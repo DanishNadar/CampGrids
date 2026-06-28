@@ -1,0 +1,492 @@
+/* This import asks Google Fonts for the Nunito typeface. If the visitor has internet access, the page uses Nunito. If not, the browser falls back to the backup fonts listed later in the body rule. */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap');
+
+/* This reset makes sizing easier to understand. Browsers add their own default spacing to many elements. This removes that surprise spacing and tells the browser to include borders and padding inside each element's total width. */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* These are site-wide color variables. Think of them as named paint swatches. Instead of repeating the same color everywhere, the rest of the CSS can reuse names like var(--ink). */
+:root {
+  --ink: #172033;
+  --muted: #64748b;
+  --paper: #ffffff;
+  --page: #f1f5f9;
+  --line: #dbe4ef;
+  --shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
+}
+
+/* This controls the whole page. It sets the main font, main text color, soft page background, and extra room at the bottom so the footer never feels cramped. */
+body {
+  min-height: 100vh;
+  font-family: 'Nunito', 'Arial Rounded MT Bold', Arial, sans-serif;
+  color: var(--ink);
+  background:
+    linear-gradient(180deg, rgba(235, 37, 37, 0.1), rgba(224, 145, 0, 0) 340px),
+    var(--page);
+  padding-bottom: 52px;
+}
+
+/* This keeps links from turning the browser's default blue/purple. The links still work normally, but they inherit the color of the design around them instead of using default link colors. */
+a {
+  color: inherit;
+}
+
+/* This styles the large top banner. Flexbox places the image slot and the title text side by side on wide screens, while the blue gradient gives the page a friendly first impression. */
+.siteHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  min-height: 220px;
+  padding: 42px 24px 34px;
+  color: white;
+  background:
+    linear-gradient(135deg, #e03229, #e05f29),
+    #2563eb;
+}
+
+/* This limits the width of the header text. Without this, long lines can stretch too far across large screens and become harder to read. */
+.headerCopy {
+  max-width: 760px;
+}
+
+/* This sizes the image slot in the header. The image source is still the same placeholder file, but this rule makes it larger than the smaller placeholders used inside cards. */
+.headerLogo {
+  width: 108px;
+  height: 108px;
+  border-color: rgba(255, 255, 255, 0.65);
+  background-color: rgba(255, 255, 255, 0.16);
+}
+
+/* This styles the main page title. The clamp() value means the title is smaller on phones and larger on desktops, while still staying within a sensible minimum and maximum size. */
+.siteHeader h1 {
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 900;
+  line-height: 1.02;
+  margin: 4px 0 10px;
+}
+
+/* This styles the short sentence under the main title. It is slightly smaller than the title but still bold enough to read clearly. */
+.siteHeader p {
+  font-size: 1.08rem;
+  font-weight: 700;
+  opacity: 0.93;
+}
+
+/* This styles small label text used above larger headings. "Eyebrow" is a design term for a small uppercase label that introduces the larger heading below it. */
+.eyebrow {
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* This styles the quickLinks bar. The white background separates the shortcut links from the blue header above. */
+.quickLinks {
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+  padding: 22px 20px 24px;
+}
+
+/* This styles the "Quick Links" label. It is centered and uppercase so users understand the buttons below are shortcuts, not project cards. */
+.quickLinksLabel {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* This arranges the shortcut buttons. Flexbox lets the buttons wrap onto a new line if the screen is too narrow. */
+.quickLinksList {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* This styles each individual quickLink button. The rounded shape, white text, small image placeholder, and shadow make each shortcut feel like a button instead of plain text. */
+.quickLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 16px 8px 10px;
+  border-radius: 999px;
+  color: white;
+  font-weight: 900;
+  text-decoration: none;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+/* This adds a small lift effect when someone hovers over or tabs to a quick link. It helps users notice that the button is clickable. */
+.quickLink:hover,
+.quickLink:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.20);
+}
+
+/* These are the available quickLink button colors. script.js chooses one of these color classes for each shortcut button. */
+.qlBlue { background: #2563eb; }
+.qlGreen { background: #16a34a; }
+.qlOrange { background: #ea580c; }
+.qlPurple { background: #9333ea; }
+.qlTeal { background: #0f766e; }
+.qlRed { background: #dc2626; }
+
+/* This styles the introduction area above the card grid. It places the heading on the left and the explanatory paragraph on the right on larger screens. */
+.introPanel {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 28px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 34px 24px 20px;
+}
+
+/* This styles the "Choose a Category" heading. clamp() keeps the heading readable on small screens and prominent on large ones. */
+.introPanel h2 {
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+  font-weight: 900;
+}
+
+/* This styles the intro paragraph beside the heading. The max-width prevents the sentence from becoming one long hard-to-read line. */
+.introPanel p {
+  max-width: 600px;
+  color: var(--muted);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+/* This creates the main card grid. On desktop it shows three cards per row. Later media queries reduce that count on smaller screens. */
+.grid {
+  display: grid;
+  align-items: start;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* This styles each category card container. The card holds one clickable category header and its hidden project list. */
+.card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+}
+
+/* This styles the top button of each card. The colored strip at the top uses --categoryColor, which script.js sets for each category when it builds the card. */
+.cardBtn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 104px;
+  padding: 16px;
+  border: 0;
+  border-top: 8px solid var(--categoryColor);
+  background: white;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+/* This changes the card button background slightly when it is hovered or focused. It gives users feedback that the card can be opened. */
+.cardBtn:hover,
+.cardBtn:focus-visible {
+  background: #f8fafc;
+}
+
+/* This controls the text area inside each card button. It stacks the category name above the small resource count. */
+.cardLabel {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* This styles the category name, such as "Notebooking" or "Paper Flight". */
+.cardName {
+  font-size: 1.02rem;
+  font-weight: 900;
+  line-height: 1.18;
+}
+
+/* This styles the smaller line under each category name. It tells the user how many resources are inside that card. */
+.cardMeta {
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+/* This styles the small downArrow indicator on each card. The letter "v" is used in the HTML/JavaScript, and CSS makes it look like a small circular control. */
+.chevron {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #edf2f7;
+  color: #334155;
+  font-size: 0.95rem;
+  font-weight: 900;
+  transition: transform 0.22s ease;
+}
+
+/* This rotates the arrow when a card is open. JavaScript adds the open class, and this CSS reacts to that class. */
+.cardBtn.open .chevron {
+  transform: rotate(180deg);
+}
+
+/* This hides each card's project list by default. max-height: 0 means the dropdown takes up no visible space until opened. */
+.cardDropdown {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+
+/* This reveals the project list when JavaScript adds the open class. The large max-height gives long categories enough room to show all resources. */
+.cardDropdown.open {
+  max-height: 7000px;
+  border-top: 1px solid var(--line);
+}
+
+/* This styles the short description at the top of each opened category. It explains what kind of activities the category contains. */
+.cardDescription {
+  padding: 14px 16px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.45;
+  background: #f8fafc;
+}
+
+/* This separates one belt section from the next inside an opened card. */
+.beltSection {
+  border-top: 1px solid var(--line);
+}
+
+/* This styles each clickable belt heading row. It places the belt name, item count, and arrow in one compact button. */
+.beltHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 14px;
+  border: 0;
+  font-size: 0.88rem;
+  font-weight: 900;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+/* This styles the small item count inside a belt heading. */
+.beltCount {
+  margin-left: auto;
+  font-size: 0.74rem;
+  opacity: 0.8;
+}
+
+/* This styles the arrow on each belt subDropdown. */
+.beltChevron {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.35);
+  font-size: 0.8rem;
+  transition: transform 0.2s ease;
+}
+
+/* This rotates the belt arrow when the belt list is open. */
+.beltHeading.open .beltChevron {
+  transform: rotate(180deg);
+}
+
+/* These rules color the belt headings. Each belt gets its own familiar color so campers can scan the progression quickly without reading every row first. */
+.beltWhite .beltHeading { background: #ffffff; color: #1f2937; border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; }
+.beltYellow .beltHeading { background: #fde047; color: #422006; }
+.beltOrange .beltHeading { background: #fb923c; color: #431407; }
+.beltGreen .beltHeading { background: #22c55e; color: #052e16; }
+.beltBlue .beltHeading { background: #3b82f6; color: #eff6ff; }
+.beltPurple .beltHeading { background: #a855f7; color: #faf5ff; }
+.beltBrown .beltHeading { background: #92400e; color: #fff7ed; }
+.beltBlack .beltHeading { background: #111827; color: #f9fafb; }
+
+/* This wraps the project/resource rows within one belt section. */
+.projectList {
+  display: grid;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.28s ease;
+}
+
+/* This reveals a belt's project rows only after its belt button is clicked. */
+.projectList.open {
+  max-height: 2400px;
+}
+
+/* This styles each project row. Each row is a link with a image slot on the left and text on the right. */
+.project {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 66px;
+  padding: 10px 14px;
+  color: var(--ink);
+  text-decoration: none;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  background: white;
+  transition: background 0.15s ease;
+}
+
+/* This changes a project row's background when hovered or focused. It helps users see which resource they are about to open. */
+.project:hover,
+.project:focus-visible {
+  background: #f1f5f9;
+}
+
+/* This stacks the project title above the small project type label. */
+.projectCopy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+/* This styles the main project title in each row. */
+.projectName {
+  font-size: 0.93rem;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+/* This styles the small label under the project title. Examples include "resource", "video", "instructions", or "setup". */
+.projectType {
+  width: fit-content;
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: #475569;
+  background: #e2e8f0;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* This gives video rows a stronger label so the type flip is easy to notice. */
+.projectVideo .projectType {
+  color: #7c2d12;
+  background: #fed7aa;
+}
+
+/* This gives instruction rows a distinct label without making the row louder. */
+.projectInstructions .projectType {
+  color: #1e3a8a;
+  background: #bfdbfe;
+}
+
+/* This gives setup rows a distinct label for account/setup tasks. */
+.projectSetup .projectType {
+  color: #14532d;
+  background: #bbf7d0;
+}
+
+/* This is the shared style for all image slots. The dashed border keeps each image area clear and consistent. */
+.imagePlaceholder,
+.cardImage,
+.projectImage,
+.quickLinkImage {
+  display: inline-block;
+  flex: 0 0 auto;
+  border: 2px dashed #94a3b8;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #eef2f7;
+}
+
+/* This sets the image slot size used on category cards. */
+.cardImage {
+  width: 64px;
+  height: 64px;
+}
+
+/* This sets the smaller image slot size used on project rows. */
+.projectImage {
+  width: 44px;
+  height: 44px;
+}
+
+/* This sets the tiny image slot size used inside quickLink buttons. The lighter border works better because quick links have colorful backgrounds. */
+.quickLinkImage {
+  width: 26px;
+  height: 26px;
+  border-color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* This styles the footer at the bottom of the page. */
+footer {
+  max-width: 1180px;
+  margin: 36px auto 0;
+  padding: 0 24px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* This media query changes the layout on medium screens, such as tablets. The card grid becomes two columns, and the intro section stacks more naturally. */
+@media (max-width: 980px) {
+  /* On medium screens, two columns give cards enough width to remain readable. */
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* This makes the intro heading and paragraph stack instead of stretching awkwardly across a narrower screen. */
+  .introPanel {
+    align-items: start;
+    flex-direction: column;
+  }
+}
+
+/* This media query changes the layout on small screens, such as phones. The page becomes mostly one-column so text and buttons stay easy to tap. */
+@media (max-width: 640px) {
+  /* On phones, the header stacks vertically so the image slot and title fit. */
+  .siteHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  /* The header image slot becomes smaller on phones to save vertical space. */
+  .headerLogo {
+    width: 84px;
+    height: 84px;
+  }
+
+  /* The card grid becomes one column on phones. */
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Quick links align to the left on phones so wrapped buttons read naturally. */
+  .quickLinksList {
+    justify-content: flex-start;
+  }
+}

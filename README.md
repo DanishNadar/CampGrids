@@ -1,0 +1,71 @@
+# CampGrids
+
+CampGrids is a static project browser for camp activities. It organizes resources into category cards, belt levels, and project rows so the curriculum is easier to scan than a spreadsheet.
+
+## Files
+
+`index.html` - Page structure and content containers
+`styles.css` - Layout, colors, responsive behavior, and imageSlot styling
+`script.js` - Project data, quick links, card rendering, and dropdown behavior
+`assets/placeholder.jpg` - Shared image slot graphic
+`CampGrids.xlsx` - Source workbook
+`scripts/generateCampgrids.py` - Workbook-to-site data generator
+`update_campgrids.bat` - Windows updater for rebuilding `script.js`
+
+## Structure
+
+The page starts with a header, quick links, and a projectCard grid. The card grid is rendered from `campData` in `script.js`.
+
+Each category includes:
+
+- a category name
+- a short description
+- an accent color
+- beltLevel subDropdowns
+- project rows with titles, links, and resource types
+
+## Data Mapping
+
+The workbook maps into the site like this:
+
+- Row 1, columns B through W become category names.
+- Column A provides the active belt level.
+- Non-empty cells under each category become project rows.
+- Workbook hyperlinks become project links when present.
+
+## Adding New Items
+
+New projects belong in `CampGrids.xlsx`, not directly in the long `campData` block.
+
+To add a new project:
+
+1. Open `CampGrids.xlsx`.
+2. Put the project under the correct category column.
+3. Put it on a row covered by the correct belt color in column A.
+4. Add the project link as a workbook hyperlink when one exists.
+5. Save the workbook.
+6. Run `update_campgrids.bat`.
+7. Open or refresh `index.html`.
+
+The updater reads the workbook and rebuilds the category cards, belt sections, project rows, counts, and comments in `script.js`.
+
+## Standard Workbook Format
+
+The updater expects this structure:
+
+- The first worksheet contains the project grid.
+- Row 1 contains category names.
+- Column A contains belt names.
+- Category columns start at column B.
+- Belt names use: White, Yellow, Orange, Green, Blue, Purple, Brown, Black.
+- Project cells contain the text shown on the site.
+- Hyperlinks attached to project cells become clickable project links.
+
+As long as a replacement workbook keeps that format and is named `CampGrids.xlsx`, running `update_campgrids.bat` rebuilds the site data automatically.
+
+## Design Notes
+
+- Cards stay collapsed by default to keep the page easy to scan.
+- Belt colors appear as compact subDropdown buttons inside each category.
+- Image slots reserve consistent visual space across headers, cards, and rows.
+- Links open in new tabs so the main grid stays available.
