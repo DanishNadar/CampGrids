@@ -14,7 +14,7 @@
     <div class="headerCopy">
       <p class="eyebrow">Automation Notes</p>
       <h1>CampGrids Sync Process</h1>
-      <p>The workbook is the source of truth. The script reads the sheet, rebuilds the interface data, and the cards update to match.</p>
+      <p>This page shows how a cleaned-up workbook turns into the card interface. The short version is: run the batch file with the latest spreadsheet, let the Python script rebuild the data, then refresh the page.</p>
     </div>
   </header>
 
@@ -31,8 +31,8 @@
     <!-- Overview section. -->
     <section class="processIntro">
       <p class="eyebrow">What is happening</p>
-      <h2>Sheet changes translate to the interface automatically.</h2>
-      <p>When columns are removed from the workbook, the generated category cards disappear from the interface. When those columns are restored and the updater runs again, the cards come back with their project counts and links.</p>
+      <h2>The interface follows the workbook.</h2>
+      <p>Each project category starts as a column in the spreadsheet. If a column is removed, that category is left out of the generated site. If the column is added back and the updater runs again, the card returns with its belts, links, resource labels, and counts.</p>
     </section>
 
     <!-- Step-by-step visual explanation. -->
@@ -41,8 +41,8 @@
         <img class="processImage" src="assets/process/sheetRemovedColumns.svg" alt="Source workbook view showing Circuit Playground and Lego with the removed columns no longer present.">
         <div class="processCopy">
           <p class="eyebrow">Step 1</p>
-          <h3>The workbook structure changes first</h3>
-          <p>The workbook is the source of truth for the interface. In this version, the Pipe Cleaners and 3D Pen columns are not present, so the generator only has source columns through Lego to read.</p>
+          <h3>The spreadsheet changes first</h3>
+          <p>Here, the Pipe Cleaners and 3D Pen columns have been removed from the workbook. Since the generator reads the sheet from left to right, Lego is now the last project category available for the site to import.</p>
         </div>
       </article>
 
@@ -50,8 +50,8 @@
         <img class="processImage" src="assets/process/interfaceRemovedColumns.svg" alt="CampGrids interface after Pipe Cleaners and 3D Pen are removed, ending with Lego as the trailing category.">
         <div class="processCopy">
           <p class="eyebrow">Step 2</p>
-          <h3>The interface updates from those columns</h3>
-          <p>After the updater reads the workbook, the interface no longer renders Pipe Cleaners or 3D Pen. Lego becomes the trailing category because it is the last category column available in the source sheet.</p>
+          <h3>The site reflects that missing data</h3>
+          <p>After syncing this edited workbook, the interface does not show Pipe Cleaners or 3D Pen. Nothing was manually deleted from the HTML. Those cards are gone because their source columns were not in the spreadsheet that was imported.</p>
         </div>
       </article>
 
@@ -59,8 +59,8 @@
         <img class="processImage" src="assets/process/sheetRestoredColumns.svg" alt="Restored workbook view showing Pygamer, Circuit Playground, Lego, Pipe Cleaners, and 3D Pen columns.">
         <div class="processCopy">
           <p class="eyebrow">Step 3</p>
-          <h3>The removed columns are restored</h3>
-          <p>Once Pipe Cleaners and 3D Pen return to the workbook, the source again contains the full category set. No manual frontend editing is needed because the interface is rebuilt from the sheet.</p>
+          <h3>The missing columns are added back</h3>
+          <p>In the restored workbook, Pipe Cleaners and 3D Pen are back at the end of the sheet. The spreadsheet structure is standardized again, so the updater has those categories available to rebuild.</p>
         </div>
       </article>
 
@@ -68,8 +68,8 @@
         <img class="processImage" src="assets/process/syncOutput.svg" alt="Terminal output showing updateInterface.bat syncing Restored_CampGrids_27-06-26.xlsx and generating 22 categories with 396 resources.">
         <div class="processCopy">
           <p class="eyebrow">Step 4</p>
-          <h3>The updater regenerates the frontend data</h3>
-          <p>The command passes the restored workbook into the Python generator. The script extracts categories, belts, links, resource types, and counts, then replaces the generated <code>campData</code> block in <code>script.js</code>.</p>
+          <h3>The batch file runs the sync</h3>
+          <p>The command sends the restored workbook into <code>updateInterface.bat</code>. The batch file checks that a spreadsheet path was provided, then calls <code>generateCampgrids.py</code> with that file so the frontend data can be rebuilt.</p>
         </div>
       </article>
 
@@ -77,8 +77,8 @@
         <img class="processImage" src="assets/process/interfaceRestoredColumns.svg" alt="CampGrids interface after the restored workbook sync, showing Pipe Cleaners and 3D Pen back in the card grid.">
         <div class="processCopy">
           <p class="eyebrow">Step 5</p>
-          <h3>The synced interface matches the restored sheet</h3>
-          <p>After the restored workbook is synced, the frontend shows the full category set again. Pipe Cleaners and 3D Pen return because those columns are back in the spreadsheet, and the generated data now contains 22 categories and 396 resources.</p>
+          <h3>The refreshed site matches the restored workbook</h3>
+          <p>Once the sync finishes, the interface has the full category list again. Pipe Cleaners and 3D Pen reappear because the generated <code>campData</code> now includes them, along with the imported belts, links, and 396 total resources.</p>
         </div>
       </article>
     </section>
@@ -86,23 +86,23 @@
     <!-- Technical logic section. -->
     <section class="processLogic">
       <p class="eyebrow">Script logic</p>
-      <h2>How the automation works</h2>
+      <h2>What runs when the workbook is synced</h2>
       <div class="logicGrid">
         <article>
-          <h3>1. Read the workbook</h3>
-          <p><code>generateCampgrids.py</code> opens the Excel file as a zip archive, reads the worksheet XML, shared strings, and hyperlink relationship files.</p>
+          <h3>1. Use the batch file</h3>
+          <p><code>updateInterface.bat</code> is the command-line entry point. It requires an Excel file path, confirms the file exists, and then passes that exact workbook to the Python generator.</p>
         </article>
         <article>
-          <h3>2. Build structured data</h3>
-          <p>The first row becomes category cards. Belt names in column A set the current belt. Project cells become rows with title, link, and type.</p>
+          <h3>2. Read the workbook internals</h3>
+          <p><code>generateCampgrids.py</code> opens the <code>.xlsx</code> file and reads the worksheet text, shared strings, and hyperlink relationship data. That is how it gets both the visible project names and the links behind them.</p>
         </article>
         <article>
-          <h3>3. Replace the data block</h3>
-          <p>The generator leaves the rendering code alone and only rewrites the <code>campData</code> array in <code>script.js</code>.</p>
+          <h3>3. Build the site data</h3>
+          <p>The script turns spreadsheet columns into categories, column A belt labels into belt sections, numbered rows into parts, matching instruction/video pairs into series, and every non-video item into a resource.</p>
         </article>
         <article>
-          <h3>4. Render the interface</h3>
-          <p>The browser loads <code>script.js</code>, loops through <code>campData</code>, creates category cards, and nests belt subDropdowns inside each card.</p>
+          <h3>4. Replace and render</h3>
+          <p>The generator rewrites only the generated <code>campData</code> block in <code>script.js</code>. The browser then uses that data to draw the category cards, belt dropdowns, series sections, and resource/video rows.</p>
         </article>
       </div>
     </section>
