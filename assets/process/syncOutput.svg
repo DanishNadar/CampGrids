@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650" role="img" aria-label="Terminal sync output">
+  <rect width="1200" height="650" rx="18" fill="#111827"/>
+  <rect x="0" y="0" width="1200" height="54" rx="18" fill="#1f2937"/>
+  <circle cx="34" cy="27" r="8" fill="#ef4444"/><circle cx="62" cy="27" r="8" fill="#f59e0b"/><circle cx="90" cy="27" r="8" fill="#22c55e"/>
+  <g font-family="Consolas, monospace" font-size="24" fill="#e5e7eb">
+    <text x="42" y="120">PS C:\Users\Danis\Documents\Development\CampGrids&gt; .\updateInterface.bat "Restored_CampGrids_27-06-26.xlsx"</text>
+    <text x="42" y="180" fill="#bfdbfe">Updating CampGrids from "Restored_CampGrids_27-06-26.xlsx"...</text>
+    <text x="42" y="240" fill="#bbf7d0">Updated script.js from Restored_CampGrids_27-06-26.xlsx: 22 categories, 396 resources.</text>
+    <text x="42" y="320">Update complete. Open or refresh index.html to see the latest frontend content.</text>
+    <text x="42" y="380" fill="#fef3c7">Press any key to continue . . .</text>
+  </g>
+</svg>

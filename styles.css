@@ -340,8 +340,65 @@ a {
 
 /* This reveals a belt's project rows only after its belt button is clicked. */
 .projectList.open {
-  max-height: 2400px;
+  max-height: 8000px;
 }
+
+/* This wraps one automatically detected part or series inside an opened belt. */
+.resourceGroup {
+  padding: 8px 12px 0;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+/* This styles the lighter rectangular heading for a part or series. */
+.groupHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 16px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 8px;
+  color: #172033;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+  font-size: 0.86rem;
+  font-weight: 900;
+  font-family: inherit;
+  text-align: left;
+}
+
+/* This styles the part or series title inside a rectangular group section. */
+.groupName {
+  flex: 1;
+  min-width: 0;
+}
+
+/* This styles the item count inside a group section heading. */
+.groupCount {
+  color: rgba(15, 23, 42, 0.72);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+/* This keeps the rows inside each generated group visible because parts and series are sections, not dropdowns. */
+.groupList {
+  display: grid;
+  margin-top: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 8px;
+}
+
+/* These lighter colors make group section headings feel related to their parent belt without being as strong. */
+.beltWhite .groupHeading { background: #f8fafc; }
+.beltYellow .groupHeading { background: #fef3c7; }
+.beltOrange .groupHeading { background: #ffedd5; }
+.beltGreen .groupHeading { background: #dcfce7; }
+.beltBlue .groupHeading { background: #dbeafe; }
+.beltPurple .groupHeading { background: #f3e8ff; }
+.beltBrown .groupHeading { background: #fed7aa; }
+.beltBlack .groupHeading { background: #e5e7eb; }
 
 /* This styles each project row. Each row is a link with a image slot on the left and text on the right. */
 .project {
@@ -377,35 +434,27 @@ a {
   line-height: 1.25;
 }
 
-/* This styles the small label under the project title. Examples include "resource", "video", "instructions", or "setup". */
+/* This styles the small label under the project title. The interface only uses resource and video labels. */
 .projectType {
   width: fit-content;
   padding: 2px 7px;
   border-radius: 999px;
-  color: #475569;
-  background: #e2e8f0;
   font-size: 0.72rem;
   font-weight: 900;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
-/* This gives video rows a stronger label so the type flip is easy to notice. */
-.projectVideo .projectType {
-  color: #7c2d12;
-  background: #fed7aa;
-}
-
-/* This gives instruction rows a distinct label without making the row louder. */
-.projectInstructions .projectType {
+/* This gives resource rows one consistent label color, including setup documents like TinkerCAD setup. */
+.projectResource .projectType {
   color: #1e3a8a;
   background: #bfdbfe;
 }
 
-/* This gives setup rows a distinct label for account/setup tasks. */
-.projectSetup .projectType {
-  color: #14532d;
-  background: #bbf7d0;
+/* This gives video rows a stronger label so the type flip is easy to notice. */
+.projectVideo .projectType {
+  color: #7c2d12;
+  background: #fed7aa;
 }
 
 /* This is the shared style for all image slots. The dashed border keeps each image area clear and consistent. */
@@ -452,6 +501,138 @@ footer {
   text-align: center;
 }
 
+/* This sets a slightly cleaner background for the process explanation page. */
+.processPage {
+  background: #f8fafc;
+}
+
+/* This keeps the process page header aligned with the main CampGrids visual language. */
+.processHeader {
+  min-height: 250px;
+}
+
+/* This wraps the process page content so the long explanations stay readable on wide screens. */
+.processMain {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 34px 24px 0;
+}
+
+/* This styles the short overview panel near the top of the process page. */
+.processIntro {
+  margin-bottom: 24px;
+  padding: 26px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+}
+
+/* This styles the large process page heading. */
+.processIntro h2,
+.processLogic h2 {
+  margin: 6px 0 10px;
+  font-size: clamp(1.7rem, 4vw, 2.4rem);
+  font-weight: 900;
+}
+
+/* This keeps process page paragraphs readable and muted. */
+.processIntro p,
+.processCopy p,
+.processLogic p {
+  color: var(--muted);
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+/* This stacks each screenshot/mockup with its explanation in a calm vertical timeline. */
+.processTimeline {
+  display: grid;
+  gap: 22px;
+}
+
+/* This styles each process step as a two-column explanation card. */
+.processStep {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+  gap: 22px;
+  align-items: center;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+}
+
+/* This makes process images responsive while preserving the screenshot-like frame. */
+.processImage {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #eef2f7;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.55);
+}
+
+/* This styles the text beside each process image. */
+.processCopy h3,
+.logicGrid h3 {
+  margin: 6px 0 8px;
+  font-size: 1.22rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+/* This styles inline code labels inside the process explanation. */
+.processPage code {
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: #1e3a8a;
+  background: #dbeafe;
+  font-family: Consolas, monospace;
+  font-size: 0.92em;
+}
+
+/* This styles the technical logic section after the visual walkthrough. */
+.processLogic {
+  margin-top: 24px;
+  padding: 26px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+}
+
+/* This lays out the four logic explanation cards. */
+.logicGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+/* This styles each compact technical explanation block. */
+.logicGrid article {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+/* This centers the Automation Notes button below the generated card grid. */
+.automationNotesLink {
+  display: flex;
+  justify-content: center;
+  max-width: 1180px;
+  margin: 34px auto 0;
+  padding: 0 24px;
+}
+
+/* This makes the lower Automation Notes button feel intentional instead of part of the top quick-link strip. */
+.automationNotesButton {
+  min-width: 260px;
+  justify-content: center;
+}
+
 /* This media query changes the layout on medium screens, such as tablets. The card grid becomes two columns, and the intro section stacks more naturally. */
 @media (max-width: 980px) {
   /* On medium screens, two columns give cards enough width to remain readable. */
@@ -463,6 +644,12 @@ footer {
   .introPanel {
     align-items: start;
     flex-direction: column;
+  }
+
+  /* This stacks process steps on tablet-sized screens. */
+  .processStep,
+  .logicGrid {
+    grid-template-columns: 1fr;
   }
 }
 

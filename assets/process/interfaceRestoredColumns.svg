@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650" role="img" aria-label="Interface after restored sync">
+  <rect width="1200" height="650" fill="#eef2f7"/>
+  <g font-family="Arial, sans-serif" font-weight="700" fill="#111827">
+    <text x="60" y="58" font-size="30">Interface after syncing the restored workbook</text>
+    <text x="60" y="92" font-size="18" fill="#64748b">Pipe Cleaners and 3D Pen return because the restored sheet includes those columns again.</text>
+  </g>
+  <g transform="translate(50 128)">
+    <g fill="#fff" stroke="#dbe4ef">
+      <rect x="0" y="0" width="330" height="88" rx="8"/><rect x="385" y="0" width="330" height="88" rx="8"/><rect x="770" y="0" width="330" height="88" rx="8"/>
+      <rect x="0" y="112" width="330" height="88" rx="8"/><rect x="385" y="112" width="330" height="88" rx="8"/><rect x="770" y="112" width="330" height="88" rx="8"/>
+      <rect x="0" y="224" width="330" height="88" rx="8"/><rect x="385" y="224" width="330" height="88" rx="8"/><rect x="770" y="224" width="330" height="88" rx="8"/>
+      <rect x="0" y="336" width="330" height="88" rx="8"/><rect x="385" y="336" width="330" height="88" rx="8"/><rect x="770" y="336" width="330" height="88" rx="8"/>
+      <rect x="0" y="448" width="330" height="88" rx="8"/>
+    </g>
+    <g>
+      <rect x="0" y="0" width="330" height="8" rx="4" fill="#2563eb"/><rect x="385" y="0" width="330" height="8" rx="4" fill="#0ea5e9"/><rect x="770" y="0" width="330" height="8" rx="4" fill="#14b8a6"/>
+      <rect x="0" y="112" width="330" height="8" rx="4" fill="#22c55e"/><rect x="385" y="112" width="330" height="8" rx="4" fill="#84cc16"/><rect x="770" y="112" width="330" height="8" rx="4" fill="#eab308"/>
+      <rect x="0" y="224" width="330" height="8" rx="4" fill="#f97316"/><rect x="385" y="224" width="330" height="8" rx="4" fill="#ef4444"/><rect x="770" y="224" width="330" height="8" rx="4" fill="#ec4899"/>
+      <rect x="0" y="336" width="330" height="8" rx="4" fill="#a855f7"/><rect x="385" y="336" width="330" height="8" rx="4" fill="#6366f1"/><rect x="770" y="336" width="330" height="8" rx="4" fill="#d97706"/>
+      <rect x="0" y="448" width="330" height="8" rx="4" fill="#047857"/>
+    </g>
+    <g fill="#94a3b8" stroke="#94a3b8" stroke-dasharray="5 4">
+      <rect x="18" y="24" width="54" height="54" rx="6" fill="#f8fafc"/><rect x="403" y="24" width="54" height="54" rx="6" fill="#f8fafc"/><rect x="788" y="24" width="54" height="54" rx="6" fill="#f8fafc"/>
+      <rect x="18" y="136" width="54" height="54" rx="6" fill="#f8fafc"/><rect x="403" y="136" width="54" height="54" rx="6" fill="#f8fafc"/><rect x="788" y="136" width="54" height="54" rx="6" fill="#f8fafc"/>
+      <rect x="18" y="248" width="54" height="54" rx="6" fill="#f8fafc"/><rect x="403" y="248" width="54" height="54" rx="6" fill="#f8fafc"/><rect x="788" y="248" width="54" height="54" rx="6" fill="#f8fafc"/>
+      <rect x="18" y="360" width="54" height="54" rx="6" fill="#f8fafc"/><rect x="403" y="360" width="54" height="54" rx="6" fill="#f8fafc"/><rect x="788" y="360" width="54" height="54" rx="6" fill="#f8fafc"/>
+      <rect x="18" y="472" width="54" height="54" rx="6" fill="#f8fafc"/>
+    </g>
+    <g font-family="Arial, sans-serif" font-weight="700" fill="#111827" font-size="18">
+      <text x="88" y="45">Fiber Art</text><text x="473" y="45">Hands-On Science</text><text x="858" y="45">3D Printing 101</text>
+      <text x="88" y="157">Vinyl Cutting</text><text x="473" y="157">Laser Cutting 101</text><text x="858" y="157">Digital Embroidery</text>
+      <text x="88" y="269">Electronics 101</text><text x="473" y="269">Mechatronics</text><text x="858" y="269">Engineering 101</text>
+      <text x="88" y="381">Circuit Playground</text><text x="473" y="381">Lego</text><text x="858" y="381">Pipe Cleaners</text>
+      <text x="88" y="493">3D Pen</text>
+    </g>
+    <g font-family="Arial, sans-serif" fill="#64748b" font-size="14">
+      <text x="88" y="67">28 resources</text><text x="473" y="67">26 resources</text><text x="858" y="67">17 resources</text>
+      <text x="88" y="179">11 resources</text><text x="473" y="179">15 resources</text><text x="858" y="179">8 resources</text>
+      <text x="88" y="291">16 resources</text><text x="473" y="291">9 resources</text><text x="858" y="291">19 resources</text>
+      <text x="88" y="403">9 resources</text><text x="473" y="403">10 resources</text><text x="858" y="403">16 resources</text>
+      <text x="88" y="515">11 resources</text>
+    </g>
+  </g>
+</svg>

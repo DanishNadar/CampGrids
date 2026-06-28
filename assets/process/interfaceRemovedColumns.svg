@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650" role="img" aria-label="Interface after removed columns">
+  <rect width="1200" height="650" fill="#eef2f7"/>
+  <g font-family="Arial, sans-serif" font-weight="700" fill="#111827">
+    <text x="60" y="58" font-size="30">Interface synced after removing Pipe Cleaners and 3D Pen</text>
+    <text x="60" y="92" font-size="18" fill="#64748b">The trailing category is Lego because the last two source columns are not present.</text>
+  </g>
+  <g transform="translate(60 130)">
+    <g fill="#fff" stroke="#dbe4ef">
+      <rect x="0" y="0" width="320" height="92" rx="8"/><rect x="350" y="0" width="320" height="92" rx="8"/><rect x="700" y="0" width="320" height="92" rx="8"/>
+      <rect x="0" y="118" width="320" height="92" rx="8"/><rect x="350" y="118" width="320" height="92" rx="8"/><rect x="700" y="118" width="320" height="92" rx="8"/>
+      <rect x="0" y="236" width="320" height="92" rx="8"/><rect x="350" y="236" width="320" height="92" rx="8"/><rect x="700" y="236" width="320" height="92" rx="8"/>
+      <rect x="0" y="354" width="320" height="92" rx="8"/><rect x="350" y="354" width="320" height="92" rx="8"/>
+    </g>
+    <g fill="#2563eb"><rect x="0" y="0" width="320" height="8" rx="4"/><rect x="350" y="0" width="320" height="8" rx="4"/><rect x="700" y="0" width="320" height="8" rx="4"/></g>
+    <g fill="#22c55e"><rect x="0" y="118" width="320" height="8" rx="4"/><rect x="350" y="118" width="320" height="8" rx="4"/><rect x="700" y="118" width="320" height="8" rx="4"/></g>
+    <g fill="#f97316"><rect x="0" y="236" width="320" height="8" rx="4"/><rect x="350" y="236" width="320" height="8" rx="4"/><rect x="700" y="236" width="320" height="8" rx="4"/></g>
+    <g fill="#10b981"><rect x="0" y="354" width="320" height="8" rx="4"/><rect x="350" y="354" width="320" height="8" rx="4"/></g>
+    <g font-family="Arial, sans-serif" font-weight="700" fill="#111827" font-size="20">
+      <text x="68" y="55">Fiber Art</text><text x="418" y="55">Hands-On Science</text><text x="768" y="55">3D Printing 101</text>
+      <text x="68" y="173">Vinyl Cutting</text><text x="418" y="173">Laser Cutting</text><text x="768" y="173">Digital Embroidery</text>
+      <text x="68" y="291">Electronics 101</text><text x="418" y="291">Mechatronics</text><text x="768" y="291">Engineering 101</text>
+      <text x="68" y="409">Circuit Playground</text><text x="418" y="409">Lego</text>
+    </g>
+    <g font-family="Arial, sans-serif" fill="#64748b" font-size="15">
+      <text x="68" y="78">28 resources</text><text x="418" y="78">26 resources</text><text x="768" y="78">17 resources</text>
+      <text x="68" y="196">11 resources</text><text x="418" y="196">15 resources</text><text x="768" y="196">8 resources</text>
+      <text x="68" y="314">16 resources</text><text x="418" y="314">9 resources</text><text x="768" y="314">19 resources</text>
+      <text x="68" y="432">9 resources</text><text x="418" y="432">10 resources</text>
+    </g>
+  </g>
+</svg>

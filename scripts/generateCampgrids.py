@@ -226,14 +226,65 @@ def itemType(title: str) -> str:
     # This marks anything with "video" in the title as a video.
     if "video" in lower:
         return "video"
-    # This marks instruction-like resources as instructions, including manuals and instructables.
-    if "instruction" in lower or "manual" in lower or "instructable" in lower:
-        return "instructions"
-    # This marks setup/account/getting-started items as setup tasks.
-    if "setup" in lower or "getting started" in lower or "account" in lower:
-        return "setup"
-    # This fallback is used for ordinary projects and resources.
+    # This fallback treats every non-video item as a resource, including Google Docs such as TinkerCAD setup.
     return "resource"
+
+
+# This removes labels like Instructions and Video so related rows can become one series group.
+def seriesTitle(title: str) -> str:
+    # This removes a leading number like "1." because numbered items are grouped separately as parts.
+    title = re.sub(r"^\d+\.\s*", "", title).strip()
+    # This removes common trailing resource labels after a colon, such as ": Instructions", ": Video", or ": Videos".
+    title = re.sub(r"\s*:\s*(instructions?|videos?|manual|instructable(?:\s+w/\s*video)?)\s*$", "", title, flags=re.IGNORECASE).strip()
+    # This removes common trailing resource labels without a colon.
+    title = re.sub(r"\s+(instructions?|videos?)\s*$", "", title, flags=re.IGNORECASE).strip()
+    # This removes a leading OR marker so alternate video labels still group under the meaningful title.
+    title = re.sub(r"^OR\s+", "", title, flags=re.IGNORECASE).strip()
+    # This returns the cleaned title or a generic fallback if the source text became empty.
+    return title or "Resource"
+
+
+# This turns a group title into a stable id suffix for aria-controls values.
+def groupId(value: str, index: int) -> str:
+    # This combines the position with a slug so repeated group names still get unique ids.
+    return f"group-{index + 1}-{slug(value)}"
+
+
+# This takes flat project rows inside one belt and creates rectangular group sections such as Part 1, Part 2, or Jumping Frog.
+def groupItems(items: list[dict]) -> list[dict]:
+    # This list will hold the final grouped structures used by the frontend.
+    groups = []
+    # This stores the group currently being filled while reading consecutive rows.
+    currentGroup = None
+    # This stores the comparison key for the current group so consecutive matching resources stay together.
+    currentKey = ""
+
+    # This loops through each project row in the same order it appeared in the workbook.
+    for item in items:
+        # This checks for numbered resources like "1. Introduction" or "2. Your Name".
+        numberMatch = re.match(r"^(\d+)\.\s*(.*)", item["title"])
+        # This builds a part group for numbered rows, otherwise a series group from the cleaned resource name.
+        if numberMatch:
+            key = f"part-{numberMatch.group(1)}"
+            title = f"Part {numberMatch.group(1)}"
+        else:
+            title = seriesTitle(item["title"])
+            key = f"series-{slug(title)}"
+
+        # This starts a new group whenever the key changes, which keeps only consecutive matching series together.
+        if key != currentKey:
+            currentGroup = {"id": groupId(title, len(groups)), "title": title, "items": []}
+            groups.append(currentGroup)
+            currentKey = key
+
+        # This adds the current project row to the active group.
+        currentGroup["items"].append(item)
+
+    # This adds a count to each group so the rectangular section heading can show how many rows it contains.
+    for group in groups:
+        group["count"] = len(group["items"])
+    # This returns the nested group list for one belt.
+    return groups
 
 
 # This converts raw worksheet rows into the campData structure that script.js renders.
@@ -307,6 +358,8 @@ def buildData(rows: list[tuple[int, dict[int, dict[str, str]]]]) -> list[dict]:
         # This stores the item count on each belt so the belt button can show "4 items", "6 items", and so on.
         for belt in category["belts"]:
             belt["count"] = len(belt["items"])
+            belt["groups"] = groupItems(belt["items"])
+            del belt["items"]
         # This deletes the internal column number because the browser does not need to know the spreadsheet column.
         del category["col"]
     # This returns the complete browser-ready category list.
@@ -330,16 +383,19 @@ def emitData(categories: list[dict]) -> str:
         # This adds a comment under every belts array because belts are the subDropdown sections inside a category.
         if stripped == '"belts": [':
             commented.append(f"{indent}  // Belt sections shown inside this category card.")
-        # This adds a comment under every items array because items are the actual project/resource rows.
+        # This adds a comment under every groups array because groups are the lighter rectangular section boxes inside a belt.
+        elif stripped == '"groups": [':
+            commented.append(f"{indent}  // Rectangular group sections shown inside this belt.")
+        # This adds a comment under every items array because items are the actual project/resource rows inside a group or belt.
         elif stripped == '"items": [':
-            commented.append(f"{indent}  // Project rows listed under this belt.")
+            commented.append(f"{indent}  // Project rows listed under this section.")
         # This regex finds count lines like '"count": 4' so the generated data explains what each count means.
         elif re.match(r'"count": \d+', stripped):
             # This indentation check distinguishes category-level counts from deeper belt-level counts.
             if len(indent) <= 4:
                 commented.append(f"{indent}// Total project rows in this category.")
             else:
-                commented.append(f"{indent}// Number of project rows in this belt.")
+                commented.append(f"{indent}// Number of project rows in this section.")
     # This joins all data and comment lines into one JavaScript-ready block of text.
     return "\n".join(commented)
 

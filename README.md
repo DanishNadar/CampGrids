@@ -5,16 +5,20 @@ CampGrids is a static project browser for camp activities. It organizes resource
 ## Files
 
 `index.html` - Page structure and content containers
+`process.html` - Automation walkthrough and sync process explanation
 `styles.css` - Layout, colors, responsive behavior, and imageSlot styling
 `script.js` - Project data, quick links, card rendering, and dropdown behavior
 `assets/placeholder.jpg` - Shared image slot graphic
+`assets/process/` - Process explanation visuals
 `CampGrids.xlsx` - Source workbook
 `scripts/generateCampgrids.py` - Workbook-to-site data generator
-`update_campgrids.bat` - Windows updater for rebuilding `script.js`
+`updateInterface.bat` - Windows updater for rebuilding `script.js`
 
 ## Structure
 
 The page starts with a header, quick links, and a projectCard grid. The card grid is rendered from `campData` in `script.js`.
+
+The `Automation Notes` button below the card grid opens `process.html`, which explains how workbook changes become updated interface cards.
 
 Each category includes:
 
@@ -22,6 +26,7 @@ Each category includes:
 - a short description
 - an accent color
 - beltLevel subDropdowns
+- automatic part/series subDropdowns inside each belt
 - project rows with titles, links, and resource types
 
 ## Data Mapping
@@ -44,7 +49,7 @@ To add a new project:
 3. Put it on a row covered by the correct belt color in column A.
 4. Add the project link as a workbook hyperlink when one exists.
 5. Save the workbook.
-6. Run `update_campgrids.bat`.
+6. Run `updateInterface.bat`.
 7. Open or refresh `index.html`.
 
 The updater reads the workbook and rebuilds the category cards, belt sections, project rows, counts, and comments in `script.js`.
@@ -61,11 +66,13 @@ The updater expects this structure:
 - Project cells contain the text shown on the site.
 - Hyperlinks attached to project cells become clickable project links.
 
-As long as a replacement workbook keeps that format and is named `CampGrids.xlsx`, running `update_campgrids.bat` rebuilds the site data automatically.
+As long as a replacement workbook keeps that format and is named `CampGrids.xlsx`, running `updateInterface.bat` rebuilds the site data automatically.
 
 ## Design Notes
 
 - Cards stay collapsed by default to keep the page easy to scan.
 - Belt colors appear as compact subDropdown buttons inside each category.
+- Numbered resources become Part 1, Part 2, and similar subDropdowns automatically.
+- Consecutive matching instruction/video rows become series subDropdowns automatically.
 - Image slots reserve consistent visual space across headers, cards, and rows.
 - Links open in new tabs so the main grid stays available.

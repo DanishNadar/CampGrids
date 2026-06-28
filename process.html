@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Browser setup for the process page. -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampGrids Process</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="processPage">
+  <!-- Process page header. -->
+  <header class="siteHeader processHeader">
+    <img class="headerLogo imagePlaceholder" src="assets/placeholder.jpg" alt="" aria-hidden="true">
+    <div class="headerCopy">
+      <p class="eyebrow">Automation Notes</p>
+      <h1>CampGrids Sync Process</h1>
+      <p>The workbook is the source of truth. The script reads the sheet, rebuilds the interface data, and the cards update to match.</p>
+    </div>
+  </header>
+
+  <!-- Same simple quick access strip used to return to the main interface. -->
+  <nav class="quickLinks" aria-label="Process links">
+    <span class="quickLinksLabel">Process Links</span>
+    <div class="quickLinksList">
+      <a class="quickLink qlBlue" href="index.html">Return to Interface</a>
+    </div>
+  </nav>
+
+  <!-- Main explanation content. -->
+  <main class="processMain">
+    <!-- Overview section. -->
+    <section class="processIntro">
+      <p class="eyebrow">What is happening</p>
+      <h2>Sheet changes translate to the interface automatically.</h2>
+      <p>When columns are removed from the workbook, the generated category cards disappear from the interface. When those columns are restored and the updater runs again, the cards come back with their project counts and links.</p>
+    </section>
+
+    <!-- Step-by-step visual explanation. -->
+    <section class="processTimeline" aria-label="Automation process images and explanations">
+      <article class="processStep">
+        <img class="processImage" src="assets/process/sheetRemovedColumns.svg" alt="Source workbook view showing Circuit Playground and Lego with the removed columns no longer present.">
+        <div class="processCopy">
+          <p class="eyebrow">Step 1</p>
+          <h3>The workbook structure changes first</h3>
+          <p>The workbook is the source of truth for the interface. In this version, the Pipe Cleaners and 3D Pen columns are not present, so the generator only has source columns through Lego to read.</p>
+        </div>
+      </article>
+
+      <article class="processStep">
+        <img class="processImage" src="assets/process/interfaceRemovedColumns.svg" alt="CampGrids interface after Pipe Cleaners and 3D Pen are removed, ending with Lego as the trailing category.">
+        <div class="processCopy">
+          <p class="eyebrow">Step 2</p>
+          <h3>The interface updates from those columns</h3>
+          <p>After the updater reads the workbook, the interface no longer renders Pipe Cleaners or 3D Pen. Lego becomes the trailing category because it is the last category column available in the source sheet.</p>
+        </div>
+      </article>
+
+      <article class="processStep">
+        <img class="processImage" src="assets/process/sheetRestoredColumns.svg" alt="Restored workbook view showing Pygamer, Circuit Playground, Lego, Pipe Cleaners, and 3D Pen columns.">
+        <div class="processCopy">
+          <p class="eyebrow">Step 3</p>
+          <h3>The removed columns are restored</h3>
+          <p>Once Pipe Cleaners and 3D Pen return to the workbook, the source again contains the full category set. No manual frontend editing is needed because the interface is rebuilt from the sheet.</p>
+        </div>
+      </article>
+
+      <article class="processStep">
+        <img class="processImage" src="assets/process/syncOutput.svg" alt="Terminal output showing updateInterface.bat syncing Restored_CampGrids_27-06-26.xlsx and generating 22 categories with 396 resources.">
+        <div class="processCopy">
+          <p class="eyebrow">Step 4</p>
+          <h3>The updater regenerates the frontend data</h3>
+          <p>The command passes the restored workbook into the Python generator. The script extracts categories, belts, links, resource types, and counts, then replaces the generated <code>campData</code> block in <code>script.js</code>.</p>
+        </div>
+      </article>
+
+      <article class="processStep">
+        <img class="processImage" src="assets/process/interfaceRestoredColumns.svg" alt="CampGrids interface after the restored workbook sync, showing Pipe Cleaners and 3D Pen back in the card grid.">
+        <div class="processCopy">
+          <p class="eyebrow">Step 5</p>
+          <h3>The synced interface matches the restored sheet</h3>
+          <p>After the restored workbook is synced, the frontend shows the full category set again. Pipe Cleaners and 3D Pen return because those columns are back in the spreadsheet, and the generated data now contains 22 categories and 396 resources.</p>
+        </div>
+      </article>
+    </section>
+
+    <!-- Technical logic section. -->
+    <section class="processLogic">
+      <p class="eyebrow">Script logic</p>
+      <h2>How the automation works</h2>
+      <div class="logicGrid">
+        <article>
+          <h3>1. Read the workbook</h3>
+          <p><code>generateCampgrids.py</code> opens the Excel file as a zip archive, reads the worksheet XML, shared strings, and hyperlink relationship files.</p>
+        </article>
+        <article>
+          <h3>2. Build structured data</h3>
+          <p>The first row becomes category cards. Belt names in column A set the current belt. Project cells become rows with title, link, and type.</p>
+        </article>
+        <article>
+          <h3>3. Replace the data block</h3>
+          <p>The generator leaves the rendering code alone and only rewrites the <code>campData</code> array in <code>script.js</code>.</p>
+        </article>
+        <article>
+          <h3>4. Render the interface</h3>
+          <p>The browser loads <code>script.js</code>, loops through <code>campData</code>, creates category cards, and nests belt subDropdowns inside each card.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <!-- Bottom page label. -->
+  <footer>
+    <p>Camp Grids | Museum of Science and Industry</p>
+  </footer>
+</body>
+</html>
