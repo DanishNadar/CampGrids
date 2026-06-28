@@ -111,35 +111,41 @@ a {
   gap: 10px;
 }
 
-/* This styles each individual quickLink button. The rounded shape, white text, small image placeholder, and shadow make each shortcut feel like a button instead of plain text. */
+/* This styles each individual quickLink button. The white background, black text, orange border, and rounded corners match the MSI button style. */
 .quickLink {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 10px;
   min-height: 44px;
-  padding: 8px 16px 8px 10px;
-  border-radius: 999px;
-  color: white;
+  padding: 9px 18px 9px 12px;
+  border: 2px solid #e6531f;
+  border-radius: 12px;
+  color: #020617;
+  background: #ffffff;
   font-weight: 900;
   text-decoration: none;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  box-shadow: none;
+  transition: transform 0.18s ease, border-color 0.18s ease;
 }
 
 /* This adds a small lift effect when someone hovers over or tabs to a quick link. It helps users notice that the button is clickable. */
 .quickLink:hover,
 .quickLink:focus-visible {
   transform: translateY(-2px);
-  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.20);
+  border-color: #c2410c;
 }
 
-/* These are the available quickLink button colors. script.js chooses one of these color classes for each shortcut button. */
-.qlBlue { background: #2563eb; }
-.qlGreen { background: #16a34a; }
-.qlOrange { background: #ea580c; }
-.qlPurple { background: #9333ea; }
-.qlTeal { background: #0f766e; }
-.qlRed { background: #dc2626; }
+/* These legacy quickLink color classes are kept so script.js can keep using the same data shape while every shortcut shares the MSI outline style. */
+.qlBlue,
+.qlGreen,
+.qlOrange,
+.qlPurple,
+.qlTeal,
+.qlRed {
+  color: #020617;
+  background: #ffffff;
+}
 
 /* This styles the introduction area above the card grid. It places the heading on the left and the explanatory paragraph on the right on larger screens. */
 .introPanel {
@@ -482,12 +488,12 @@ a {
   height: 44px;
 }
 
-/* This sets the tiny image slot size used inside quickLink buttons. The lighter border works better because quick links have colorful backgrounds. */
+/* This sets the tiny image slot size used inside quickLink buttons. The grey border keeps the placeholder visible on white buttons. */
 .quickLinkImage {
   width: 26px;
   height: 26px;
-  border-color: rgba(255, 255, 255, 0.75);
-  background: rgba(255, 255, 255, 0.18);
+  border-color: #94a3b8;
+  background: #f8fafc;
 }
 
 /* This styles the footer at the bottom of the page. */
