@@ -1,113 +1,105 @@
 # CampGrids
 
-CampGrids is a static project browser for camp activities. It organizes resources into category cards, belt levels, and project rows so the curriculum is easier to scan than a spreadsheet.
+CampGrids is a static browser for MSI camp grid activities. The idea was proposed by Fannie Yu, an MSI intern, and I built the interface and workbook sync workflow around it.
 
-## Files
+The site takes what used to live in a large spreadsheet and turns it into a set of category cards, belt sections, and resource/video rows. The goal is simple: make the camp materials easier to scan without losing the structure of the original workbook.
 
-`index.html` - Page structure and content containers
-`process.html` - Automation walkthrough and sync process explanation
-`styles.css` - Layout, colors, responsive behavior, and imageSlot styling
-`script.js` - Project data, quick links, card rendering, and dropdown behavior
-`assets/placeholder.jpg` - Shared image slot graphic
-`assets/process/` - Process explanation visuals
-`CampGrids.xlsx` - Source workbook
-`scripts/generateCampgrids.py` - Workbook-to-site data generator
-`updateInterface.bat` - Windows updater for rebuilding `script.js`
+## How It Works
 
-## Structure
+The workbook is still the place where project information should be edited. After the workbook is updated, `updateInterface.bat` sends it into `scripts/generateCampgrids.py`, which rebuilds the generated data inside `script.js`.
 
-The page starts with a header, quick links, and a projectCard grid. The card grid is rendered from `campData` in `script.js`.
+The HTML and CSS stay mostly stable. The generated `campData` block is the part that changes when a new workbook is synced.
 
-The `Automation Notes` button below the card grid opens `process.html`, which explains how workbook changes become updated interface cards.
+## Workflow Diagrams
 
-Each category includes:
+These diagrams show the intended flow of the project. They are the general workflow diagrams for the repo, not the sample screenshots used on the Automation Notes page.
 
-- a category name
-- a short description
-- an accent color
-- beltLevel subDropdowns
-- automatic part/series sections inside each belt
-- project rows with titles, links, and resource types
+### Main Sync Workflow
 
-## Visual Sync Walkthrough
+![CampGrids main sync workflow](diagrams/CampGrids_Main_Sync_Workflow.png)
 
-The images below show the same test used in `process.html`: remove two category columns from the workbook, sync the interface, restore the columns, and sync again.
+### Data Mapping
 
-### 1. Workbook with columns removed
+![CampGrids data mapping](diagrams/CampGrids_Data_Mapping.png)
 
-`Pipe Cleaners` and `3D Pen` are missing from the source workbook, so `Lego` is the last category column available to import.
+### User Browsing Workflow
 
-![Workbook after removing Pipe Cleaners and 3D Pen columns](assets/process/sheetRemovedColumns.svg)
+![CampGrids user browsing workflow](diagrams/CampGrids_User_Browsing_Workflow.png)
 
-### 2. Interface after syncing the edited workbook
+## Main Files
 
-After the updater reads that workbook, the interface no longer renders the missing categories.
+`index.html` contains the page structure and the empty containers that JavaScript fills.
 
-![Interface after syncing the workbook with missing columns](assets/process/interfaceRemovedColumns.svg)
+`styles.css` controls the layout, card styling, belt colors, quick links, process page, and placeholder image slots.
 
-### 3. Workbook with columns restored
+`script.js` contains the quick links, generated `campData`, and the rendering logic for cards, belts, sections, and rows.
 
-The original category columns are added back to the workbook.
+`process.html` explains the workbook sync process with sample screenshots.
 
-![Workbook after restoring Pipe Cleaners and 3D Pen columns](assets/process/sheetRestoredColumns.svg)
+`scripts/generateCampgrids.py` reads a standardized Excel workbook and rebuilds the generated data in `script.js`.
 
-### 4. Sync command output
+`updateInterface.bat` is the Windows command used to run the sync.
 
-The batch file passes the restored workbook into the generator and reports the rebuilt category/resource totals.
+`diagrams/` contains the workflow diagrams used in this README.
 
-![Command output from updateInterface.bat](assets/process/syncOutput.svg)
+`assets/` contains the placeholder image and process-page sample visuals.
 
-### 5. Interface after syncing the restored workbook
+## Updating The Site From A Workbook
 
-After the restored workbook is synced, the missing categories return to the card grid.
+Run the updater with the workbook path:
 
-![Interface after syncing the restored workbook](assets/process/interfaceRestoredColumns.svg)
+```bat
+updateInterface.bat "Restored_CampGrids_27-06-26.xlsx"
+```
 
-## Data Mapping
+The batch file requires a workbook argument on purpose. That makes it harder to accidentally rebuild the site from the wrong file.
 
-The workbook maps into the site like this:
+After the command finishes, open or refresh `index.html`.
 
-- Row 1, columns B through W become category names.
-- Column A provides the active belt level.
-- Non-empty cells under each category become project rows.
-- Workbook hyperlinks become project links when present.
+## Workbook Format
+
+The generator expects the workbook to follow the same basic layout as the source camp grid:
+
+- the first worksheet contains the project grid
+- row 1 contains category names
+- column A contains belt names
+- category columns start at column B
+- belt names use `White`, `Yellow`, `Orange`, `Green`, `Blue`, `Purple`, `Brown`, and `Black`
+- project cells contain the text shown on the site
+- hyperlinks attached to project cells become clickable resource links
+
+## How Rows Become Interface Items
+
+Each non-empty project cell becomes a row in the interface.
+
+Items with `Video` in the title are labeled `video`. Everything else is labeled `resource`, including setup documents such as TinkerCAD setup.
+
+Numbered items such as `1. ...` and `2. ...` become Part 1, Part 2, and similar section headers.
+
+Consecutive related items, such as an instruction row followed by a video row for the same project, become one series section.
+
+Single standalone resources or videos stay as normal rows without an extra section label.
 
 ## Adding New Items
 
-New projects belong in `CampGrids.xlsx`, not directly in the long `campData` block.
+Add new projects in the workbook, not directly in the generated `campData` block.
 
-To add a new project:
-
-1. Open `CampGrids.xlsx`.
-2. Put the project under the correct category column.
-3. Put it on a row covered by the correct belt color in column A.
-4. Add the project link as a workbook hyperlink when one exists.
+1. Open the latest standardized CampGrids workbook.
+2. Add the project under the correct category column.
+3. Place it on a row covered by the correct belt in column A.
+4. Add a workbook hyperlink if the project has a link.
 5. Save the workbook.
-6. Run `updateInterface.bat`.
-7. Open or refresh `index.html`.
+6. Run `updateInterface.bat "YourWorkbook.xlsx"`.
+7. Refresh `index.html`.
 
-The updater reads the workbook and rebuilds the category cards, belt sections, project rows, counts, and comments in `script.js`.
+## Interface Notes
 
-## Standard Workbook Format
+Cards start collapsed so the page stays easy to scan.
 
-The updater expects this structure:
+Belt sections stay color coded.
 
-- The first worksheet contains the project grid.
-- Row 1 contains category names.
-- Column A contains belt names.
-- Category columns start at column B.
-- Belt names use: White, Yellow, Orange, Green, Blue, Purple, Brown, Black.
-- Project cells contain the text shown on the site.
-- Hyperlinks attached to project cells become clickable project links.
+Part and series labels use lighter rectangular sections so they are visually separate from belt headings.
 
-As long as a replacement workbook keeps that format, running `updateInterface.bat "YourWorkbook.xlsx"` rebuilds the site data automatically.
+Quick links use MSI-style outline buttons.
 
-## Design Notes
-
-- Cards stay collapsed by default to keep the page easy to scan.
-- Belt colors appear as compact subDropdown buttons inside each category.
-- Numbered resources become Part 1, Part 2, and similar sections automatically.
-- Consecutive matching instruction/video rows become series sections automatically.
-- Single standalone resources/videos stay as normal rows without an extra section label.
-- Image slots reserve consistent visual space across headers, cards, and rows.
-- Links open in new tabs so the main grid stays available.
+Blank image placeholders are intentional. They reserve space for future visuals without relying on emoji or generated-looking filler.
