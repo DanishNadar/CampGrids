@@ -42,7 +42,7 @@ These diagrams show the intended flow of the project. They are the general workf
 
 `diagrams/` contains the workflow diagrams used in this README.
 
-`assets/` contains the placeholder image and process-page sample visuals.
+`assets/` contains the site images, the fallback placeholder, and the process-page sample visuals.
 
 ## Updating The Site From A Workbook
 
@@ -55,6 +55,81 @@ updateInterface.bat "Restored_CampGrids_27-06-26.xlsx"
 The batch file requires a workbook argument on purpose. That makes it harder to accidentally rebuild the site from the wrong file.
 
 After the command finishes, open or refresh `index.html`.
+
+## Image Naming
+
+Images are loaded during the same sync process as the workbook data. The site does not search the folder in the browser. Instead, `generateCampgrids.py` scans the `assets/` folder, matches standardized filenames, and writes the matching image paths into `script.js`.
+
+Put new images directly inside `assets/`. Do not put these matched card/resource images inside `assets/process/`; that folder is only for the Automation Notes screenshots.
+
+The supported image types are `.png`, `.jpg`, `.jpeg`, `.webp`, `.gif`, and `.svg`.
+
+### Category cover images
+
+Use this pattern for the main image on a category card:
+
+```text
+CategoryName_Cover.png
+```
+
+Examples already in the project:
+
+```text
+Notebooking_Cover.png
+OrigamiFigure_Cover.png
+PaperFlight_Cover.png
+```
+
+The matching is forgiving about spaces and punctuation. For example, the workbook category `Origami (Figure)` can match `OrigamiFigure_Cover.png`.
+
+### Belt/resource images
+
+Use this pattern for images that should show on resource/video rows for a category and belt:
+
+```text
+CategoryName_BeltCode.png
+```
+
+Examples already in the project:
+
+```text
+Notebooking_WT.png
+Notebooking_YW.png
+Notebooking_OR.png
+OrigamiFigure_BU.png
+```
+
+Current belt codes:
+
+- `WT` for White
+- `YW` for Yellow
+- `OR` for Orange
+- `GR` for Green
+- `BU` for Blue
+- `PU` for Purple
+- `BN` for Brown
+- `BK` for Black
+
+The script also accepts a few backup versions of those codes, but the list above is the clean standard to use.
+
+### Background image
+
+The large header background is handled by CSS, not the workbook generator:
+
+```text
+assets/CampGrids_TitleBG.png
+```
+
+If that image is replaced with a new file using the same name, the header will use the new image automatically after refresh.
+
+### Getting new images to show up
+
+1. Add the image files to `assets/`.
+2. Make sure the filenames follow the naming rules above.
+3. Run `updateInterface.bat "YourWorkbook.xlsx"`.
+4. Refresh `index.html`.
+
+If an image does not match a category or belt code, the site keeps using `assets/placeholder.jpg` for that spot. That fallback is intentional, so missing images do not break the page.
 
 ## Workbook Format
 
@@ -102,4 +177,4 @@ Part and series labels use lighter rectangular sections so they are visually sep
 
 Quick links use MSI-style outline buttons.
 
-Blank image placeholders are intentional. They reserve space for future visuals provided by Fannie Yu.
+Blank image placeholders are intentional. They reserve space anywhere a matching standardized image has not been added yet.

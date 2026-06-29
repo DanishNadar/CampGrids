@@ -18,13 +18,14 @@
   --shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
 }
 
-/* This controls the whole page. It sets the main font, main text color, soft page background, and extra room at the bottom so the footer never feels cramped. */
+/* This controls the whole page. It sets the main font, text color, title background image, and enough white overlay to keep the lower content readable. */
 body {
   min-height: 100vh;
   font-family: 'Nunito', 'Arial Rounded MT Bold', Arial, sans-serif;
   color: var(--ink);
   background:
-    linear-gradient(180deg, rgba(235, 37, 37, 0.1), rgba(224, 145, 0, 0) 340px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(248, 250, 252, 0.70) 420px, rgba(248, 250, 252, 0.84)),
+    url("assets/CampGrids_TitleBG.png") top center / cover fixed no-repeat,
     var(--page);
   padding-bottom: 52px;
 }
@@ -34,7 +35,7 @@ a {
   color: inherit;
 }
 
-/* This styles the large top banner. Flexbox places the image slot and the title text side by side on wide screens, while the blue gradient gives the page a friendly first impression. */
+/* This styles the large top banner. The warm overlay keeps the title readable while the body background image continues behind the page. */
 .siteHeader {
   display: flex;
   align-items: center;
@@ -44,21 +45,20 @@ a {
   padding: 42px 24px 34px;
   color: white;
   background:
-    linear-gradient(135deg, #e03229, #e05f29),
-    #2563eb;
+    linear-gradient(90deg, rgba(52, 20, 18, 0.62), rgba(190, 67, 28, 0.28)),
+    url("assets/CampGrids_TitleBG.png") center 38% / cover no-repeat,
+    #e6531f;
 }
 
 /* This limits the width of the header text. Without this, long lines can stretch too far across large screens and become harder to read. */
 .headerCopy {
   max-width: 760px;
+  text-shadow: 0 2px 8px rgba(2, 6, 23, 0.55);
 }
 
-/* This sizes the image slot in the header. The image source is still the same placeholder file, but this rule makes it larger than the smaller placeholders used inside cards. */
+/* This keeps the old header image slot hidden because the header now uses the full background image instead. */
 .headerLogo {
-  width: 108px;
-  height: 108px;
-  border-color: rgba(255, 255, 255, 0.65);
-  background-color: rgba(255, 255, 255, 0.16);
+  display: none;
 }
 
 /* This styles the main page title. The clamp() value means the title is smaller on phones and larger on desktops, while still staying within a sensible minimum and maximum size. */
@@ -661,16 +661,10 @@ footer {
 
 /* This media query changes the layout on small screens, such as phones. The page becomes mostly one-column so text and buttons stay easy to tap. */
 @media (max-width: 640px) {
-  /* On phones, the header stacks vertically so the image slot and title fit. */
+  /* On phones, the header text stacks naturally and keeps enough room over the background image. */
   .siteHeader {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  /* The header image slot becomes smaller on phones to save vertical space. */
-  .headerLogo {
-    width: 84px;
-    height: 84px;
   }
 
   /* The card grid becomes one column on phones. */

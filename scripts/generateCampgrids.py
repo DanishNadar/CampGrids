@@ -15,6 +15,8 @@ from pathlib import Path
 workbook = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("CampGrids.xlsx")
 # This points to the JavaScript file that will receive the rebuilt campData block.
 scriptFile = Path("script.js")
+# This points to the folder where category and resource images are stored.
+assetsDir = Path("assets")
 # This is the internal XML path for the first worksheet inside an .xlsx file, because .xlsx files are actually zipped folders of XML files.
 sheetFile = "xl/worksheets/sheet1.xml"
 # This is the internal XML path for worksheet relationships, which is where Excel stores hyperlink targets for cells.
@@ -29,6 +31,19 @@ ns = {
 
 # These belt names define the only belt rows the importer treats as section headers.
 belts = ["White", "Yellow", "Orange", "Green", "Blue", "Purple", "Brown", "Black"]
+# These short belt codes are used for standardized image filenames such as Notebooking_WT.png or OrigamiFigure_BU.png.
+beltImageCodes = {
+    "White": ["WT", "WH", "WHITE"],
+    "Yellow": ["YW", "YL", "YE", "YELLOW"],
+    "Orange": ["OR", "OG", "ORANGE"],
+    "Green": ["GR", "GN", "GREEN"],
+    "Blue": ["BU", "BL", "BLUE"],
+    "Purple": ["PU", "PR", "PURPLE"],
+    "Brown": ["BN", "BR", "BROWN"],
+    "Black": ["BK", "BLK", "BLACK"],
+}
+# These are the image extensions the importer will consider when scanning the assets folder.
+imageExtensions = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"}
 # These colors are assigned to category cards from left to right; if there are more categories than colors, the list wraps around.
 colors = [
     "#f7c948",
@@ -111,6 +126,59 @@ def slug(value: str) -> str:
     value = re.sub(r"[^a-z0-9]+", "-", value).strip("-")
     # This fallback prevents an empty id if the source cell had no usable letters or numbers.
     return value or "item"
+
+
+# This turns a name into an image lookup key, so "Origami (Figure)_Cover" and "OrigamiFigure Cover" can match the same asset.
+def imageKey(value: str) -> str:
+    # This cleans the text, lowercases it, and removes every non-letter/non-number character so filenames can ignore spaces, dashes, and parentheses.
+    return re.sub(r"[^a-z0-9]+", "", cleanText(value).lower())
+
+
+# This scans the assets folder once and builds a lookup table from normalized filename stems to browser-ready paths.
+def imageAssets() -> dict[str, str]:
+    # This dictionary maps normalized names like "notebookingcover" to paths like "assets/Notebooking_Cover.png".
+    found = {}
+    # This quietly returns an empty lookup if the assets folder does not exist yet.
+    if not assetsDir.exists():
+        return found
+    # This checks only files directly inside assets, leaving sample process diagrams alone.
+    for file in sorted(assetsDir.iterdir()):
+        # This skips folders, unsupported files, and the shared placeholder image.
+        if not file.is_file() or file.suffix.lower() not in imageExtensions or file.name.lower() == "placeholder.jpg":
+            continue
+        # This stores the first matching file for each normalized name so the output is stable.
+        found.setdefault(imageKey(file.stem), file.as_posix())
+    # This returns the completed image lookup table.
+    return found
+
+
+# This returns the first image path matching one of the proposed standardized filename stems.
+def findImage(assets: dict[str, str], candidates: list[str]) -> str:
+    # This tries each candidate in order, which lets more specific names win before broader fallbacks.
+    for candidate in candidates:
+        # This normalizes the candidate exactly like real filenames were normalized.
+        key = imageKey(candidate)
+        # This returns the asset path as soon as a matching file exists.
+        if key in assets:
+            return assets[key]
+    # This empty string tells the browser renderer to use the normal placeholder fallback.
+    return ""
+
+
+# This finds the cover image for a category card, such as Notebooking_Cover.png.
+def categoryImage(assets: dict[str, str], categoryName: str) -> str:
+    # This tries the standard cover pattern first, then a plain category filename as a forgiving fallback.
+    return findImage(assets, [f"{categoryName}_Cover", f"{categoryName} Cover", categoryName])
+
+
+# This finds an image for a resource row by category and belt, such as Notebooking_WT.png for Notebooking white belt items.
+def itemImage(assets: dict[str, str], categoryName: str, beltName: str, title: str) -> str:
+    # This builds category-plus-belt-code candidates from the standardized belt code list.
+    candidates = [f"{categoryName}_{code}" for code in beltImageCodes.get(beltName, [])]
+    # This also tries category-plus-full-belt-name and category-plus-title in case future images use more descriptive filenames.
+    candidates.extend([f"{categoryName}_{beltName}", f"{categoryName}_{title}", title])
+    # This returns the first matching row image, or an empty string if no asset exists.
+    return findImage(assets, candidates)
 
 
 # This converts Excel cell letters into a number, so A becomes 1, B becomes 2, AA becomes 27, and so on.
@@ -289,6 +357,8 @@ def groupItems(items: list[dict]) -> list[dict]:
 
 # This converts raw worksheet rows into the campData structure that script.js renders.
 def buildData(rows: list[tuple[int, dict[int, dict[str, str]]]]) -> list[dict]:
+    # This scans available assets before reading rows so images can be attached while the site data is built.
+    assets = imageAssets()
     # This uses the first non-empty row as the category header row.
     header = rows[0][1]
     # This list will hold the final category objects.
@@ -307,6 +377,7 @@ def buildData(rows: list[tuple[int, dict[int, dict[str, str]]]]) -> list[dict]:
             "name": name,
             "description": descriptions.get(name, "Camp project resources and activities."),
             "color": colors[(col - 2) % len(colors)],
+            "image": categoryImage(assets, name),
             "belts": [{"name": belt, "id": slug(belt), "items": []} for belt in belts],
         })
 
@@ -349,6 +420,7 @@ def buildData(rows: list[tuple[int, dict[int, dict[str, str]]]]) -> list[dict]:
                 "title": title,
                 "href": href,
                 "type": itemType(title),
+                "image": itemImage(assets, byCol[col]["name"], currentBelt, title),
             })
 
     # This final pass calculates counts and removes the temporary spreadsheet column number from each category.

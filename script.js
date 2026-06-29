@@ -18,6 +18,7 @@ const campData = [
     "name": "Notebooking",
     "description": "Sketch, record, reflect, and document maker work.",
     "color": "#f7c948",
+    "image": "assets/Notebooking_Cover.png",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -35,7 +36,8 @@ const campData = [
               {
                 "title": "Notebook",
                 "href": "https://docs.google.com/document/d/1pR6EuSTzPdrjEb9VxxsBYX7IazxlkjfPehHYuQlSgCM/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": "assets/Notebooking_WT.png"
               }
             ],
             "count": 1
@@ -58,7 +60,8 @@ const campData = [
               {
                 "title": "Written Notes",
                 "href": "https://drive.google.com/open?id=11-4Olb4yIMDuacq34q_M2-NCTFGE8F2BTXxTuiKSPAc",
-                "type": "resource"
+                "type": "resource",
+                "image": "assets/Notebooking_YW.png"
               }
             ],
             "count": 1
@@ -81,7 +84,8 @@ const campData = [
               {
                 "title": "Simple Sketching",
                 "href": "https://docs.google.com/document/d/1MhpQloHlCB4Wn8asrfQImHiphBb5rfIrVwWenKiMX24/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": "assets/Notebooking_OR.png"
               }
             ],
             "count": 1
@@ -104,7 +108,8 @@ const campData = [
               {
                 "title": "The Innovation Process",
                 "href": "https://docs.google.com/presentation/d/16xBTtXYuueqzE3l3q3A3edR0jkKQmpY2hgTx67OmQ8w/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -127,7 +132,8 @@ const campData = [
               {
                 "title": "Notebook Rough Sketch",
                 "href": "https://drive.google.com/open?id=1aRGnYDaspwjgyWHhU1GOp7IMsLQZeWaBvKbXfdslLOg",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -150,7 +156,8 @@ const campData = [
               {
                 "title": "Notebook Detail Sketch",
                 "href": "https://drive.google.com/open?id=15KiIzkpOb8_odfrRTeadHHxGLxmw2ugRQerdM7kJc5s",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -173,7 +180,8 @@ const campData = [
               {
                 "title": "Sketch Model",
                 "href": "https://drive.google.com/open?id=15NXBMsNSQi01KFgzgrY-GwT2-yyIsa7U1DzxTN6ImAs",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -196,7 +204,8 @@ const campData = [
               {
                 "title": "Recording Data",
                 "href": "https://docs.google.com/document/d/1bKx6wJshooVdf_zz6WHUsWKLmMczZWH88G_hvAS-apI",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -213,6 +222,7 @@ const campData = [
     "name": "Origami (Figure)",
     "description": "Fold animals, figures, and paper characters.",
     "color": "#ff8a3d",
+    "image": "assets/OrigamiFigure_Cover.png",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -230,12 +240,14 @@ const campData = [
               {
                 "title": "1. Make a Square Sheet of Paper: Instructions",
                 "href": "https://docs.google.com/document/d/1CTuENjsKcSaLcZ0kOcMBGBpEvwTz58j0/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "1. Make a Square Sheet of Paper: Video",
                 "href": "https://www.youtube.com/watch?v=_5pWN0O2i2I",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -249,12 +261,14 @@ const campData = [
               {
                 "title": "2. Make a Whale: Instructions",
                 "href": "https://origami.me/whale/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "2. Make a Whale :Videos",
                 "href": "https://www.youtube.com/watch?v=8dLe5dS4b60",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -277,12 +291,14 @@ const campData = [
               {
                 "title": "Angel Fish: Instructions",
                 "href": "http://origami.me/angelfish/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Angel Fish: Video",
                 "href": "https://www.youtube.com/watch?v=NxUV-Rao4TM",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -296,12 +312,14 @@ const campData = [
               {
                 "title": "Cat Face: Instructions",
                 "href": "http://origami.me/cat-face/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Cat Face: Video",
                 "href": "https://www.youtube.com/watch?v=lLmtLKVMoAs",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -324,12 +342,14 @@ const campData = [
               {
                 "title": "Simple Frog: Instructions",
                 "href": "https://www.origamiway.com/easy-origami-frog.shtml",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Simple Frog: Video",
                 "href": "https://www.youtube.com/watch?v=1kZjq8f8Mpo",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -343,12 +363,14 @@ const campData = [
               {
                 "title": "Cicada: Instructions",
                 "href": "http://origami.me/cicada/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Cicada: Video",
                 "href": "https://www.youtube.com/watch?v=HkHX18n4tak",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -362,7 +384,8 @@ const campData = [
               {
                 "title": "Fox: Instructions",
                 "href": "http://origami.me/fox/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -385,7 +408,8 @@ const campData = [
               {
                 "title": "Fox: Video",
                 "href": "https://www.youtube.com/watch?v=DJ23zgGAg6c",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 1
@@ -399,12 +423,14 @@ const campData = [
               {
                 "title": "Jumping Frog: Instructions",
                 "href": "https://www.origamiway.com/origami-jumping-frog.shtml",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Jumping Frog: Video",
                 "href": "https://www.youtube.com/watch?v=1kZjq8f8Mpo",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -418,12 +444,14 @@ const campData = [
               {
                 "title": "Beetle: Instructions",
                 "href": "http://origami.me/beetle/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Beetle: Video",
                 "href": "https://www.youtube.com/watch?v=Hdj_Vr7dOok",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -446,12 +474,14 @@ const campData = [
               {
                 "title": "Flapping Bird: Instructions",
                 "href": "https://www.origamiway.com/origami-flapping-bird.shtml",
-                "type": "resource"
+                "type": "resource",
+                "image": "assets/OrigamiFigure_BU.png"
               },
               {
                 "title": "Flapping Bird: Video",
                 "href": "https://www.youtube.com/watch?v=DD1M3VrNSt4",
-                "type": "video"
+                "type": "video",
+                "image": "assets/OrigamiFigure_BU.png"
               }
             ],
             "count": 2
@@ -465,12 +495,14 @@ const campData = [
               {
                 "title": "Traditional Crane: Instructions",
                 "href": "https://www.origamiway.com/origami-crane.shtml",
-                "type": "resource"
+                "type": "resource",
+                "image": "assets/OrigamiFigure_BU.png"
               },
               {
                 "title": "Traditional Crane: Video",
                 "href": "https://www.youtube.com/watch?v=KfnyopxdJXQ",
-                "type": "video"
+                "type": "video",
+                "image": "assets/OrigamiFigure_BU.png"
               }
             ],
             "count": 2
@@ -493,12 +525,14 @@ const campData = [
               {
                 "title": "Iris: Instructions",
                 "href": "http://origami.me/iris/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Iris: Video",
                 "href": "https://www.youtube.com/watch?v=QY9LE0bDFxY",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -512,12 +546,14 @@ const campData = [
               {
                 "title": "Lion: Instructions",
                 "href": "http://origami.me/lion/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Lion: Video",
                 "href": "https://www.youtube.com/watch?v=XSM0DTx7nZE",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -540,12 +576,14 @@ const campData = [
               {
                 "title": "Seal: Instructions",
                 "href": "http://origami.me/seal/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Seal: Video",
                 "href": "https://www.youtube.com/watch?v=U3SH59mHURA",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -559,12 +597,14 @@ const campData = [
               {
                 "title": "Rabbit: Instructions",
                 "href": "http://origami.me/rabbit/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Rabbit: Video",
                 "href": "https://www.youtube.com/watch?v=6QqBvy_yO_M",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -587,7 +627,8 @@ const campData = [
               {
                 "title": "Parrot: Instructions",
                 "href": "http://origami.me/parrot/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -601,7 +642,8 @@ const campData = [
               {
                 "title": "Parrot: Video*",
                 "href": "https://www.youtube.com/watch?v=lchxv2BOg6M",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 1
@@ -615,7 +657,8 @@ const campData = [
               {
                 "title": "Advanced Frog: Instructions",
                 "href": "http://origami.me/traditional-frog/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -632,6 +675,7 @@ const campData = [
     "name": "Origami (Modular)",
     "description": "Build geometric forms from repeated paper units.",
     "color": "#ff6b6b",
+    "image": "",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -649,12 +693,14 @@ const campData = [
               {
                 "title": "1. Make a Square Sheet of Paper: Instructions",
                 "href": "https://docs.google.com/document/d/1CTuENjsKcSaLcZ0kOcMBGBpEvwTz58j0/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "1. Make a Square Sheet of Paper: Videos",
                 "href": "https://www.youtube.com/watch?v=_5pWN0O2i2I",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -677,12 +723,14 @@ const campData = [
               {
                 "title": "Water Bomb Base: Instructions",
                 "href": "https://docs.google.com/document/d/1S-UltC3lh4c3PVYMkcn3Qb50i0pxZzjc/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Water Bomb Base: Video",
                 "href": "https://www.youtube.com/watch?v=yl1rjHml2Gc",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -705,12 +753,14 @@ const campData = [
               {
                 "title": "Sunken Octahedron: Instructions",
                 "href": "https://docs.google.com/document/d/1vToFCTdHDbcYkI2YD79fDYa8ZD2H_EOt/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Sunken Octahedron: Video",
                 "href": "https://www.youtube.com/watch?v=qWk8WVvWrM8",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -733,7 +783,8 @@ const campData = [
               {
                 "title": "Cris-Cros Cube: Instructions",
                 "href": "https://docs.google.com/document/d/1BbSvuZO7bEbNm6923o-tipX7Dhoq7-7u/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -747,7 +798,8 @@ const campData = [
               {
                 "title": "Cris-Cros Cube: Videos *",
                 "href": "https://www.youtube.com/watch?v=HQhBOLABSkg",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 1
@@ -770,12 +822,14 @@ const campData = [
               {
                 "title": "Twelve Pointed Star: Instructions",
                 "href": "https://docs.google.com/document/d/1Sa6N65Hoc1WIvCtPzR795ZfquvDLlkfF/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Twelve Pointed Star: Video",
                 "href": "https://youtu.be/HQhBOLABSkg?t=9m23s",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -798,12 +852,14 @@ const campData = [
               {
                 "title": "Fold a Sonobe Module: Instructions",
                 "href": "https://docs.google.com/document/d/1dgxhr5qlsitkkgiaY6wlGuSyngiL0EHh/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Fold a Sonobe Module: Video",
                 "href": "https://www.youtube.com/watch?v=TKGW2W168H0",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -817,12 +873,14 @@ const campData = [
               {
                 "title": "Transforming Ninja Star: Instructions",
                 "href": "https://www.origamiway.com/origami-transforming-ninja-star.shtml",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Transforming Ninja Star: Video",
                 "href": "https://www.youtube.com/watch?v=n01fsCDWAUc",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -845,12 +903,14 @@ const campData = [
               {
                 "title": "Assemble Simple Sonobe Models: Instructions",
                 "href": "https://docs.google.com/document/d/1XRv37KP5nvnkTTfHkhthh6XgjaloLgzj/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Assemble Simple Sonobe Models: Videos",
                 "href": "https://www.youtube.com/watch?v=WasvUFXmACk",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -873,12 +933,14 @@ const campData = [
               {
                 "title": "Assemble a Complex Sonobe Model: Instructions",
                 "href": "https://docs.google.com/document/d/1QRrfGQSA7azPW3cT8g7CkTuAKP8LWXd0/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Assemble a Complex Sonobe Model: Video",
                 "href": "https://www.youtube.com/watch?v=rWWyDVBV-qc",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -895,6 +957,7 @@ const campData = [
     "name": "Paper Craft",
     "description": "Make playful paper models and moving paper projects.",
     "color": "#d95fcd",
+    "image": "",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -912,12 +975,14 @@ const campData = [
               {
                 "title": "Simple Stand-Up Cat: Instructions",
                 "href": "https://drive.google.com/file/d/1FIz1vNG9k89cLokLkq1VQYo6z3GPGxTD/view",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Simple Stand-Up Cat: Video",
                 "href": "https://youtu.be/6L_gQ1-Tno8?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -940,12 +1005,14 @@ const campData = [
               {
                 "title": "Jumping Frog: Instructions",
                 "href": "https://www.origamiway.com/easy-origami-frog/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Jumping Frog: Video",
                 "href": "https://youtu.be/oi7oitREUBQ?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -959,12 +1026,14 @@ const campData = [
               {
                 "title": "Rabbit: Instructions",
                 "href": "https://drive.google.com/file/d/1NomLFoQW1nE5lvVgJl0L6miMQMjVfjdN/view?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Rabbit: Video",
                 "href": "https://youtu.be/2DfFoVoeYow?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -987,12 +1056,14 @@ const campData = [
               {
                 "title": "Paper Fortune Teller: Instructions",
                 "href": "https://www.origamiway.com/paper-fortune-teller/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Paper Fortune Teller: Video",
                 "href": "https://youtu.be/g6BrDm9tYbE?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1006,12 +1077,14 @@ const campData = [
               {
                 "title": "Blinking Eye Origami: Instructions",
                 "href": "https://www.origamiway.com/origami-blinking-eye/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Blinking Eye Origami: Video",
                 "href": "https://youtu.be/a2SU3jRoV_4?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1034,12 +1107,14 @@ const campData = [
               {
                 "title": "Fold-Up Pup: Instructions",
                 "href": "https://drive.google.com/file/d/1z7UEucCYYFn6ugdPIl7op3_BHJiRSD6n/view?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Fold-Up Pup: Video",
                 "href": "https://youtu.be/yJfvYKn2C2o?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1053,12 +1128,14 @@ const campData = [
               {
                 "title": "Paper Tiger: Instructions",
                 "href": "https://drive.google.com/file/d/1U9Ea9vrCS0fMkjGxWSpKFS6L_o2zn8m0/view",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Paper Tiger: Video",
                 "href": "https://youtu.be/3SW-9gnr5R0?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1072,12 +1149,14 @@ const campData = [
               {
                 "title": "Origami Boat: Instructions",
                 "href": "https://www.origamiway.com/origami-boat.shtml",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Origami Boat: Video",
                 "href": "https://youtu.be/3N7EUi3-PG8?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1091,12 +1170,14 @@ const campData = [
               {
                 "title": "Jumping Frog Level 2: Instructions",
                 "href": "https://www.origamiway.com/origami-jumping-frog.shtml",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Jumping Frog Level 2: Video",
                 "href": "https://youtu.be/2dHhvV18eX8?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1110,12 +1191,14 @@ const campData = [
               {
                 "title": "Toon Skelly Mask: Instructions",
                 "href": "https://drive.google.com/file/d/1Bv9TREvi0IwOanvc3KI-q7eCTxc9N1Uh/view?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Toon Skelly Mask: Video",
                 "href": "https://youtu.be/GFxjC9WY-lY?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1138,7 +1221,8 @@ const campData = [
               {
                 "title": "NASA Starshade: Instructions",
                 "href": "https://www.jpl.nasa.gov/edu/resources/project/space-origami-make-your-own-starshade/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -1152,12 +1236,14 @@ const campData = [
               {
                 "title": "Flapping Bird: Instructions",
                 "href": "https://www.origamiway.com/origami-flapping-bird/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Flapping Bird: Video",
                 "href": "https://youtu.be/Oh03DJ0dOOc?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1171,12 +1257,14 @@ const campData = [
               {
                 "title": "Origami Crane: Instructions",
                 "href": "https://www.origamiway.com/origami-crane.shtml",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Origami Crane: Video",
                 "href": "https://youtu.be/GC_Szxdqh2Y?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1190,12 +1278,14 @@ const campData = [
               {
                 "title": "Hedgehog: Instructions",
                 "href": "https://drive.google.com/file/d/1AURaDMXQaVNFUenuWLPyCnlwDp3fZ-8I/view?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Hedgehog: Video",
                 "href": "https://youtu.be/qmeGnV0rz5E?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1218,12 +1308,14 @@ const campData = [
               {
                 "title": "Paper Robot: Instructions",
                 "href": "https://www.instructables.com/id/Paperbot-Paper-Robot-to-Print-Out-and-Make/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Paper Robot: Video",
                 "href": "https://youtu.be/qkUuGVyu3cg?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1237,12 +1329,14 @@ const campData = [
               {
                 "title": "Cardboard Phone Stand: Instructions",
                 "href": "https://i.ytimg.com/vi/eFnLHOCWO3o/maxresdefault.jpg",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Cardboard Phone Stand: Video",
                 "href": "https://youtu.be/eFnLHOCWO3o?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1265,7 +1359,8 @@ const campData = [
               {
                 "title": "3D Cat-In-Box Automata",
                 "href": "https://youtu.be/c7HKJqTHGbQ",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -1279,12 +1374,14 @@ const campData = [
               {
                 "title": "Red Panda Mask: Instructions",
                 "href": "https://drive.google.com/file/d/18ycBCaeZMxluWkBjNt6LQaDYsNmdP6IZ/view",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Red Panda Mask: Video",
                 "href": "https://youtu.be/1EQl9iUae8E?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1298,12 +1395,14 @@ const campData = [
               {
                 "title": "Paper Basket: Instructions",
                 "href": "https://www.instructables.com/Recycled-Paper-Basket/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Paper Basket: Video",
                 "href": "https://youtu.be/wWDzSA3X63M?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1326,12 +1425,14 @@ const campData = [
               {
                 "title": "Walking Paper Mech Warrior or Robot: Instructions",
                 "href": "https://www.instructables.com/Walking-Papercraft-Mech-Warrior/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Walking Paper Mech Warrior or Robot: Video",
                 "href": "https://youtu.be/azixGAjPC1Q?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1345,12 +1446,14 @@ const campData = [
               {
                 "title": "Rabbit eating Carrot Automaton : Instructions",
                 "href": "https://drive.google.com/file/d/1IHAyK4fpdj5Z5omyYo-24t0BrAIumabE/view?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Rabbit eating Carrot Automaton : Video",
                 "href": "https://youtu.be/SxvO-kNyOOU?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1367,6 +1470,7 @@ const campData = [
     "name": "Paper Flight",
     "description": "Design, fold, and test flying paper builds.",
     "color": "#8b5cf6",
+    "image": "assets/PaperFlight_Cover.png",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -1384,12 +1488,14 @@ const campData = [
               {
                 "title": "Basic Paper Airplane: Instructions",
                 "href": "https://www.origamiway.com/plane-dart.shtml",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Basic Paper Airplane: Video",
                 "href": "https://youtu.be/veyZNyurlwU?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1403,12 +1509,14 @@ const campData = [
               {
                 "title": "Paper Helicopter: Instructions",
                 "href": "https://www.origamiway.com/how-to-make-a-paper-helicopter.shtml",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Paper Helicopter: Video",
                 "href": "https://youtu.be/zTakrjE9yCo?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1431,12 +1539,14 @@ const campData = [
               {
                 "title": "Nakamura Lock Paper Airplane: Instructions",
                 "href": "https://www.origamiway.com/plane-nakamura-lock.shtml",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Nakamura Lock Paper Airplane: Video",
                 "href": "https://youtu.be/P4J4Cj2HcQU?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1459,12 +1569,14 @@ const campData = [
               {
                 "title": "Spy Plane Paper Airplane: Instructions",
                 "href": "https://www.origamiway.com/plane-spy-plane.shtml",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Spy Plane Paper Airplane: Video",
                 "href": "https://youtu.be/VfWAGxQZaDc?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1487,12 +1599,14 @@ const campData = [
               {
                 "title": "Professional Paper Airplane: Instructions",
                 "href": "https://www.origamiway.com/plane-professional.shtml",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Professional Paper Airplane: Video",
                 "href": "https://youtu.be/K2tVuqNxKdw?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1515,12 +1629,14 @@ const campData = [
               {
                 "title": "Headhunter Paper Airplane: Instructions",
                 "href": "https://www.origamiway.com/plane-headhunter.shtml",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Headhunter Paper Airplane: Video",
                 "href": "https://youtu.be/LidNaWlnO5k?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1543,12 +1659,14 @@ const campData = [
               {
                 "title": "Pet Dragon Paper Airplane: Instructions",
                 "href": "https://www.origamiway.com/plane-pet-dragon.shtml",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Pet Dragon Paper Airplane: Video",
                 "href": "https://youtu.be/oqeNcIHlePc?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1571,12 +1689,14 @@ const campData = [
               {
                 "title": "Infinity Arrow Paper Airplane: Instructions",
                 "href": "https://www.origamiway.com/plane-infinity-arrow.shtml",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Infinity Arrow Paper Airplane: Video",
                 "href": "https://youtu.be/KIGEBjiBDFM?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1599,12 +1719,14 @@ const campData = [
               {
                 "title": "Star Crusher Paper Airplane: Instructions",
                 "href": "https://www.origamiway.com/plane-star-crusher.shtml",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Star Crusher Paper Airplane: Video",
                 "href": "https://youtu.be/5iqFlEpQs0U?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1621,6 +1743,7 @@ const campData = [
     "name": "Popsicle Sticks",
     "description": "Create structures, mechanisms, toys, and models.",
     "color": "#4f46e5",
+    "image": "",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -1638,12 +1761,14 @@ const campData = [
               {
                 "title": "Popsicle Stick Heroes: Instructions",
                 "href": "https://www.instructables.com/Popsicle-Stick-Superheros/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Popsicle Stick Heroes: Video",
                 "href": "https://www.youtube.com/watch?v=KnpnVe5uxhw",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1657,12 +1782,14 @@ const campData = [
               {
                 "title": "Popsicle Stick Playing Cards: Instructions",
                 "href": "https://www.instructables.com/Popsicle-Stick-Playing-Cards/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Popsicle Stick Playing Cards: Video",
                 "href": "https://youtu.be/4vYWuCej_Rg?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1685,12 +1812,14 @@ const campData = [
               {
                 "title": "Popsicle Stick Coaster: Instructions",
                 "href": "https://www.instructables.com/Popsicle-Stick-Coaster/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Popsicle Stick Coaster: Video",
                 "href": "https://youtu.be/sTrp37Dv4hI?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1704,12 +1833,14 @@ const campData = [
               {
                 "title": "Exploding Popsicle Sticks: Instructions",
                 "href": "https://www.instructables.com/Popsicle-Stick-Bomb-2/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Exploding Popsicle Sticks: Video",
                 "href": "https://youtu.be/GQyGDKklVPU?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1732,12 +1863,14 @@ const campData = [
               {
                 "title": "Popsicle Stick Icosahedron: Instructions",
                 "href": "https://www.instructables.com/Popsicle-Stick-Icosahedron/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Popsicle Stick Icosahedron: Video",
                 "href": "https://youtu.be/xL7esJK-b2U?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1751,7 +1884,8 @@ const campData = [
               {
                 "title": "Popsicle Stick Newton's Cradle: Instructions",
                 "href": "https://www.instructables.com/Newtons-Cradle-Out-of-Popsicle-Sticks/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -1774,7 +1908,8 @@ const campData = [
               {
                 "title": "Popsicle Stick Newton's Cradle: Video",
                 "href": "https://youtu.be/DJI3EaBZFZA?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 1
@@ -1788,12 +1923,14 @@ const campData = [
               {
                 "title": "Popsicle Stick Chain Reaction: Instructions",
                 "href": "https://youtu.be/FGXv-Pp615U",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Popsicle Stick Chain Reaction: Video",
                 "href": "https://youtu.be/r7j7l39ZAsU?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1807,12 +1944,14 @@ const campData = [
               {
                 "title": "Da Vinci Popsicle Stick Bridge: Instructions",
                 "href": "https://www.instructables.com/Da-Vinci-Popsicle-Stick-Bridge/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Da Vinci Popsicle Stick Bridge: Video",
                 "href": "https://youtu.be/mVP0I-nsP_8?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1835,7 +1974,8 @@ const campData = [
               {
                 "title": "Spoon Catapult Out Of Popsicle Sticks: Video",
                 "href": "https://www.youtube.com/watch?v=iKQaTFfhwWo",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 1
@@ -1849,12 +1989,14 @@ const campData = [
               {
                 "title": "Popsicle Stick Holder: Instructions",
                 "href": "https://www.instructables.com/Popsicle-Stick-Holder/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Popsicle Stick Holder: Video",
                 "href": "https://youtu.be/gU3AqE5zzTg?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1868,12 +2010,14 @@ const campData = [
               {
                 "title": "Popsicle Stick Hexagon Shelf: Instructions",
                 "href": "https://www.instructables.com/Popsicle-Sticks-Hexagon-Shelf/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Popsicle Stick Hexagon Shelf: Video",
                 "href": "https://youtu.be/D61inpGzPUc?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1896,12 +2040,14 @@ const campData = [
               {
                 "title": "Popsicle Stick Motorboat: Instructions",
                 "href": "https://www.instructables.com/Popsicle-stick-motorboat/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Popsicle Stick Motorboat: Video",
                 "href": "https://youtu.be/dhV3h-Hjpmk?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1915,12 +2061,14 @@ const campData = [
               {
                 "title": "Popsicle Stick Birdhouse: Instructions",
                 "href": "https://www.instructables.com/Popsicle-Stick-Birdhouse/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Popsicle Stick Birdhouse: Video",
                 "href": "https://youtu.be/L_s0M5Z8Nm8?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1934,12 +2082,14 @@ const campData = [
               {
                 "title": "Popsicle Stick Shutter Lamp Shade: Instructions",
                 "href": "https://www.instructables.com/Make-a-Popsicle-Stick-Shutter-Lamp/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Popsicle Stick Shutter Lamp Shade: Video",
                 "href": "https://youtu.be/rLPnaF2Dy7k?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1962,12 +2112,14 @@ const campData = [
               {
                 "title": "Popsicle Stick Shutter Lamp Shade: Instructions",
                 "href": "https://www.instructables.com/Make-a-Popsicle-Stick-Shutter-Lamp/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Popsicle Stick Shutter Lamp Shade: Video",
                 "href": "https://youtu.be/rLPnaF2Dy7k?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -1981,12 +2133,14 @@ const campData = [
               {
                 "title": "Popsicle Stick Ring: Instructions",
                 "href": "https://www.instructables.com/Popsicle-Stick-Ring/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Popsicle Stick Ring: Video",
                 "href": "https://youtu.be/M-oDO7HaenU?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -2000,7 +2154,8 @@ const campData = [
               {
                 "title": "Popsicle Stick Folding Chair: Video",
                 "href": "https://youtu.be/jAi6S_5krTo?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 1
@@ -2014,7 +2169,8 @@ const campData = [
               {
                 "title": "Popsicle Stick Bridge: Instructions",
                 "href": "https://www.instructables.com/Popsicle-Stick-Bridge/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2037,7 +2193,8 @@ const campData = [
               {
                 "title": "Popsicle Stick Bridge: Video",
                 "href": "https://youtu.be/eGM36jU_364?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 1
@@ -2051,7 +2208,8 @@ const campData = [
               {
                 "title": "Popsicle Stick Helicopter: Video",
                 "href": "https://youtu.be/LEfU-ke-oVk?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 1
@@ -2065,12 +2223,14 @@ const campData = [
               {
                 "title": "Popsicle Stick Marble Labyrinth: Instructions",
                 "href": "https://www.instructables.com/Popsicle-Stick-Marble-Labyrinth/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Popsicle Stick Marble Labyrinth: Video",
                 "href": "https://youtu.be/1yIxqWfaczg?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -2087,6 +2247,7 @@ const campData = [
     "name": "Fiber Art",
     "description": "Explore yarn, crochet, weaving, and textile projects.",
     "color": "#2563eb",
+    "image": "",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -2104,12 +2265,14 @@ const campData = [
               {
                 "title": "Pumpkin Pom-Pom: Instructions",
                 "href": "https://www.instructables.com/Easy-Pumpkin-Pom-Pom-With-Your-Hand/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Pumpkin Pom-Pom: Video",
                 "href": "https://www.youtube.com/watch?v=oi2NBGKAkH4",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -2123,12 +2286,14 @@ const campData = [
               {
                 "title": "Cardboard Yarn Letter: Instructions",
                 "href": "https://www.instructables.com/Cardboard-Yarn-Letter/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Cardboard Yarn Letter: Video",
                 "href": "https://www.youtube.com/watch?v=RIrDDS_DE7E",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -2151,12 +2316,14 @@ const campData = [
               {
                 "title": "Crochet Chain Bracelet: Instructions",
                 "href": "https://www.crochetleaf.com/chain-stitch-bracelet.html",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Crochet Chain Bracelet: Video",
                 "href": "https://www.youtube.com/watch?v=R49LOKSHw6c",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -2170,12 +2337,14 @@ const campData = [
               {
                 "title": "Yarn Art: Instructions",
                 "href": "https://www.instructables.com/Yarn-Art/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Yarn Art: Video",
                 "href": "https://www.youtube.com/watch?v=_WQGT7DBeEM",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -2189,12 +2358,14 @@ const campData = [
               {
                 "title": "Yarn Dolls: Instructions",
                 "href": "https://www.instructables.com/Yarn-Dolls-1/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Yarn Dolls: Video",
                 "href": "https://www.youtube.com/watch?v=bDGdD21y3nI",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -2217,7 +2388,8 @@ const campData = [
               {
                 "title": "String Art with Paperclips",
                 "href": "https://www.instructables.com/String-Art-With-Paperclips/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2231,7 +2403,8 @@ const campData = [
               {
                 "title": "Friendship Bracelet Cable Wrap",
                 "href": "https://www.instructables.com/Chevron-Friendship-Bracelet-Style-Cable-Wrap-2-Siz/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2254,7 +2427,8 @@ const campData = [
               {
                 "title": "Geometric String Art",
                 "href": "https://www.instructables.com/Geometric-String-Art/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2268,7 +2442,8 @@ const campData = [
               {
                 "title": "Posable Yarn Friend",
                 "href": "https://www.instructables.com/Posable-Creepy-Yarn-Friend/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2291,7 +2466,8 @@ const campData = [
               {
                 "title": "Textured Crochet Square Potholder",
                 "href": "https://www.instructables.com/Textured-Crochet-Square-Potholder/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2305,12 +2481,14 @@ const campData = [
               {
                 "title": "How to Finger Weave: Instructions",
                 "href": "https://www.instructables.com/How-to-Fingerweave-Something/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "How to Finger Weave: Video",
                 "href": "https://www.youtube.com/watch?v=pAhuzHltIDs",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -2333,7 +2511,8 @@ const campData = [
               {
                 "title": "Yarn Jewelry",
                 "href": "https://www.instructables.com/Pantry-Yarn-Jewelry/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2347,12 +2526,14 @@ const campData = [
               {
                 "title": "Trollen Wheel Weaving: Instructions",
                 "href": "https://www.instructables.com/Viking-Braids-Make-a-Trollen-Wheel/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Trollen Wheel Weaving: Video",
                 "href": "https://www.youtube.com/watch?v=q9giXHTOpYE",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -2375,7 +2556,8 @@ const campData = [
               {
                 "title": "Complete an Embroidery Project",
                 "href": "https://www.instructables.com/Zodiac-Embroidery/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2389,7 +2571,8 @@ const campData = [
               {
                 "title": "(Skip the LED portion)",
                 "href": "#",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2403,7 +2586,8 @@ const campData = [
               {
                 "title": "Try three different String Art Patterns - and make a gift card USING:",
                 "href": "#",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2417,12 +2601,14 @@ const campData = [
               {
                 "title": "Different Shape String Art Templates: Instructions",
                 "href": "https://www.instructables.com/String-Art-Valentine-Cards-and-Other-Holidays/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Different Shape String Art Templates: Video",
                 "href": "https://www.youtube.com/watch?v=IANCecGCzi8",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -2436,7 +2622,8 @@ const campData = [
               {
                 "title": "Thread Triangular Art Card",
                 "href": "https://www.instructables.com/silk-thread-triangular-art-card/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2459,7 +2646,8 @@ const campData = [
               {
                 "title": "Complete an Independent Embroidery Project -- find your own template online, and follow previous instructions",
                 "href": "#",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2473,7 +2661,8 @@ const campData = [
               {
                 "title": "3d String art - USE POPSICLE STICKS and small hole puncher",
                 "href": "https://www.instructables.com/Desktop-3D-String-Art/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2490,6 +2679,7 @@ const campData = [
     "name": "Hands-On Science",
     "description": "Try experiments, challenges, and physical science builds.",
     "color": "#0ea5e9",
+    "image": "",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -2507,7 +2697,8 @@ const campData = [
               {
                 "title": "Egg Carton Nursery",
                 "href": "https://www.pbs.org/parents/crafts-and-experiments/grow-seedlings-in-an-egg-carton",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2521,7 +2712,8 @@ const campData = [
               {
                 "title": "Counting Over 1000 Using Your Fingers",
                 "href": "https://www.youtube.com/watch?v=UixU1oRW64Q",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2544,7 +2736,8 @@ const campData = [
               {
                 "title": "Weather Station",
                 "href": "https://drive.google.com/file/d/1O0bT2-sGLiS1GLWVZcK0TnYrlvv6KgzX/view?usp=drive_link",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2558,7 +2751,8 @@ const campData = [
               {
                 "title": "Mind Reader",
                 "href": "https://drive.google.com/file/d/1BAkhRoxQF9QVhZEfiQyR8pI1HumePlen/view?usp=drive_link",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2572,7 +2766,8 @@ const campData = [
               {
                 "title": "OR Mind Reader Video! (Super helpful!)",
                 "href": "https://youtu.be/cT8sQiUJipg?si=KCTKLWDMNlDT8OVB",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 1
@@ -2595,7 +2790,8 @@ const campData = [
               {
                 "title": "Candy Chromatography",
                 "href": "https://drive.google.com/file/d/126E2Z_B8nCq8JpA4ia0i9Z7Ljf9C5c5M/view?usp=drive_link",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2609,7 +2805,8 @@ const campData = [
               {
                 "title": "Solar Oven",
                 "href": "https://drive.google.com/file/d/1CdqLCvGN40ysJ8MRlHPS-KYpw98wJTBY/view?usp=drive_link",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2632,7 +2829,8 @@ const campData = [
               {
                 "title": "Air Blaster",
                 "href": "https://drive.google.com/file/d/1bw_uqz1i51PHv6AERrFe1PzzW8kXq6Dr/view?usp=drive_link",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2646,12 +2844,14 @@ const campData = [
               {
                 "title": "Slime: Instructions",
                 "href": "https://littlebinsforlittlehands.com/how-to-make-saline-solution-slime-recipe/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "Slime: Video",
                 "href": "https://youtu.be/Tb84tJl7eqo?feature=shared",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -2665,7 +2865,8 @@ const campData = [
               {
                 "title": "Parachute Design (Video Only)",
                 "href": "https://youtu.be/nmJPOHNUzB4?si=bambm151qwEiCt9A",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 1
@@ -2688,12 +2889,14 @@ const campData = [
               {
                 "title": "Straw Bridge Instructions",
                 "href": "https://drive.google.com/file/d/1akOucflalXWMubu9WXHu8yqtMij3VNQp/view?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "OR Straw Bridge Video",
                 "href": "https://youtu.be/GA93aHRDMD8?si=T6ARglUbQ_lxYkrW",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -2707,12 +2910,14 @@ const campData = [
               {
                 "title": "Comeback Can",
                 "href": "https://drive.google.com/file/d/1p_LeN5IUHgKT60g22BXQs2ULIO3PIiS-/view?usp=drive_link",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "OR Comeback Can Video",
                 "href": "https://youtu.be/-DPxl7Ik93k?si=YZEzzAqT2VaU9Ybd",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -2726,12 +2931,14 @@ const campData = [
               {
                 "title": "Hovercraft Instructions",
                 "href": "https://www.scienceworld.ca/resource/balloon-hovercraft/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "OR Hovercraft Video",
                 "href": "https://youtu.be/iujDMqL_448?si=jOtEGtRhQTBBIndM",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -2754,12 +2961,14 @@ const campData = [
               {
                 "title": "Paddle Boat",
                 "href": "https://drive.google.com/file/d/1kUiCEnFz4VwxUuQrxV0K4cSak_jYUZmF/view?usp=drive_link",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "OR Paddle Boat Video",
                 "href": "https://youtu.be/PlANTECC-QA?si=IjY30kQVq7ImkQF4",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -2773,12 +2982,14 @@ const campData = [
               {
                 "title": "Newspaper Fort",
                 "href": "https://drive.google.com/file/d/1B03vIpJrk3OWNSD1uPnig3MQiapCKm17/view?usp=drive_link",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "OR Newspaper Fort Video",
                 "href": "https://youtu.be/TV2Fpq8s9Ws?si=BnylX105FK3kOvVv",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -2801,12 +3012,14 @@ const campData = [
               {
                 "title": "Hot Air Balloon",
                 "href": "https://drive.google.com/file/d/1FnFf9_HAUDPQ54H20Ek2kcH-Cag_g3ck/view?usp=drive_link",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "OR Hot Air Balloon Video",
                 "href": "https://youtu.be/2t170Kb9Fz8?si=LAdqHX2kMDYUcCY6",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -2829,12 +3042,14 @@ const campData = [
               {
                 "title": "Stomp Rocket",
                 "href": "https://drive.google.com/file/d/1WkN1uyYV0oMvkOrO9HOMc5VE12K6A4hU/view?usp=drive_link",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "OR Stomp Rocket Video",
                 "href": "https://youtu.be/9oZSBSYB1_o?si=Sis4McMY5Nzs_scN",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 2
@@ -2848,7 +3063,8 @@ const campData = [
               {
                 "title": "Hot Glue 3D Water Printing",
                 "href": "https://docs.google.com/presentation/d/1-7Fn-l2FIu0Lt7eOuAriNNzYmrxwMMgcfrxu_Cpru7A/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2865,6 +3081,7 @@ const campData = [
     "name": "3D Printing 101 (Prusa Mini)",
     "description": "Design, slice, and print beginner 3D models.",
     "color": "#14b8a6",
+    "image": "",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -2882,12 +3099,14 @@ const campData = [
               {
                 "title": "1. Design a Mesh Model in Sculptris",
                 "href": "https://drive.google.com/open?id=1-px_dgqD27YoiMfLxrYysuD_sWbwHZ1FkKEOCjB0bJw",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               },
               {
                 "title": "1. Design a Mesh Model on the Web",
                 "href": "https://docs.google.com/document/d/14Lbh7DkWVNFkcI0WmlF898Ifk5mKU0IWm6ZgqRxkWF4/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 2
@@ -2901,7 +3120,8 @@ const campData = [
               {
                 "title": "2. Slice a Model with Prusa Slicer",
                 "href": "https://docs.google.com/document/d/1upXN7Sn65urau1wNAFDMXtyxqXqN8KoHL3yEZmVe_bE/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2915,7 +3135,8 @@ const campData = [
               {
                 "title": "3. Operating a PrusaMini",
                 "href": "https://docs.google.com/document/d/1NUxdjrleygNWIulcpqfp5QnaQXQO5-6ylX8NuEyR6Wk/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2938,7 +3159,8 @@ const campData = [
               {
                 "title": "1. TinkerCAD Setup",
                 "href": "https://docs.google.com/document/d/1nZVrv83v7UY9wUDPerOByM0jOgnmNomrNawanWTDaIM/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2952,7 +3174,8 @@ const campData = [
               {
                 "title": "2. Intro to TinkerCAD",
                 "href": "https://docs.google.com/document/d/1Abz3T5SNf5l3LclQbwUUS0Vc3Dx8z3_yeSVAjtm5QHM/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2975,7 +3198,8 @@ const campData = [
               {
                 "title": "Lithophane in FlashPrint",
                 "href": "https://drive.google.com/open?id=13ZW3JMHMBOVJriVCoxsfjZ0r6-7dP7ujKPQG5CWSI-g",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -2989,7 +3213,8 @@ const campData = [
               {
                 "title": "Extruded Traced Bitmap",
                 "href": "https://drive.google.com/open?id=1denVgeSQwDsPCYnQwmxJzHssLNW7ZehRVtUEQJTUacs",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3003,7 +3228,8 @@ const campData = [
               {
                 "title": "TinkerCAD Game Piece",
                 "href": "https://drive.google.com/open?id=1ge0KJgVUiaSCQYDNslE1qczOuyljhAzrinsVNRIjujU",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3026,7 +3252,8 @@ const campData = [
               {
                 "title": "Custom Phone Stand",
                 "href": "https://docs.google.com/document/d/1OA3BuftxTsMSqYeQtNtpnxNZfOsnoQrMqopognIWf8A/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3040,7 +3267,8 @@ const campData = [
               {
                 "title": "Custom Ring in TinkerCad",
                 "href": "https://docs.google.com/document/d/18khDTj27AIhp4tYXK_6c7QlxLbZoTUa9SemmDa7N9a8/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3063,7 +3291,8 @@ const campData = [
               {
                 "title": "Custom BRICK",
                 "href": "https://drive.google.com/open?id=10kkz3Lm5hm-grF-s-gbYWJ6ll6kzLK1Ocu-vE1_MU1k",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3077,7 +3306,8 @@ const campData = [
               {
                 "title": "Custom Cookie Cutter",
                 "href": "https://docs.google.com/document/d/1-bPp7kwhK2IwONXSVg0EuA-Bo0SGaFJ0eQahFJPu_iQ/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3100,7 +3330,8 @@ const campData = [
               {
                 "title": "Head Scan",
                 "href": "https://drive.google.com/open?id=1_4dD4H4J8Eq4S0eCQBxYwxvhclI2bIXJS9febTysEe8",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3123,7 +3354,8 @@ const campData = [
               {
                 "title": "Altered Head Scan",
                 "href": "https://drive.google.com/open?id=1iE-VRqtvK6xV4u7fhxch5KTYHn3k-Npcq9Pc5g1zKZM",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3137,7 +3369,8 @@ const campData = [
               {
                 "title": "Assemble a Screwless Gear Cube",
                 "href": "https://docs.google.com/document/d/12ymvx_31TNeZy9h9VrEQz7n7j1GnxK6o1-z7bdzuhms/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3160,7 +3393,8 @@ const campData = [
               {
                 "title": "Custom Secret Message Container",
                 "href": "https://docs.google.com/document/d/1_uasA_Za-9T3Y_kVKt417sgiWPoqRAt1uy8vS634EAE/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3177,6 +3411,7 @@ const campData = [
     "name": "Vinyl Cutting (Cameo)",
     "description": "Create decals and cut designs with vinyl tools.",
     "color": "#22c55e",
+    "image": "",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -3194,7 +3429,8 @@ const campData = [
               {
                 "title": "Introduction to Silhouette Studio",
                 "href": "https://docs.google.com/document/d/1xWcqfcxSU7U8cQhd8wbiB2uzbfazvSmO/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3208,7 +3444,8 @@ const campData = [
               {
                 "title": "How to Operate a Cameo 3 Vinyl Cutter",
                 "href": "https://docs.google.com/document/d/1-RKGi-l_QMrycU-2nXIYaGFFazrayhTo/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3222,7 +3459,8 @@ const campData = [
               {
                 "title": "How to Operate a Cameo 4 Vinyl Cutter",
                 "href": "https://docs.google.com/document/d/1ihm51BJbhbJg2W8rZuadxG_umpEW2MvX/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3245,7 +3483,8 @@ const campData = [
               {
                 "title": "Make a Name Decal",
                 "href": "https://docs.google.com/document/d/14xUjEdv4Ih1zdgg8OBxuz8Hnm6tmL_vb/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3268,7 +3507,8 @@ const campData = [
               {
                 "title": "How To Apply a Vinly Decal",
                 "href": "https://docs.google.com/document/d/1D5qDopoflQ4PM_qTRfv1qhc95A-UN3uL/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3291,7 +3531,8 @@ const campData = [
               {
                 "title": "Trace an Image in Silhouette Studio",
                 "href": "https://docs.google.com/document/d/1RkdDKCjzJTwM2dAsCoNgLksI2viHa0Wv/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3314,7 +3555,8 @@ const campData = [
               {
                 "title": "Make a Heat Transfer Design",
                 "href": "https://docs.google.com/document/d/1ToUxPWMPBVwPsauaU0m3mG77AzXnkT1K/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3328,7 +3570,8 @@ const campData = [
               {
                 "title": "How to Operate the Heat Press",
                 "href": "https://docs.google.com/document/d/1gZX95vsLJHtNTK8G22r12zt5wgir5w67/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3351,7 +3594,8 @@ const campData = [
               {
                 "title": "Make a 2-Color Decal",
                 "href": "https://docs.google.com/document/d/1UwbTx0Rt6fbwfz9Cgue8KVpuds2Tfzok/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3374,7 +3618,8 @@ const campData = [
               {
                 "title": "3+ Color Decal",
                 "href": "https://docs.google.com/document/d/1Tc6vsuXBtJXbRC0qWsRk_SMfgxlO4TZA/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3397,7 +3642,8 @@ const campData = [
               {
                 "title": "Draw & Cut with the Vinyl Cutter",
                 "href": "https://docs.google.com/document/d/1_Luof-f1lRxi2Ww00u1SrfLTtiCy3-Kv/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3414,6 +3660,7 @@ const campData = [
     "name": "Laser Cutting 101 (Muse)",
     "description": "Learn laser safety, files, and cut projects.",
     "color": "#84cc16",
+    "image": "",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -3431,7 +3678,8 @@ const campData = [
               {
                 "title": "Muse Laser Cutter Manual**",
                 "href": "https://2882208.fs1.hubspotusercontent-na1.net/hubfs/2882208/Muse%20Core%20Manual%201-23.pdf",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3445,7 +3693,8 @@ const campData = [
               {
                 "title": "Operate the Muse Laser Cutter",
                 "href": "https://docs.google.com/document/d/1CFgD1smsIa1M34kqKHDH5plTjC3YVqDN/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3459,7 +3708,8 @@ const campData = [
               {
                 "title": "Fab Lab Fridge Magnet Test",
                 "href": "https://docs.google.com/document/d/1hbh0TUZPwn0uB8zmLZwz4rizc4T6Y1c9/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3482,7 +3732,8 @@ const campData = [
               {
                 "title": "Name Tag",
                 "href": "https://docs.google.com/document/d/1dxPYF_T5Pq23CgZOXMrVNRpgbaIYGmwt/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3496,7 +3747,8 @@ const campData = [
               {
                 "title": "Keychain",
                 "href": "https://docs.google.com/document/d/1W617q1dH_ef_9ndTik_k4LD4Yff653xU/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3510,7 +3762,8 @@ const campData = [
               {
                 "title": "Coaster",
                 "href": "https://docs.google.com/document/d/1hdf0m-t-J9EF1vZiVz8-334qMj6Cln7o/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3524,7 +3777,8 @@ const campData = [
               {
                 "title": "Tic-Tac-Toe Set",
                 "href": "https://docs.google.com/document/d/1drz-Kdm0iqL8p7vVZE50z6SV-4EK_34A/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3547,7 +3801,8 @@ const campData = [
               {
                 "title": "Trace an Image in Inkscape",
                 "href": "https://docs.google.com/document/d/1afeIQDA7kRPlD-9IfBcTANHKL46yaDRD/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3561,7 +3816,8 @@ const campData = [
               {
                 "title": "Fake Stained Glass",
                 "href": "https://docs.google.com/document/d/1ljoF3uKHa_1_Y_2vFOQcaqLoh-8SUohu/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3584,7 +3840,8 @@ const campData = [
               {
                 "title": "2.5D Chess Pawn",
                 "href": "https://docs.google.com/document/d/1uaXBzE9SLDNS5D8MlvX8VyoH_RXwIeQx/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3598,7 +3855,8 @@ const campData = [
               {
                 "title": "Laser Cut Diorama",
                 "href": "https://docs.google.com/document/d/1D2PAy1wVQnP-YMVjyJR-xYKg5pLk8fMI/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3621,7 +3879,8 @@ const campData = [
               {
                 "title": "Maker Case Box",
                 "href": "https://docs.google.com/document/d/1O50opFhpsbVBoNCJ7VcfRnx4B2VxCJvB/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3644,7 +3903,8 @@ const campData = [
               {
                 "title": "Laser Cut Spirograph",
                 "href": "https://docs.google.com/document/d/1Kx1n7EJ7s3bKNhFk0jXMh2GU8BqYi3GJ/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3667,7 +3927,8 @@ const campData = [
               {
                 "title": "Laser Cut Pantograph",
                 "href": "https://docs.google.com/document/d/1CVJ4ADuGut4tn-0go_BBH5LIO91tQ-bI/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3690,7 +3951,8 @@ const campData = [
               {
                 "title": "Laser Cut Gear Box",
                 "href": "https://docs.google.com/document/d/1r0OgOqTrdItJCz_fC6pdsqJGu5BRHDCC/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3707,6 +3969,7 @@ const campData = [
     "name": "Digital Embroidery 101 (Brother PE800)",
     "description": "Hoop, thread, stitch, and finish embroidery projects.",
     "color": "#eab308",
+    "image": "",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -3724,7 +3987,8 @@ const campData = [
               {
                 "title": "Hooping Fabric for Embroidery Machine",
                 "href": "https://docs.google.com/document/d/19TWrhT59vthZ-x71_YN8poeZSdChET5S/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3747,7 +4011,8 @@ const campData = [
               {
                 "title": "Threading the PE800 (Video)",
                 "href": "https://youtu.be/3voxF1cbyS4?t=103",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 1
@@ -3770,7 +4035,8 @@ const campData = [
               {
                 "title": "Embroider Your Name",
                 "href": "https://docs.google.com/document/d/1qqNh_5BpfkRn3KvBBr757DzXfSKWn-UA/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3793,7 +4059,8 @@ const campData = [
               {
                 "title": "Multicolor Patch",
                 "href": "https://docs.google.com/document/d/1DVfj7wUGo8kYKOKMwN-xWRHMnbcu9ntZ/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3816,7 +4083,8 @@ const campData = [
               {
                 "title": "Multipart Patch",
                 "href": "https://docs.google.com/document/d/1RuZHY8ptb9WwbXFFGKUn3NmpZ9ctryqI/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3839,7 +4107,8 @@ const campData = [
               {
                 "title": "Add an Applique",
                 "href": "https://docs.google.com/document/d/1IOvIZfmdBF1oxf-nHhZwZMhucqp9r5xU/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3862,7 +4131,8 @@ const campData = [
               {
                 "title": "Puffy Embroidery",
                 "href": "https://docs.google.com/document/d/1-CEx8VKVYznZnVA5EttqWfSQJqTHD5_N/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3885,7 +4155,8 @@ const campData = [
               {
                 "title": "Sewing an External File",
                 "href": "https://docs.google.com/document/d/1fUh9h8QnOMm4nQWjyDDRYclUBADgCAA3/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3902,6 +4173,7 @@ const campData = [
     "name": "Electronics 101",
     "description": "Build circuits, lights, and electronics experiments.",
     "color": "#f97316",
+    "image": "",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -3919,7 +4191,8 @@ const campData = [
               {
                 "title": "1. TinkerCAD Setup",
                 "href": "https://docs.google.com/document/d/1eOUcYsAs_NhbfDqq8WUAjei6RKpMsr62/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3933,7 +4206,8 @@ const campData = [
               {
                 "title": "2. Simple Lamp",
                 "href": "https://docs.google.com/document/d/1t6vEsXuo7HqfO3QZWdquD8A6IVD0W4ne/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3956,7 +4230,8 @@ const campData = [
               {
                 "title": "Cu Tape Torch",
                 "href": "https://drive.google.com/file/d/0B66Qe-o5qktELTBNUkVMZ3VURlE/view?usp=sharing&resourcekey=0-oVcVrUPm1xeobeRPUknBww",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3970,7 +4245,8 @@ const campData = [
               {
                 "title": "Paper Parallel Circuit",
                 "href": "https://docs.google.com/document/d/1LhzaRdE7mulAwX0aXnoeS19P7CnkcKsy/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -3984,7 +4260,8 @@ const campData = [
               {
                 "title": "Cu Tape Torch Instructable w/ video",
                 "href": "https://www.instructables.com/Circuit-Torch/",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 1
@@ -4007,7 +4284,8 @@ const campData = [
               {
                 "title": "Simple LED Circuit",
                 "href": "https://docs.google.com/document/d/1sxRiEsIo-oyoy2xQXOsAdUqUbkZXUBD4/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4021,7 +4299,8 @@ const campData = [
               {
                 "title": "Resistor Code Wheel",
                 "href": "https://drive.google.com/open?id=1hvufvKUJdoDnYfYvqjZStlwFDl4UnQ-X",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4044,7 +4323,8 @@ const campData = [
               {
                 "title": "Make an LED Series Circuit",
                 "href": "https://docs.google.com/document/d/1ZPS6lfO9SXX24JczBVcq7Cqc2-XPw_ET/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4058,7 +4338,8 @@ const campData = [
               {
                 "title": "Make a Variable Resistor",
                 "href": "https://docs.google.com/document/d/1ywzIkCgD4mzWq1Pguh6pPOIqp3t2iukU/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4081,7 +4362,8 @@ const campData = [
               {
                 "title": "LED Stop Light Circuit",
                 "href": "https://docs.google.com/document/d/1s7n_SGLBTTlPKZySVZilAk1ws8q7HlQk/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4095,7 +4377,8 @@ const campData = [
               {
                 "title": "RGB LED Circuit",
                 "href": "https://docs.google.com/document/d/1S_Iga0mpq_59w8hgqPI5iW379MQ-Yy0w/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4109,7 +4392,8 @@ const campData = [
               {
                 "title": "RGB LED Cu Tape Circuit",
                 "href": "https://docs.google.com/document/d/1G72STvxmJHXbFFFu8L5aLgF5cucDzMC0/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4132,7 +4416,8 @@ const campData = [
               {
                 "title": "How a Capacitor Works",
                 "href": "https://docs.google.com/document/d/1Ili_5KdyCszRVXzE9q-lnFbVPZ95H1xZ/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4155,7 +4440,8 @@ const campData = [
               {
                 "title": "555 Blinking Light",
                 "href": "https://docs.google.com/document/d/1j0SF_83C7RftXOv9LFS2dyUrataAOEXf/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4169,7 +4455,8 @@ const campData = [
               {
                 "title": "555 Photo Theremin",
                 "href": "https://docs.google.com/document/d/1Xp465RMT_ucVlGSQLFQeh7BdEgJGra1j/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4192,7 +4479,8 @@ const campData = [
               {
                 "title": "555 Octave Keyboard",
                 "href": "https://docs.google.com/document/d/1cIlo2cDxQ_rc0dzkP_IOSqML8NCB3rIW/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4209,6 +4497,7 @@ const campData = [
     "name": "Mechatronics",
     "description": "Combine mechanisms, motion, gears, and controls.",
     "color": "#ef4444",
+    "image": "",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -4226,7 +4515,8 @@ const campData = [
               {
                 "title": "Gluetorial Sampler",
                 "href": "https://docs.google.com/document/d/1Ut_yKCfCMPef_R_wOPdUl2SlnA50EHWe/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4249,7 +4539,8 @@ const campData = [
               {
                 "title": "Slider Crank Diagram",
                 "href": "https://docs.google.com/presentation/d/16HNDgOB5AO-L7WBvDG6eI5t304hz-fNXTQxHrFqQlZ8/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4263,7 +4554,8 @@ const campData = [
               {
                 "title": "Slider Crank Assembly Pics",
                 "href": "https://photos.app.goo.gl/hw9x96uq7vUj682H9",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4286,7 +4578,8 @@ const campData = [
               {
                 "title": "Cam and Follower",
                 "href": "https://docs.google.com/presentation/d/1M6siUEXQSTYWsuqMaWkWy-U8uVWBzDuhjr71Ipd_Tgs/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4309,7 +4602,8 @@ const campData = [
               {
                 "title": "Corregated Gears",
                 "href": "#",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4332,7 +4626,8 @@ const campData = [
               {
                 "title": "Cage Gears",
                 "href": "#",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4355,7 +4650,8 @@ const campData = [
               {
                 "title": "Laser Cut Spirograph",
                 "href": "https://docs.google.com/document/d/1ZwWYj9OczMhbOE9G3NO_n5U6EHvN4-MU/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4378,7 +4674,8 @@ const campData = [
               {
                 "title": "Arduino Programming -Servo",
                 "href": "https://learn.adafruit.com/adafruit-arduino-lesson-14-servo-motors?view=all",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4401,7 +4698,8 @@ const campData = [
               {
                 "title": "Create your own Autonomous Robot",
                 "href": "#",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4418,6 +4716,7 @@ const campData = [
     "name": "Engineering 101",
     "description": "Design, build, test, and improve engineering solutions.",
     "color": "#ec4899",
+    "image": "",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -4435,7 +4734,8 @@ const campData = [
               {
                 "title": "What is Engineering?",
                 "href": "https://www.youtube.com/watch?v=btGYcizV0iI&list=PL8dPuuaLjXtO4A_tL6DLZRotxEb114cMR&t=0s",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4458,7 +4758,8 @@ const campData = [
               {
                 "title": "Build a Straw Rocket",
                 "href": "https://www.jpl.nasa.gov/edu/learn/project/make-a-straw-rocket/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4481,7 +4782,8 @@ const campData = [
               {
                 "title": "Build a Toothpick Tower",
                 "href": "http://www.crscience.org/pdf/Marshmallow_toothpick_challenge.pdf",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4504,7 +4806,8 @@ const campData = [
               {
                 "title": "Popsicle Stick Harmonica",
                 "href": "http://www.housingaforest.com/popsicle-stick-harmonica/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4518,7 +4821,8 @@ const campData = [
               {
                 "title": "DIY Spin Drum",
                 "href": "https://www.minted.com/julep/2014/07/14/kids-party-ideas-diy-musical-instrument/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4532,7 +4836,8 @@ const campData = [
               {
                 "title": "Rubber Band Guitar",
                 "href": "http://www.makeit-loveit.com/2011/03/mister-make-it-and-love-it-series.html",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4555,7 +4860,8 @@ const campData = [
               {
                 "title": "Build a Spaghetti Bridge",
                 "href": "https://www.wikihow.com/Build-a-Spaghetti-Bridge",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4569,7 +4875,8 @@ const campData = [
               {
                 "title": "Build a Mini Siege Engine",
                 "href": "https://www.instructables.com/id/Mini-Siege-Engines/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4592,7 +4899,8 @@ const campData = [
               {
                 "title": "Build a Rubber Band Car",
                 "href": "https://yourmoderndad.com/diy-rubber-band-racer/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4606,7 +4914,8 @@ const campData = [
               {
                 "title": "Try the Egg Drop Challenge",
                 "href": "https://buggyandbuddy.com/stem-kids-egg-drop-project/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4620,7 +4929,8 @@ const campData = [
               {
                 "title": "Water Balloon Catapult",
                 "href": "https://www.msichicago.org/fileadmin/assets/online_science/summer_brain_games/activity_PDFs/SBG12_Catapult.pdf",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4634,7 +4944,8 @@ const campData = [
               {
                 "title": "Tensegrity Flying Man",
                 "href": "https://drive.google.com/file/d/1MMonoBmbj4pA3U2bIDErOIUexkple7JQ/view?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4657,7 +4968,8 @@ const campData = [
               {
                 "title": "Build a Propeller Toy",
                 "href": "https://www.instructables.com/Hand-powered-vintage-propeller-toy/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4671,7 +4983,8 @@ const campData = [
               {
                 "title": "Build a Propeller Car",
                 "href": "https://www.instructables.com/id/Propeller-Powered-Car/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4685,7 +4998,8 @@ const campData = [
               {
                 "title": "Build a Dragonfly Helicopter",
                 "href": "https://sciencetoymaker.org/dragonfly-helicopter/copter-common-materials/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4699,7 +5013,8 @@ const campData = [
               {
                 "title": "Balloon Racer",
                 "href": "https://www.msichicago.org/fileadmin/assets/online_science/summer_brain_games/activity_PDFs/SBG13_Racer.pdf",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4722,7 +5037,8 @@ const campData = [
               {
                 "title": "Build a Rubber Band Plane",
                 "href": "https://www.instructables.com/id/Rubber-Band-Powered-Aeroplane/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4736,7 +5052,8 @@ const campData = [
               {
                 "title": "Rube Goldberg Machine",
                 "href": "https://drive.google.com/file/d/1k4xgxYNdcNUu5eqj4_BAfpkjvlnhQgoi/view?usp=drive_link",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4750,7 +5067,8 @@ const campData = [
               {
                 "title": "Scribble Bot",
                 "href": "https://www.msichicago.org/fileadmin/assets/online_science/summer_brain_games/activity_PDFs/SBG15_space_bot.pdf",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4767,6 +5085,7 @@ const campData = [
     "name": "Turtle Stitch",
     "description": "Use code-driven stitching and shape-based embroidery.",
     "color": "#a855f7",
+    "image": "",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -4784,7 +5103,8 @@ const campData = [
               {
                 "title": "Create TurtleStitch Account",
                 "href": "https://docs.google.com/document/d/1zqNidmzZgIfzBh2yuugQ50Agv4yEVt4N/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4798,7 +5118,8 @@ const campData = [
               {
                 "title": "Start",
                 "href": "https://docs.google.com/drawings/d/1-uHPoLC0UX1xvWMZKjSxvbsvp-k7fOMVudr4jzaf5F0/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4812,7 +5133,8 @@ const campData = [
               {
                 "title": "Comment",
                 "href": "https://docs.google.com/drawings/d/1x1SmrL5EtZ5Yzwd9zbRAVJFq465e96Xh7k0Cx1G-Jw0/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4826,7 +5148,8 @@ const campData = [
               {
                 "title": "Line",
                 "href": "https://docs.google.com/drawings/d/1qQT8kosxr7BZy6vssIXgCgH3bNfsLgRUAOBcS6idk-U/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4840,7 +5163,8 @@ const campData = [
               {
                 "title": "Embroidery (Stitch Types)",
                 "href": "https://docs.google.com/drawings/d/1i3q6qMgaayyaLjo2IC1hQa49hoxbAqSzq4SMCsXNRMU/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4854,7 +5178,8 @@ const campData = [
               {
                 "title": "File Format",
                 "href": "https://docs.google.com/drawings/d/1nLwpzhCSMjUBZnhaBLIrXrPoBfRqU3i23w159QC81as/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4877,7 +5202,8 @@ const campData = [
               {
                 "title": "Dimensions",
                 "href": "#",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4891,7 +5217,8 @@ const campData = [
               {
                 "title": "Square",
                 "href": "https://docs.google.com/drawings/d/1sXr-WP-nuB0_w2C3fjDDId3xprYm8h2tqNWrs5FG5Go/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4905,7 +5232,8 @@ const campData = [
               {
                 "title": "Circle",
                 "href": "https://docs.google.com/drawings/d/1GVQNEhL23_O-mgRGsQMmUZT0C6ET5dcKclpbZSKftR0/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4919,7 +5247,8 @@ const campData = [
               {
                 "title": "Jump Stitch",
                 "href": "https://docs.google.com/drawings/d/1Ai9GZJPne_Y2klYSPBWYpv8NQBClTw0PjSCNaWUiZAg/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4942,7 +5271,8 @@ const campData = [
               {
                 "title": "Block",
                 "href": "https://docs.google.com/drawings/d/1rKU7QiAU4R58gZ_htZsBuL3MOOsGYcj3SEXsOQpvA7Y/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4956,7 +5286,8 @@ const campData = [
               {
                 "title": "Flower",
                 "href": "https://docs.google.com/drawings/d/1GQNN4V6d8tXpIkobUtDnCC_EQPqNHhKQfsohl64Cjk8/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4970,7 +5301,8 @@ const campData = [
               {
                 "title": "Pinwheel",
                 "href": "https://docs.google.com/drawings/d/1ov00gFlmOrkyJAowCP2Q7aNajTkDJksH7Mcm96PCpdw/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -4993,7 +5325,8 @@ const campData = [
               {
                 "title": "Little & Large",
                 "href": "https://docs.google.com/drawings/d/13Ct2MMdffsHZDHRLVIMILhW_eW-7mN7RFQmkil2BC1w/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5016,7 +5349,8 @@ const campData = [
               {
                 "title": "Star",
                 "href": "https://docs.google.com/drawings/d/1lU7kCTsR4nKMEUtM5YgEXLe78qjFGlymwdOJ9A8A2VY/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5030,7 +5364,8 @@ const campData = [
               {
                 "title": "Reset",
                 "href": "https://docs.google.com/drawings/d/1_SArTrXTLdDXrL6JQiy1pKtx-Q-BsiP_oLB00zCDSKA/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5053,7 +5388,8 @@ const campData = [
               {
                 "title": "Triangle Spiral",
                 "href": "https://docs.google.com/drawings/d/1VAEY7Ewmn_zX7cjmAFo5-W2JtLKJJbx2fAr4IZc2bhw/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5076,7 +5412,8 @@ const campData = [
               {
                 "title": "Spiral Challenge",
                 "href": "https://docs.google.com/drawings/d/1NBk9wr1xm88aX6Qs7Gi_P9LprBvTz5cxrwr9293Jp_s/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5090,7 +5427,8 @@ const campData = [
               {
                 "title": "Density",
                 "href": "https://docs.google.com/drawings/d/12aUaC9w3VJKcBLAsvKhr5_t270RUwgLw8LIMaBu-dwo/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5113,7 +5451,8 @@ const campData = [
               {
                 "title": "Fractal Tree",
                 "href": "https://docs.google.com/drawings/d/1NXVwLRsZARla142sQRdeH58kNO7j1rqDm7aQCV1KJd4/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5130,6 +5469,7 @@ const campData = [
     "name": "Block Coding 101 (scratch)",
     "description": "Create animations, stories, games, and interactive code.",
     "color": "#6366f1",
+    "image": "",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -5147,7 +5487,8 @@ const campData = [
               {
                 "title": "Getting Started",
                 "href": "https://docs.google.com/document/d/13h4EK2Rpu6Km96zMcQBqSIBJJVBXsei6/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5170,7 +5511,8 @@ const campData = [
               {
                 "title": "Creating Animations",
                 "href": "https://docs.google.com/document/d/14S33M8FEPCjVKApkH58kDCXhohkgXOFA/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5184,7 +5526,8 @@ const campData = [
               {
                 "title": "Creating Art",
                 "href": "https://docs.google.com/document/d/1JvQ0ECFePFdoNw_wCM5utE-WBQTGwqRW/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5198,7 +5541,8 @@ const campData = [
               {
                 "title": "Creating Music",
                 "href": "https://docs.google.com/document/d/1qVlWeijstxURBSt492prJrz8iliEZYG0/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5212,7 +5556,8 @@ const campData = [
               {
                 "title": "Creating Games",
                 "href": "https://docs.google.com/document/d/1Sz4EbNaD_G7nJi2h7BgZcgXmG7Fm--mz/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5226,7 +5571,8 @@ const campData = [
               {
                 "title": "Creating Stories",
                 "href": "https://docs.google.com/document/d/1HPrmWclfelbzwD_eTH4RxPOW-1E1Vb0A/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5249,7 +5595,8 @@ const campData = [
               {
                 "title": "Talking Tales",
                 "href": "https://docs.google.com/document/d/1k4m15sPw9s45uFCIbkKiVnW92gLTpkmf/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5263,7 +5610,8 @@ const campData = [
               {
                 "title": "Animate A Character",
                 "href": "https://docs.google.com/document/d/1jbpp2bzgKT-pF-pDcUza_E493VldeyMS/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5277,7 +5625,8 @@ const campData = [
               {
                 "title": "Create Animations That Talk",
                 "href": "https://docs.google.com/document/d/16YsotkA_OI0Fw1km8DR8oS16g8BoUIOO/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5291,7 +5640,8 @@ const campData = [
               {
                 "title": "Create A Story",
                 "href": "https://docs.google.com/document/d/17M8EByW5HooIosIQfvx-zz0Xtl1p4uX2/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5314,7 +5664,8 @@ const campData = [
               {
                 "title": "Code a Cartoon",
                 "href": "https://docs.google.com/document/d/1wgKr2BJtbjDlYzX5n21WlDZjJe-SND73/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5337,7 +5688,8 @@ const campData = [
               {
                 "title": "Change Size",
                 "href": "https://docs.google.com/document/d/1Hpnmek0HLztmtaESASCG0mqiQIuIBKee/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5351,7 +5703,8 @@ const campData = [
               {
                 "title": "Video Sensing",
                 "href": "https://docs.google.com/document/d/1gWug_Nf1mZMw5ATMlWzU0wjBHsinoUox/edit",
-                "type": "video"
+                "type": "video",
+                "image": ""
               }
             ],
             "count": 1
@@ -5374,7 +5727,8 @@ const campData = [
               {
                 "title": "Pong Game",
                 "href": "https://docs.google.com/document/d/18fnU7uyihVNTblfUJEDiH0wSgJ1Nd5ra/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5388,7 +5742,8 @@ const campData = [
               {
                 "title": "Animate an Adventure Game",
                 "href": "https://docs.google.com/document/d/1bCDnYcWVfkNaeFdcyIc_qVqCT6AaokUu/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5402,7 +5757,8 @@ const campData = [
               {
                 "title": "Imagine a World",
                 "href": "https://docs.google.com/document/d/1iEdsogsZrLmAEmLmr8C7DB2EPuGg8UoA/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5425,7 +5781,8 @@ const campData = [
               {
                 "title": "Check out some of the code made by other makers!",
                 "href": "https://docs.google.com/document/d/1yit0Z6teBUKhRMHCQd7CnutXRShxh0cz/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5448,7 +5805,8 @@ const campData = [
               {
                 "title": "Create your very own and share it!",
                 "href": "https://docs.google.com/document/d/1JUsbLTMXUavC93ovxRrKqxaG_FePn7F5/edit",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5465,6 +5823,7 @@ const campData = [
     "name": "Pygamer",
     "description": "Build and test handheld MakeCode Arcade projects.",
     "color": "#06b6d4",
+    "image": "",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -5482,7 +5841,8 @@ const campData = [
               {
                 "title": "Get a Pygamer, USB cord, and LiOn Battery",
                 "href": "#",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5496,7 +5856,8 @@ const campData = [
               {
                 "title": "(optional) Sign into MakeCode Using your Clever, Microsoft, or Google Account",
                 "href": "https://arcade.makecode.com/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5519,7 +5880,8 @@ const campData = [
               {
                 "title": "Create a chasing Pizza Game",
                 "href": "https://arcade.makecode.com/tutorials/chase-the-pizza",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5542,7 +5904,8 @@ const campData = [
               {
                 "title": "Load the above code into the PyGamer",
                 "href": "https://learn.adafruit.com/adafruit-pygamer/load-makecode-game-on-pybadge",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5565,7 +5928,8 @@ const campData = [
               {
                 "title": "Complete One whole level of the ARCADE SKILLS MAP (Pidegeon Level)",
                 "href": "https://arcade.makecode.com/--skillmap",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5588,7 +5952,8 @@ const campData = [
               {
                 "title": "complete two whole levels of Beginner Skills Map (Theater Curtain Level)",
                 "href": "https://arcade.makecode.com/--skillmap",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5611,7 +5976,8 @@ const campData = [
               {
                 "title": "Complete all the levels of the Beginner Skills Map (Kaiju Dinosaur Level)",
                 "href": "https://arcade.makecode.com/--skillmap",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5634,7 +6000,8 @@ const campData = [
               {
                 "title": "Create a Game that incorporates the Lights at the Bottom of the Pygamer.",
                 "href": "#",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5657,7 +6024,8 @@ const campData = [
               {
                 "title": "Set the PyGamer to control an external light or Buzzer.",
                 "href": "#",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5674,6 +6042,7 @@ const campData = [
     "name": "Circuit Playground",
     "description": "Program sensors, lights, sounds, and devices.",
     "color": "#10b981",
+    "image": "",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -5691,7 +6060,8 @@ const campData = [
               {
                 "title": "Name 3 things a Circuit Playground can do",
                 "href": "https://youtu.be/xel0AHvQgvk?si=uZ-nT3ra1mexTdIQ",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5714,7 +6084,8 @@ const campData = [
               {
                 "title": "Connect your Circuit Playground to a laptop",
                 "href": "https://youtu.be/auOcAoL4_Ik?si=n6Vh_TGL6ftcgFcohttps://youtu.be/auOcAoL4_Ik?si=n6Vh_TGL6ftcgFco",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5728,7 +6099,8 @@ const campData = [
               {
                 "title": "https://makecode.adafruit.com/",
                 "href": "https://makecode.adafruit.com/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5751,7 +6123,8 @@ const campData = [
               {
                 "title": "Turn your Circuit Playground into a Siren the Siren tutorial in Make Code.",
                 "href": "https://makecode.adafruit.com/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5774,7 +6147,8 @@ const campData = [
               {
                 "title": "Write a program to make the lights change color when the Circuit playground is tilted.",
                 "href": "https://youtu.be/f9FI3s9DDMo",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5788,7 +6162,8 @@ const campData = [
               {
                 "title": "Use the pins on Circuit Playground to make the LEDs Flash.",
                 "href": "#",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5818,7 +6193,8 @@ const campData = [
               {
                 "title": "Make your circuit playground control a servo.",
                 "href": "https://youtu.be/cofElsolYk4?si=-wvwdtvg4Qq5itJf",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5832,7 +6208,8 @@ const campData = [
               {
                 "title": "Write a program that causes one Circuit Playground start a program on another Circuit Playground",
                 "href": "#",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5855,7 +6232,8 @@ const campData = [
               {
                 "title": "Write an original program and share it with a friend",
                 "href": "#",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5879,6 +6257,7 @@ const campData = [
     "name": "Lego",
     "description": "Prototype towers, vehicles, structures, and robots.",
     "color": "#65a30d",
+    "image": "",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -5896,7 +6275,8 @@ const campData = [
               {
                 "title": "Build the tallest tower of stacked bricks you can",
                 "href": "#",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5919,7 +6299,8 @@ const campData = [
               {
                 "title": "Build a house using interlocking bricks",
                 "href": "https://www.wikihow.com/Build-a-LEGO-House",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5942,7 +6323,8 @@ const campData = [
               {
                 "title": "Design a building for a Base on Mars",
                 "href": "#",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5956,7 +6338,8 @@ const campData = [
               {
                 "title": "Design a vehicle/rover for Mars",
                 "href": "#",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -5979,7 +6362,8 @@ const campData = [
               {
                 "title": "Design a vehicle that can win a down hill race",
                 "href": "https://youtube.com/shorts/u3SwgxKLUwE?si=T1NWpevHyK8IOrT7",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6002,7 +6386,8 @@ const campData = [
               {
                 "title": "Make a 2 dimensional picture using Lego Blocks",
                 "href": "https://youtu.be/3dY-kvNcDt8?si=BtbMzZqth4iseDhK",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6016,7 +6401,8 @@ const campData = [
               {
                 "title": "1) Connect a Lego Spike Brick to your Laptop",
                 "href": "https://spike.legoeducation.com/prime/start/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6039,7 +6425,8 @@ const campData = [
               {
                 "title": "2) Learn to program a Lego Spike Block to roll in a square.",
                 "href": "https://spike.legoeducation.com/prime/start/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6062,7 +6449,8 @@ const campData = [
               {
                 "title": "Design a robot that does a particular job.",
                 "href": "#",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6085,7 +6473,8 @@ const campData = [
               {
                 "title": "Create a Lego Rover/ Robot using Lego Spike",
                 "href": "https://youtu.be/8MXGh5VE9Bs?si=cRypSLi1tK6CrvkL",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6102,6 +6491,7 @@ const campData = [
     "name": "Pipe Cleaners",
     "description": "Make flexible figures, flowers, and sculptures.",
     "color": "#d97706",
+    "image": "",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -6119,7 +6509,8 @@ const campData = [
               {
                 "title": "Pipe Cleaner People",
                 "href": "https://www.youtube.com/watch?v=zVkDp9sIjsU",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6133,7 +6524,8 @@ const campData = [
               {
                 "title": "Pipe Cleaner Rings",
                 "href": "https://www.youtube.com/watch?v=xX58LNA6wu4",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6156,7 +6548,8 @@ const campData = [
               {
                 "title": "Fish",
                 "href": "https://www.youtube.com/watch?v=bwO7NZpR8pw",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6170,7 +6563,8 @@ const campData = [
               {
                 "title": "Pipe Cleaner Flower",
                 "href": "https://www.instructables.com/Pipe-Cleaner-Flower-Mothers-Day-Craft/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6193,7 +6587,8 @@ const campData = [
               {
                 "title": "Pipe Cleaner Jellyfish",
                 "href": "https://www.youtube.com/watch?v=vlJFI1GfQOc&t=79s",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6207,7 +6602,8 @@ const campData = [
               {
                 "title": "Dragonfly",
                 "href": "https://www.youtube.com/shorts/tVX0EyBYvVA",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6230,7 +6626,8 @@ const campData = [
               {
                 "title": "CupCake",
                 "href": "https://www.youtube.com/watch?v=QRHa3E53l3A",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6244,7 +6641,8 @@ const campData = [
               {
                 "title": "Sword",
                 "href": "https://www.youtube.com/watch?v=IZry2TYbC3s",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6267,7 +6665,8 @@ const campData = [
               {
                 "title": "Pipe Cleaner Crown",
                 "href": "https://www.youtube.com/watch?v=IaJAUm2Joks",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6281,7 +6680,8 @@ const campData = [
               {
                 "title": "Bubble Wand",
                 "href": "https://www.youtube.com/watch?v=Vr_jrkd48Wc",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6304,7 +6704,8 @@ const campData = [
               {
                 "title": "Spider",
                 "href": "https://www.youtube.com/watch?v=ZvVvupxVEuw",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6318,7 +6719,8 @@ const campData = [
               {
                 "title": "Ice Cream Cone Keychain",
                 "href": "https://www.youtube.com/watch?v=q6DJt7ASzWQ",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6341,7 +6743,8 @@ const campData = [
               {
                 "title": "Pipe Cleaner Dragon",
                 "href": "https://frugalfun4boys.com/pipe-cleaner-dragons/",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6364,7 +6767,8 @@ const campData = [
               {
                 "title": "5NOF Cupcake",
                 "href": "https://www.youtube.com/watch?v=-BhZbZNmmWA",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6378,7 +6782,8 @@ const campData = [
               {
                 "title": "Giant Sunflower",
                 "href": "https://www.youtube.com/watch?v=f6d1ds6GMR8",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6392,7 +6797,8 @@ const campData = [
               {
                 "title": "Giant Flower",
                 "href": "https://www.youtube.com/watch?v=0fqAcTThF3c&t=70s",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6409,6 +6815,7 @@ const campData = [
     "name": "3D Pen",
     "description": "Draw, repair, and sculpt with a handheld 3D pen.",
     "color": "#047857",
+    "image": "",
     "belts": [
       // Belt sections shown inside this category card.
       {
@@ -6426,7 +6833,8 @@ const campData = [
               {
                 "title": "1. Introduction",
                 "href": "https://docs.google.com/document/d/1erM-dn8OncLACIcfSAgK9LGNiq96H-6OdDo398lAU5Y/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6440,7 +6848,8 @@ const campData = [
               {
                 "title": "2. Your Name",
                 "href": "https://docs.google.com/document/d/19JXLtQG7nXubzQjywlamAlZ3v3UBPWrHYinv6TQ9KKs/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6463,7 +6872,8 @@ const campData = [
               {
                 "title": "Basic Shape Outlines",
                 "href": "https://docs.google.com/document/d/1HAyzb1gmbR-r82TWfSrvEerTvJH4CRrVAVd9QEviOxY/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6477,7 +6887,8 @@ const campData = [
               {
                 "title": "FIx a 3D Print",
                 "href": "https://docs.google.com/document/d/1yS_LKKFY341gP8LiCus3zHDoCF7BvIg3tzqDRYIU0iM/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6500,7 +6911,8 @@ const campData = [
               {
                 "title": "2D Drawing",
                 "href": "https://docs.google.com/document/d/1eiqnsKYFODBw_7ibTZXMK6Noh-TRsrimBCCEGgnahTg/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6514,7 +6926,8 @@ const campData = [
               {
                 "title": "Tetrahedron",
                 "href": "https://docs.google.com/document/d/1CPvkqD8q4THyaOTdbSDBAyyThqqebgVn2ZAEjjyg6Z4/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6537,7 +6950,8 @@ const campData = [
               {
                 "title": "Filled Cube",
                 "href": "https://docs.google.com/document/d/1OrYR_tQXhRpL-pzGRqhM1wpJkVe0Qn3SX2nfcqfvWv0/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6560,7 +6974,8 @@ const campData = [
               {
                 "title": "Touch Stone",
                 "href": "https://docs.google.com/document/d/1pyKAVGxhhAdIlh24G8zPcXu-yl7hciWN7HIAZTUs5jA/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6583,7 +6998,8 @@ const campData = [
               {
                 "title": "Finishing",
                 "href": "https://docs.google.com/document/d/1NSM3ctQB_YjTxcnqILpmdczwvcTzf_UzTbY3WXN8j0Q/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6606,7 +7022,8 @@ const campData = [
               {
                 "title": "Replicate Desk Item",
                 "href": "https://docs.google.com/document/d/1Qi-7Ht8BglI8NinXAua0_Wb_IHTuOMyyq4kfGSgvSLc/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6629,7 +7046,8 @@ const campData = [
               {
                 "title": "Human/Animal Sculpture",
                 "href": "https://docs.google.com/document/d/1fBGlOvx904XiWFO-_pvBuOdYJy2JgbG19urWJj5I7A0/edit?usp=sharing",
-                "type": "resource"
+                "type": "resource",
+                "image": ""
               }
             ],
             "count": 1
@@ -6659,24 +7077,32 @@ function el(tag, className, text) {
 }
 
 /* This helper creates the reusable image slot used in the header, quick links, category cards, and project rows. */
-function placeholder(className, label) {
+function placeholder(className, label, src = placeholderSrc) {
   /* Create a normal image element, the same kind of tag as <img> in HTML. */
   const img = document.createElement('img');
 
   /* Give the image a CSS class so styles.css knows how large it should be. */
   img.className = className;
 
-  /* Point the image to the shared imageSlot file. */
-  img.src = placeholderSrc;
+  /* Point the image to the matched asset when one exists, otherwise use the shared imageSlot file. */
+  img.src = src || placeholderSrc;
 
-  /* Leave alt text blank because this is not meaningful content yet. Once real photos are added, each image should get useful alt text. */
-  img.alt = '';
+  /* If a matched file ever fails to load, fall back to the shared placeholder instead of showing a broken image icon. */
+  img.onerror = () => {
+    img.onerror = null;
+    img.src = placeholderSrc;
+    img.alt = '';
+    img.setAttribute('aria-hidden', 'true');
+  };
+
+  /* Use the label as alt text only when a real asset exists; decorative placeholders stay hidden from assistive technology. */
+  img.alt = src ? label : '';
 
   /* Lazy loading tells the browser it can wait to load images until they are needed. This is helpful when the page has many rows. */
   img.loading = 'lazy';
 
-  /* aria-hidden hides this decorative image slot from assistive technology. */
-  img.setAttribute('aria-hidden', 'true');
+  /* aria-hidden hides decorative placeholders from assistive technology while allowing real matched images to be described. */
+  if (!src) img.setAttribute('aria-hidden', 'true');
 
   /* Save a short internal label on the image element. */
   img.dataset.imageLabel = label || 'Image placeholder';
@@ -6712,7 +7138,7 @@ function createProjectRow(item) {
   setExternal(anchor);
 
   /* Add a blank project image slot to the left side of the row. */
-  anchor.appendChild(placeholder('projectImage', `${item.title} image`));
+  anchor.appendChild(placeholder('projectImage', `${item.title} image`, item.image));
 
   /* Create the text area for the row: title on top, type label below. */
   const copy = el('span', 'projectCopy');
@@ -6738,7 +7164,7 @@ function renderQuickLinks() {
     setExternal(anchor);
 
     /* Put an image slot and the button label inside the link. */
-    anchor.append(placeholder('quickLinkImage', `${link.label} image`), document.createTextNode(link.label));
+    anchor.append(placeholder('quickLinkImage', `${link.label} image`, link.image), document.createTextNode(link.label));
 
     /* Add the completed quickLink button to the page. */
     nav.appendChild(anchor);
@@ -6765,7 +7191,7 @@ function renderCards() {
     button.setAttribute('aria-controls', category.id);
 
     /* Add the blank category image slot to the button. */
-    button.appendChild(placeholder('cardImage', `${category.name} image`));
+    button.appendChild(placeholder('cardImage', `${category.name} image`, category.image));
 
     /* Create the text area inside the button: category name plus resource count. */
     const labelWrap = el('span', 'cardLabel');
