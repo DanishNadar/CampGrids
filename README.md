@@ -102,4 +102,4 @@ Part and series labels use lighter rectangular sections so they are visually sep
 
 Quick links use MSI-style outline buttons.
 
-Blank image placeholders are intentional. They reserve space for future visuals without relying on emoji or generated-looking filler.
+Blank image placeholders are intentional. They reserve space for future visuals provided by Fannie Yu.
