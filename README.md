@@ -26,8 +26,42 @@ Each category includes:
 - a short description
 - an accent color
 - beltLevel subDropdowns
-- automatic part/series subDropdowns inside each belt
+- automatic part/series sections inside each belt
 - project rows with titles, links, and resource types
+
+## Visual Sync Walkthrough
+
+The images below show the same test used in `process.html`: remove two category columns from the workbook, sync the interface, restore the columns, and sync again.
+
+### 1. Workbook with columns removed
+
+`Pipe Cleaners` and `3D Pen` are missing from the source workbook, so `Lego` is the last category column available to import.
+
+![Workbook after removing Pipe Cleaners and 3D Pen columns](assets/process/sheetRemovedColumns.svg)
+
+### 2. Interface after syncing the edited workbook
+
+After the updater reads that workbook, the interface no longer renders the missing categories.
+
+![Interface after syncing the workbook with missing columns](assets/process/interfaceRemovedColumns.svg)
+
+### 3. Workbook with columns restored
+
+The original category columns are added back to the workbook.
+
+![Workbook after restoring Pipe Cleaners and 3D Pen columns](assets/process/sheetRestoredColumns.svg)
+
+### 4. Sync command output
+
+The batch file passes the restored workbook into the generator and reports the rebuilt category/resource totals.
+
+![Command output from updateInterface.bat](assets/process/syncOutput.svg)
+
+### 5. Interface after syncing the restored workbook
+
+After the restored workbook is synced, the missing categories return to the card grid.
+
+![Interface after syncing the restored workbook](assets/process/interfaceRestoredColumns.svg)
 
 ## Data Mapping
 
@@ -66,13 +100,14 @@ The updater expects this structure:
 - Project cells contain the text shown on the site.
 - Hyperlinks attached to project cells become clickable project links.
 
-As long as a replacement workbook keeps that format and is named `CampGrids.xlsx`, running `updateInterface.bat` rebuilds the site data automatically.
+As long as a replacement workbook keeps that format, running `updateInterface.bat "YourWorkbook.xlsx"` rebuilds the site data automatically.
 
 ## Design Notes
 
 - Cards stay collapsed by default to keep the page easy to scan.
 - Belt colors appear as compact subDropdown buttons inside each category.
-- Numbered resources become Part 1, Part 2, and similar subDropdowns automatically.
-- Consecutive matching instruction/video rows become series subDropdowns automatically.
+- Numbered resources become Part 1, Part 2, and similar sections automatically.
+- Consecutive matching instruction/video rows become series sections automatically.
+- Single standalone resources/videos stay as normal rows without an extra section label.
 - Image slots reserve consistent visual space across headers, cards, and rows.
 - Links open in new tabs so the main grid stays available.
