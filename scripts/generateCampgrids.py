@@ -44,31 +44,8 @@ beltImageCodes = {
 }
 # These are the image extensions the importer will consider when scanning the assets folder.
 imageExtensions = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"}
-# These colors are assigned to category cards from left to right; if there are more categories than colors, the list wraps around.
-colors = [
-    "#f7c948",
-    "#ff8a3d",
-    "#ff6b6b",
-    "#d95fcd",
-    "#8b5cf6",
-    "#4f46e5",
-    "#2563eb",
-    "#0ea5e9",
-    "#14b8a6",
-    "#22c55e",
-    "#84cc16",
-    "#eab308",
-    "#f97316",
-    "#ef4444",
-    "#ec4899",
-    "#a855f7",
-    "#6366f1",
-    "#06b6d4",
-    "#10b981",
-    "#65a30d",
-    "#d97706",
-    "#047857",
-]
+# This single accent color is used for the strip above every category card so the card grid feels consistent.
+categoryAccentColor = "#2596be"
 
 # These descriptions are shown at the top of opened category cards; categories not listed here use a generic fallback sentence.
 descriptions = {
@@ -383,7 +360,7 @@ def buildData(rows: list[tuple[int, dict[int, dict[str, str]]]]) -> list[dict]:
             "id": slug(name),
             "name": name,
             "description": descriptions.get(name, "Camp project resources and activities."),
-            "color": colors[(col - 2) % len(colors)],
+            "color": categoryAccentColor,
             "image": categoryImage(assets, name),
             "belts": [{"name": belt, "id": slug(belt), "items": []} for belt in belts],
         })

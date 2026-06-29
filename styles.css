@@ -62,7 +62,7 @@ a {
   aspect-ratio: 1;
   object-fit: contain;
   border-radius: 0;
-  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.24);
+  box-shadow: none;
 }
 
 /* This styles the main page title. The clamp() value means the title is smaller on phones and larger on desktops, while still staying within a sensible minimum and maximum size. */

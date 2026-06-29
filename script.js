@@ -17,7 +17,7 @@ const campData = [
     "id": "notebooking",
     "name": "Notebooking",
     "description": "Sketch, record, reflect, and document maker work.",
-    "color": "#f7c948",
+    "color": "#2596be",
     "image": "assets/Notebooking_Cover.png",
     "belts": [
       // Belt sections shown inside this category card.
@@ -221,7 +221,7 @@ const campData = [
     "id": "origami-figure",
     "name": "Origami (Figure)",
     "description": "Fold animals, figures, and paper characters.",
-    "color": "#ff8a3d",
+    "color": "#2596be",
     "image": "assets/OrigamiFigure_Cover.png",
     "belts": [
       // Belt sections shown inside this category card.
@@ -674,7 +674,7 @@ const campData = [
     "id": "origami-modular",
     "name": "Origami (Modular)",
     "description": "Build geometric forms from repeated paper units.",
-    "color": "#ff6b6b",
+    "color": "#2596be",
     "image": "",
     "belts": [
       // Belt sections shown inside this category card.
@@ -956,7 +956,7 @@ const campData = [
     "id": "paper-craft",
     "name": "Paper Craft",
     "description": "Make playful paper models and moving paper projects.",
-    "color": "#d95fcd",
+    "color": "#2596be",
     "image": "",
     "belts": [
       // Belt sections shown inside this category card.
@@ -1469,7 +1469,7 @@ const campData = [
     "id": "paper-flight",
     "name": "Paper Flight",
     "description": "Design, fold, and test flying paper builds.",
-    "color": "#8b5cf6",
+    "color": "#2596be",
     "image": "assets/PaperFlight_Cover.png",
     "belts": [
       // Belt sections shown inside this category card.
@@ -1742,7 +1742,7 @@ const campData = [
     "id": "popsicle-sticks",
     "name": "Popsicle Sticks",
     "description": "Create structures, mechanisms, toys, and models.",
-    "color": "#4f46e5",
+    "color": "#2596be",
     "image": "",
     "belts": [
       // Belt sections shown inside this category card.
@@ -2246,7 +2246,7 @@ const campData = [
     "id": "fiber-art",
     "name": "Fiber Art",
     "description": "Explore yarn, crochet, weaving, and textile projects.",
-    "color": "#2563eb",
+    "color": "#2596be",
     "image": "",
     "belts": [
       // Belt sections shown inside this category card.
@@ -2678,7 +2678,7 @@ const campData = [
     "id": "hands-on-science",
     "name": "Hands-On Science",
     "description": "Try experiments, challenges, and physical science builds.",
-    "color": "#0ea5e9",
+    "color": "#2596be",
     "image": "",
     "belts": [
       // Belt sections shown inside this category card.
@@ -3080,7 +3080,7 @@ const campData = [
     "id": "3d-printing-101-prusa-mini",
     "name": "3D Printing 101 (Prusa Mini)",
     "description": "Design, slice, and print beginner 3D models.",
-    "color": "#14b8a6",
+    "color": "#2596be",
     "image": "",
     "belts": [
       // Belt sections shown inside this category card.
@@ -3410,7 +3410,7 @@ const campData = [
     "id": "vinyl-cutting-cameo",
     "name": "Vinyl Cutting (Cameo)",
     "description": "Create decals and cut designs with vinyl tools.",
-    "color": "#22c55e",
+    "color": "#2596be",
     "image": "",
     "belts": [
       // Belt sections shown inside this category card.
@@ -3659,7 +3659,7 @@ const campData = [
     "id": "laser-cutting-101-muse",
     "name": "Laser Cutting 101 (Muse)",
     "description": "Learn laser safety, files, and cut projects.",
-    "color": "#84cc16",
+    "color": "#2596be",
     "image": "",
     "belts": [
       // Belt sections shown inside this category card.
@@ -3968,7 +3968,7 @@ const campData = [
     "id": "digital-embroidery-101-brother-pe800",
     "name": "Digital Embroidery 101 (Brother PE800)",
     "description": "Hoop, thread, stitch, and finish embroidery projects.",
-    "color": "#eab308",
+    "color": "#2596be",
     "image": "",
     "belts": [
       // Belt sections shown inside this category card.
@@ -4172,7 +4172,7 @@ const campData = [
     "id": "electronics-101",
     "name": "Electronics 101",
     "description": "Build circuits, lights, and electronics experiments.",
-    "color": "#f97316",
+    "color": "#2596be",
     "image": "",
     "belts": [
       // Belt sections shown inside this category card.
@@ -4496,7 +4496,7 @@ const campData = [
     "id": "mechatronics",
     "name": "Mechatronics",
     "description": "Combine mechanisms, motion, gears, and controls.",
-    "color": "#ef4444",
+    "color": "#2596be",
     "image": "",
     "belts": [
       // Belt sections shown inside this category card.
@@ -4715,7 +4715,7 @@ const campData = [
     "id": "engineering-101",
     "name": "Engineering 101",
     "description": "Design, build, test, and improve engineering solutions.",
-    "color": "#ec4899",
+    "color": "#2596be",
     "image": "",
     "belts": [
       // Belt sections shown inside this category card.
@@ -5084,7 +5084,7 @@ const campData = [
     "id": "turtle-stitch",
     "name": "Turtle Stitch",
     "description": "Use code-driven stitching and shape-based embroidery.",
-    "color": "#a855f7",
+    "color": "#2596be",
     "image": "",
     "belts": [
       // Belt sections shown inside this category card.
@@ -5468,7 +5468,7 @@ const campData = [
     "id": "block-coding-101-scratch",
     "name": "Block Coding 101 (scratch)",
     "description": "Create animations, stories, games, and interactive code.",
-    "color": "#6366f1",
+    "color": "#2596be",
     "image": "",
     "belts": [
       // Belt sections shown inside this category card.
@@ -5822,7 +5822,7 @@ const campData = [
     "id": "pygamer",
     "name": "Pygamer",
     "description": "Build and test handheld MakeCode Arcade projects.",
-    "color": "#06b6d4",
+    "color": "#2596be",
     "image": "",
     "belts": [
       // Belt sections shown inside this category card.
@@ -6041,7 +6041,7 @@ const campData = [
     "id": "circuit-playground",
     "name": "Circuit Playground",
     "description": "Program sensors, lights, sounds, and devices.",
-    "color": "#10b981",
+    "color": "#2596be",
     "image": "",
     "belts": [
       // Belt sections shown inside this category card.
@@ -6256,7 +6256,7 @@ const campData = [
     "id": "lego",
     "name": "Lego",
     "description": "Prototype towers, vehicles, structures, and robots.",
-    "color": "#65a30d",
+    "color": "#2596be",
     "image": "",
     "belts": [
       // Belt sections shown inside this category card.
@@ -6490,7 +6490,7 @@ const campData = [
     "id": "pipe-cleaners",
     "name": "Pipe Cleaners",
     "description": "Make flexible figures, flowers, and sculptures.",
-    "color": "#d97706",
+    "color": "#2596be",
     "image": "",
     "belts": [
       // Belt sections shown inside this category card.
@@ -6814,7 +6814,7 @@ const campData = [
     "id": "3d-pen",
     "name": "3D Pen",
     "description": "Draw, repair, and sculpt with a handheld 3D pen.",
-    "color": "#047857",
+    "color": "#2596be",
     "image": "",
     "belts": [
       // Belt sections shown inside this category card.
