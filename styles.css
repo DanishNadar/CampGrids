@@ -90,8 +90,11 @@ a {
 
 /* This styles the quickLinks bar. The white background separates the shortcut links from the blue header above. */
 .quickLinks {
+  position: relative;
+  z-index: 2;
   background: var(--paper);
   border-bottom: 1px solid var(--line);
+  box-shadow: 0 16px 24px rgba(15, 23, 42, 0.18), 0 4px 8px rgba(15, 23, 42, 0.08);
   padding: 22px 20px 24px;
 }
 
@@ -129,8 +132,8 @@ a {
   background: #ffffff;
   font-weight: 900;
   text-decoration: none;
-  box-shadow: none;
-  transition: transform 0.18s ease, border-color 0.18s ease;
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.12);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 /* This adds a small lift effect when someone hovers over or tabs to a quick link. It helps users notice that the button is clickable. */
@@ -138,6 +141,7 @@ a {
 .quickLink:focus-visible {
   transform: translateY(-2px);
   border-color: #c2410c;
+  box-shadow: 0 14px 24px rgba(15, 23, 42, 0.16);
 }
 
 /* These legacy quickLink color classes are kept so script.js can keep using the same data shape while every shortcut shares the MSI outline style. */
@@ -159,7 +163,7 @@ a {
   gap: 28px;
   max-width: 1180px;
   margin: 0 auto;
-  padding: 34px 24px 20px;
+  padding: 42px 24px 20px;
 }
 
 /* This styles the "Choose a Category" heading. clamp() keeps the heading readable on small screens and prominent on large ones. */
@@ -194,7 +198,7 @@ a {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--paper);
-  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14);
 }
 
 /* This styles the top button of each card. The colored strip at the top uses --categoryColor, which script.js sets for each category when it builds the card. */
