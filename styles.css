@@ -438,7 +438,7 @@ a {
 /* This stacks the project title above the small project type label. */
 .projectCopy {
   display: grid;
-  gap: 3px;
+  gap: 7px;
   min-width: 0;
 }
 
