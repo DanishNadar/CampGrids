@@ -429,6 +429,11 @@ a {
   transition: background 0.15s ease;
 }
 
+/* This keeps video text aligned with resource text even though video rows do not show an image placeholder. */
+.projectVideo {
+  padding-left: calc(14px + 58px + 12px);
+}
+
 /* This changes a project row's background when hovered or focused. It helps users see which resource they are about to open. */
 .project:hover,
 .project:focus-visible {
