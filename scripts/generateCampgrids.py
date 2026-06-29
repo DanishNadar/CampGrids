@@ -31,7 +31,7 @@ ns = {
 
 # These belt names define the only belt rows the importer treats as section headers.
 belts = ["White", "Yellow", "Orange", "Green", "Blue", "Purple", "Brown", "Black"]
-# These short belt codes are used for standardized image filenames such as Notebooking_WT.png or OrigamiFigure_BU.png.
+# These short belt codes are used for standardized image filenames such as Notebooking_WT.png or OrigamiFigure_BU_TraditionalCrane.png.
 beltImageCodes = {
     "White": ["WT", "WH", "WHITE"],
     "Yellow": ["YW", "YL", "YE", "YELLOW"],
@@ -171,12 +171,19 @@ def categoryImage(assets: dict[str, str], categoryName: str) -> str:
     return findImage(assets, [f"{categoryName}_Cover", f"{categoryName} Cover", categoryName])
 
 
-# This finds an image for a resource row by category and belt, such as Notebooking_WT.png for Notebooking white belt items.
+# This finds an image for a resource row by category, belt, and item title, such as OrigamiFigure_BU_TraditionalCrane.png for a specific blue-belt project.
 def itemImage(assets: dict[str, str], categoryName: str, beltName: str, title: str) -> str:
-    # This builds category-plus-belt-code candidates from the standardized belt code list.
-    candidates = [f"{categoryName}_{code}" for code in beltImageCodes.get(beltName, [])]
-    # This also tries category-plus-full-belt-name and category-plus-title in case future images use more descriptive filenames.
-    candidates.extend([f"{categoryName}_{beltName}", f"{categoryName}_{title}", title])
+    # This removes labels like Instructions and Video so one project-specific image can match both rows in an instruction/video pair.
+    projectName = seriesTitle(title)
+    # This starts with the most specific filenames, using the extra underscore convention for separate projects inside the same belt.
+    candidates = [f"{categoryName}_{code}_{projectName}" for code in beltImageCodes.get(beltName, [])]
+    # This also tries category-plus-full-belt-name-plus-project in case future images use full belt words instead of short codes.
+    candidates.append(f"{categoryName}_{beltName}_{projectName}")
+    # This then tries project-only fallbacks for images named directly after the resource.
+    candidates.extend([f"{categoryName}_{title}", f"{categoryName}_{projectName}", title, projectName])
+    # This finally tries broad belt-level images, which are useful only when one image is meant to represent the whole belt.
+    candidates.extend([f"{categoryName}_{code}" for code in beltImageCodes.get(beltName, [])])
+    candidates.append(f"{categoryName}_{beltName}")
     # This returns the first matching row image, or an empty string if no asset exists.
     return findImage(assets, candidates)
 
@@ -415,12 +422,14 @@ def buildData(rows: list[tuple[int, dict[int, dict[str, str]]]]) -> list[dict]:
                 continue
             # This records the item as seen before adding it to the data.
             seen.add(key)
+            # This labels the row before choosing an image because videos should never receive resource image placeholders.
+            resourceType = itemType(title)
             # This appends the project row to the active category and active belt.
             byCol[col]["belts"][beltIndex]["items"].append({
                 "title": title,
                 "href": href,
-                "type": itemType(title),
-                "image": itemImage(assets, byCol[col]["name"], currentBelt, title),
+                "type": resourceType,
+                "image": itemImage(assets, byCol[col]["name"], currentBelt, title) if resourceType == "resource" else "",
             })
 
     # This final pass calculates counts and removes the temporary spreadsheet column number from each category.

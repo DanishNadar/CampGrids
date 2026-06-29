@@ -84,7 +84,7 @@ The matching is forgiving about spaces and punctuation. For example, the workboo
 
 ### Belt/resource images
 
-Use this pattern for images that should show on resource/video rows for a category and belt:
+Use this pattern for images that should show on resource rows for a category and belt:
 
 ```text
 CategoryName_BeltCode.png
@@ -96,8 +96,24 @@ Examples already in the project:
 Notebooking_WT.png
 Notebooking_YW.png
 Notebooking_OR.png
-OrigamiFigure_BU.png
 ```
+
+If one belt has multiple separate projects and each project needs its own image, add another underscore and the project name:
+
+```text
+CategoryName_BeltCode_ProjectName.png
+```
+
+Example:
+
+```text
+OrigamiFigure_BU_TraditionalCrane.png
+OrigamiFigure_BU_FlappingBird.png
+```
+
+That extra project name matters for sections like Origami Figure Blue Belt, where Traditional Crane and Flapping Bird should not share the same image.
+
+Video rows intentionally do not show image placeholders or matched images; only resource rows use these item images.
 
 Current belt codes:
 
@@ -151,9 +167,9 @@ Items with `Video` in the title are labeled `video`. Everything else is labeled 
 
 Numbered items such as `1. ...` and `2. ...` become Part 1, Part 2, and similar section headers.
 
-Consecutive related items, such as an instruction row followed by a video row for the same project, become one series section.
+Consecutive related items, such as an instruction row followed by a video row for the same project, become one section with a shared heading.
 
-Single standalone resources or videos stay as normal rows without an extra section label.
+Single standalone resources or videos also get their own one-item section heading so the belt contents stay visually consistent.
 
 ## Adding New Items
 

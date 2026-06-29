@@ -475,13 +475,13 @@ const campData = [
                 "title": "Flapping Bird: Instructions",
                 "href": "https://www.origamiway.com/origami-flapping-bird.shtml",
                 "type": "resource",
-                "image": "assets/OrigamiFigure_BU.png"
+                "image": ""
               },
               {
                 "title": "Flapping Bird: Video",
                 "href": "https://www.youtube.com/watch?v=DD1M3VrNSt4",
                 "type": "video",
-                "image": "assets/OrigamiFigure_BU.png"
+                "image": ""
               }
             ],
             "count": 2
@@ -496,13 +496,13 @@ const campData = [
                 "title": "Traditional Crane: Instructions",
                 "href": "https://www.origamiway.com/origami-crane.shtml",
                 "type": "resource",
-                "image": "assets/OrigamiFigure_BU.png"
+                "image": "assets/OrigamiFigure_BU_TraditionalCrane.png"
               },
               {
                 "title": "Traditional Crane: Video",
                 "href": "https://www.youtube.com/watch?v=KfnyopxdJXQ",
                 "type": "video",
-                "image": "assets/OrigamiFigure_BU.png"
+                "image": ""
               }
             ],
             "count": 2
@@ -7137,8 +7137,8 @@ function createProjectRow(item) {
   anchor.href = item.href || '#';
   setExternal(anchor);
 
-  /* Add a blank project image slot to the left side of the row. */
-  anchor.appendChild(placeholder('projectImage', `${item.title} image`, item.image));
+  /* Add an image slot only for resources, because video rows should stay text-only instead of showing a placeholder. */
+  if (item.type === 'resource') anchor.appendChild(placeholder('projectImage', `${item.title} image`, item.image));
 
   /* Create the text area for the row: title on top, type label below. */
   const copy = el('span', 'projectCopy');
@@ -7147,6 +7147,15 @@ function createProjectRow(item) {
   /* Put the text area into the link, then return the completed row to whichever section is building it. */
   anchor.appendChild(copy);
   return anchor;
+}
+
+/* This writes item counts in normal English, so one independent resource says "1 item" instead of "1 items". */
+function itemCountLabel(count) {
+  /* Convert missing or unusual count values into a number so the label still renders predictably. */
+  const total = Number(count) || 0;
+
+  /* Return the count with the correct singular or plural word. */
+  return `${total} ${total === 1 ? 'item' : 'items'}`;
 }
 
 /* This builds the quickLink buttons at the top of the page. It looks for the empty <div id="quickLinks"></div> in index.html, then loops through the quickLinks list and adds one button for each item. */
@@ -7232,20 +7241,13 @@ function renderCards() {
       /* Loop through every generated part or series group, such as Part 1, Part 2, Jumping Frog, or Rabbit. */
       groups.forEach((group) => {
         if (!group.items || !group.items.length) return;
-        const isSingleStandaloneItem = group.items.length === 1 && !/^Part \d+$/.test(group.title);
 
-        /* If a group only contains one ordinary resource or video, add it directly so the page does not create a pointless rectangular section label. */
-        if (isSingleStandaloneItem) {
-          list.appendChild(createProjectRow(group.items[0]));
-          return;
-        }
+        /* Create the wrapper that keeps independent resources and multi-item series aligned consistently inside the belt. */
+        const groupSection = el('section', `resourceGroup ${group.count === 1 ? 'singleItemGroup' : 'seriesGroup'}`);
 
-        /* Create the lighter rectangular section that separates numbered parts and true multi-item project series inside the belt. */
-        const groupSection = el('section', 'resourceGroup');
-
-        /* Create the plain group heading text. This is not a button because parts and series should read as sections, not another dropdown layer. */
+        /* Create the rectangular heading for the part, series, or independent one-item section. */
         const groupHeading = el('div', 'groupHeading');
-        groupHeading.append(el('span', 'groupName', group.title), el('span', 'groupCount', `${group.count} items`));
+        groupHeading.append(el('span', 'groupName', group.title), el('span', 'groupCount', itemCountLabel(group.count)));
         groupSection.appendChild(groupHeading);
 
         /* Create the visible row list for the resources and videos inside this specific group. */

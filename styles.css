@@ -40,9 +40,9 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 24px;
-  min-height: 220px;
-  padding: 42px 24px 34px;
+  gap: 44px;
+  min-height: 250px;
+  padding: 46px 28px 42px;
   color: white;
   background:
     linear-gradient(90deg, rgba(52, 20, 18, 0.62), rgba(190, 67, 28, 0.28)),
@@ -56,9 +56,13 @@ a {
   text-shadow: 0 2px 8px rgba(2, 6, 23, 0.55);
 }
 
-/* This keeps the old header image slot hidden because the header now uses the full background image instead. */
+/* This styles the MSI logo beside the title so it stays crisp and balanced in the header. */
 .headerLogo {
-  display: none;
+  width: clamp(96px, 11vw, 146px);
+  aspect-ratio: 1;
+  object-fit: contain;
+  border-radius: 0;
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.24);
 }
 
 /* This styles the main page title. The clamp() value means the title is smaller on phones and larger on desktops, while still staying within a sensible minimum and maximum size. */
@@ -66,7 +70,7 @@ a {
   font-size: clamp(2rem, 5vw, 3.4rem);
   font-weight: 900;
   line-height: 1.02;
-  margin: 4px 0 10px;
+  margin: 8px 0 22px;
 }
 
 /* This styles the short sentence under the main title. It is slightly smaller than the title but still bold enough to read clearly. */
@@ -347,6 +351,7 @@ a {
 /* This reveals a belt's project rows only after its belt button is clicked. */
 .projectList.open {
   max-height: 8000px;
+  padding-bottom: 12px;
 }
 
 /* This wraps one automatically detected part or series inside an opened belt. */
@@ -665,6 +670,7 @@ footer {
   .siteHeader {
     align-items: flex-start;
     flex-direction: column;
+    gap: 22px;
   }
 
   /* The card grid becomes one column on phones. */
