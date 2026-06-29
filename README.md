@@ -2,7 +2,7 @@
 
 CampGrids is a static browser for MSI camp grid activities. The idea was proposed by Fannie Yu, an MSI intern, and I built the interface and workbook sync workflow around it.
 
-The site takes what used to live in a large spreadsheet and turns it into a set of category cards, belt sections, and resource/video rows. The goal is simple: make the camp materials easier to scan without losing the structure of the original workbook.
+The site takes what used to live in a large spreadsheet and turns it into a set of category cards, belt sections, and resource/video rows. The intention was to make the camp materials easier to scan without losing the structure of the original workbook.
 
 ## How It Works
 
