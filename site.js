@@ -3,7 +3,7 @@
 /* Shared image slot used anywhere a camp page or gallery needs a photo that has not been supplied yet. */
 const sitePlaceholderImage = 'assets/placeholder.jpg';
 
-/* This list fills the quick link buttons on the CampGrids resources page. These are outside tools rather than pages of this site, so they stay a quick link strip and are deliberately not in the navigation bar. */
+/* This list fills the quick link buttons on the Activities page. These are outside tools rather than pages of this site, so they stay a quick link strip and are deliberately not in the navigation bar. */
 const externalLinks = [
   { label: 'Belts', href: 'https://docs.google.com/spreadsheets/d/13XSBDHuYkVl0Fgng4vzA6WdHMrDKTD67eLoiP7Y3z4E/edit?usp=sharing', colorClass: 'qlPurple' },
   { label: 'TinkerCAD Portal', href: 'http://www.tinkercad.com/joinclass/HQPGBBSGD', colorClass: 'qlTeal' },
@@ -231,13 +231,13 @@ function renderSiteNav() {
   const brand = makeEl('a', 'navBrand', 'CampGrids');
   brand.href = 'index.html';
 
-  /* Build the tabs: the four from the sketch, plus Resources for the project grid, which is the part of the site campers and staff use most. */
+  /* Build the tabs: the four from the sketch, plus Activities for the project grid, which is the part of the site campers and staff use most. */
   const tabs = makeEl('div', 'siteNavTabs');
   tabs.append(
     createNavLink('Home', 'index.html', active === 'home'),
     createNavMenu('MSI Camps', createCampsPanel(currentCampId), active === 'camps'),
     createNavMenu('External Camps', createExternalCampsPanel(currentCampId), active === 'externalCamps'),
-    createNavLink('Resources', 'campgrids.html', active === 'resources'),
+    createNavLink('Activities', 'campgrids.html', active === 'activities'),
     createNavLink('About', 'about.html', active === 'about')
   );
 
@@ -363,12 +363,12 @@ function renderCampPage() {
   );
   main.appendChild(photos);
 
-  /* Build the closing band that sends visitors to the resource grid and to the other camps in this category. */
+  /* Build the closing band that sends visitors to the Activities page and to the other camps in this group. */
   const next = makeEl('section', 'pageSection campNext');
   next.append(makeEl('p', 'eyebrow', 'Keep exploring'), makeEl('h2', '', 'Where to go next'));
 
   const nextLinks = makeEl('div', 'campNextLinks');
-  const gridLink = makeEl('a', 'quickLink qlBlue', 'Open CampGrids resources');
+  const gridLink = makeEl('a', 'quickLink qlBlue', 'Open CampGrids activities');
   gridLink.href = 'campgrids.html';
   nextLinks.appendChild(gridLink);
 

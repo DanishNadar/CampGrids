@@ -30,7 +30,7 @@ These diagrams show the intended flow of the project. They are the general workf
 
 `index.html` is the homepage. It introduces the site and lists the camp categories.
 
-`campgrids.html` is the project resource page. It contains the empty containers that `script.js` fills with the category cards.
+`campgrids.html` is the Activities page, the core of the site. It contains the empty containers that `script.js` fills with the category cards.
 
 `camp.html` is the shared template for every camp page. The camp id in the address, such as `camp.html?camp=mini-makers`, decides which camp is shown.
 
