@@ -148,14 +148,29 @@ a {
   padding: 18px;
 }
 
-/* This is one camp category column inside the MSI Camps dropdown. */
+/* This is one camp column inside the MSI Camps dropdown. The whole column is a link, so the name and its description are one large target. */
 .navColumn {
   display: grid;
   align-content: start;
-  gap: 2px;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  text-decoration: none;
 }
 
-/* This styles the camp category name at the top of a dropdown column. */
+/* This highlights a camp column on hover or keyboard focus. */
+.navColumn:hover,
+.navColumn:focus-visible {
+  background: #f8fafc;
+}
+
+/* This marks the camp page the visitor is already reading. */
+.navColumn.navCurrent {
+  border-bottom: 0;
+  background: #fff1ea;
+}
+
+/* This styles the camp name at the top of a dropdown column. */
 .navColumnTitle {
   color: #c2410c;
   font-size: 0.76rem;
@@ -164,9 +179,8 @@ a {
   text-transform: uppercase;
 }
 
-/* This styles the short sentence under a camp category name. */
+/* This styles the short sentence under a camp name. */
 .navColumnBlurb {
-  margin-bottom: 7px;
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 700;

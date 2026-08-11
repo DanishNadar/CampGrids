@@ -32,7 +32,7 @@ These diagrams show the intended flow of the project. They are the general workf
 
 `campgrids.html` is the project resource page. It contains the empty containers that `script.js` fills with the category cards.
 
-`camp.html` is the shared template for every camp page. The camp id in the address, such as `camp.html?camp=mini-makers-1`, decides which camp is shown.
+`camp.html` is the shared template for every camp page. The camp id in the address, such as `camp.html?camp=mini-makers`, decides which camp is shown.
 
 `about.html` explains what the site is and how its parts fit together.
 

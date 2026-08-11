@@ -3,48 +3,44 @@
 /* Shared image slot used anywhere a camp page or gallery needs a photo that has not been supplied yet. */
 const sitePlaceholderImage = 'assets/placeholder.jpg';
 
-/* This list fills the "External Links" menu in the navigation bar, and it also fills the quick link buttons on the CampGrids page. Editing a link here changes it everywhere on the site. */
+/* This list fills the quick link buttons on the CampGrids resources page. These are outside tools rather than pages of this site, so they stay a quick link strip and are deliberately not in the navigation bar. */
 const externalLinks = [
   { label: 'Belts', href: 'https://docs.google.com/spreadsheets/d/13XSBDHuYkVl0Fgng4vzA6WdHMrDKTD67eLoiP7Y3z4E/edit?usp=sharing', colorClass: 'qlPurple' },
   { label: 'TinkerCAD Portal', href: 'http://www.tinkercad.com/joinclass/HQPGBBSGD', colorClass: 'qlTeal' },
   { label: 'Scratch Usernames', href: 'https://docs.google.com/spreadsheets/d/1Xmc2GbvR3rrxGoHHxbuT-zOhzrYbOokWfGLSPpNzNk0/edit?usp=sharing', colorClass: 'qlBlue' }
 ];
 
-/* This is the camp menu structure behind the "MSI Camps" tab. Each entry is one camp category, and each camp inside it becomes one page rendered by camp.html. Add a camp by adding an object to a camps list; the navigation and the camp pages both follow this data. */
-const campCategories = [
+/* This is the camp list behind the "MSI Camps" tab. These are the camps run on museum premises, and there is one camp per entry. */
+const msiCamps = [
   {
     id: 'mini-makers',
     name: 'Mini Makers',
-    blurb: 'Short, playful sessions for the youngest campers, built around hands-on making.',
-    camps: [
-      { id: 'mini-makers-1', name: 'Camp 1' },
-      { id: 'mini-makers-2', name: 'Camp 2' },
-      { id: 'mini-makers-3', name: 'Camp 3' },
-      { id: 'mini-makers-4', name: 'Camp 4' }
-    ]
+    blurb: 'Short, playful sessions for the youngest campers, built around hands-on making.'
   },
   {
     id: 'young-makers',
     name: 'Young Makers',
-    blurb: 'Longer projects where campers plan, build, test, and improve their own work.',
-    camps: [
-      { id: 'young-makers-1', name: 'Camp 1' },
-      { id: 'young-makers-2', name: 'Camp 2' },
-      { id: 'young-makers-3', name: 'Camp 3' },
-      { id: 'young-makers-4', name: 'Camp 4' }
-    ]
+    blurb: 'Longer projects where campers plan, build, test, and improve their own work.'
   },
   {
     id: 'fab-lab',
     name: 'Fab Lab',
-    blurb: 'Digital fabrication camps using the lab machines, from laser cutting to 3D printing.',
-    camps: [
-      { id: 'fab-lab-1', name: 'Camp 1' },
-      { id: 'fab-lab-2', name: 'Camp 2' },
-      { id: 'fab-lab-3', name: 'Camp 3' },
-      { id: 'fab-lab-4', name: 'Camp 4' }
-    ]
+    blurb: 'Digital fabrication camps using the lab machines, from laser cutting to 3D printing.'
   }
+];
+
+/* This is the camp list behind the "External Camps" tab. These are the partnership camps that run away from museum premises. The names are placeholders until the real partnership camps are known. */
+const externalCamps = [
+  { id: 'external-camp-1', name: 'Camp 1' },
+  { id: 'external-camp-2', name: 'Camp 2' },
+  { id: 'external-camp-3', name: 'Camp 3' },
+  { id: 'external-camp-4', name: 'Camp 4' }
+];
+
+/* This ties the two camp lists together. Every camp page, dropdown, and sibling link works from this one structure, so adding a third kind of camp later only means adding an entry here. */
+const campGroups = [
+  { id: 'msi', label: 'MSI Camps', navKey: 'camps', camps: msiCamps },
+  { id: 'external', label: 'External Camps', navKey: 'externalCamps', camps: externalCamps }
 ];
 
 /* Every camp page reads these fields. A camp that does not carry its own wording yet falls back to this placeholder content, so the page layout is complete and it is obvious which text still needs writing. */
@@ -94,27 +90,19 @@ function makeEl(tag, className, text) {
   return node;
 }
 
-/* This makes a link open safely in a new browser tab. It is used for links that leave this site. */
-function openInNewTab(anchor) {
-  anchor.target = '_blank';
-  anchor.rel = 'noopener noreferrer';
-}
-
 /* This builds the address of a camp page. Every camp shares camp.html, and the camp id in the address tells that page which camp to show. */
 function campHref(campId) {
   return `camp.html?camp=${campId}`;
 }
 
-/* This searches the camp menu for one camp id and returns both the camp and the category it belongs to, because camp pages show the category name as well. */
+/* This looks up one camp by its id and reports which group it came from, because a camp page shows its group name and links to the other camps in the same group. It returns nothing when the id does not match any camp, so the caller can fall back to a default. */
 function findCamp(campId) {
-  /* Look through every category, then every camp inside that category. */
-  for (const category of campCategories) {
-    const camp = category.camps.find((entry) => entry.id === campId);
-    /* Return as soon as the matching camp is found, along with its parent category. */
-    if (camp) return { camp, category };
+  /* Look through the MSI camps first, then the external camps. */
+  for (const group of campGroups) {
+    const camp = group.camps.find((entry) => entry.id === campId);
+    if (camp) return { camp, group };
   }
 
-  /* Return nothing when the id does not match any camp, so the caller can fall back to a default. */
   return null;
 }
 
@@ -170,31 +158,25 @@ function closeAllNavMenus() {
   });
 }
 
-/* This builds the dropdown panel for the "MSI Camps" tab. The panel shows one column per camp category, and each column lists the camps inside that category. */
+/* This builds the dropdown panel for the "MSI Camps" tab. The panel shows one column per camp, and the whole column is the link into that camp's page. */
 function createCampsPanel(currentCampId) {
-  /* Create the wide panel that holds all of the category columns. */
+  /* Create the wide panel that holds all of the camp columns. */
   const panel = makeEl('div', 'navPanel navPanelWide');
 
-  /* Build one column for each camp category, such as Mini Makers or Fab Lab. */
-  campCategories.forEach((category) => {
-    const column = makeEl('div', 'navColumn');
+  /* Build one column for each camp, such as Mini Makers or Fab Lab. */
+  msiCamps.forEach((camp) => {
+    /* The whole column is a link, so there is a large easy target rather than a small line of text. */
+    const column = makeEl('a', 'navColumn');
+    column.href = campHref(camp.id);
 
-    /* The column heading names the camp category and the short line under it explains what that category is. */
-    column.append(makeEl('span', 'navColumnTitle', category.name), makeEl('span', 'navColumnBlurb', category.blurb));
+    /* The column heading names the camp and the short line under it explains what that camp is. */
+    column.append(makeEl('span', 'navColumnTitle', camp.name), makeEl('span', 'navColumnBlurb', camp.blurb));
 
-    /* List every camp in this category as its own link into camp.html. */
-    category.camps.forEach((camp) => {
-      const anchor = makeEl('a', 'navPanelLink', camp.name);
-      anchor.href = campHref(camp.id);
-
-      /* Highlight the camp the visitor is currently reading about. */
-      if (camp.id === currentCampId) {
-        anchor.classList.add('navCurrent');
-        anchor.setAttribute('aria-current', 'page');
-      }
-
-      column.appendChild(anchor);
-    });
+    /* Highlight the camp the visitor is currently reading about. */
+    if (camp.id === currentCampId) {
+      column.classList.add('navCurrent');
+      column.setAttribute('aria-current', 'page');
+    }
 
     panel.appendChild(column);
   });
@@ -202,16 +184,22 @@ function createCampsPanel(currentCampId) {
   return panel;
 }
 
-/* This builds the dropdown panel for the "External Links" tab. Every link here leaves the site, so each one opens in a new tab. */
-function createExternalPanel() {
-  /* Create the narrow panel that holds the outside links. */
+/* This builds the dropdown panel for the "External Camps" tab. These are partnership camps held away from the museum, listed as a simple set of links. */
+function createExternalCampsPanel(currentCampId) {
+  /* Create the narrow panel that holds the partnership camp links. */
   const panel = makeEl('div', 'navPanel');
 
-  /* Turn each entry in the shared externalLinks list into one link inside the panel. */
-  externalLinks.forEach((link) => {
-    const anchor = makeEl('a', 'navPanelLink', link.label);
-    anchor.href = link.href;
-    openInNewTab(anchor);
+  /* Turn each partnership camp into one link into camp.html. */
+  externalCamps.forEach((camp) => {
+    const anchor = makeEl('a', 'navPanelLink', camp.name);
+    anchor.href = campHref(camp.id);
+
+    /* Highlight the camp the visitor is currently reading about. */
+    if (camp.id === currentCampId) {
+      anchor.classList.add('navCurrent');
+      anchor.setAttribute('aria-current', 'page');
+    }
+
     panel.appendChild(anchor);
   });
 
@@ -225,10 +213,14 @@ function renderSiteNav() {
   if (!host) return;
 
   /* Read which page this is from the data-nav attribute on <body>, so the matching tab can be highlighted. */
-  const active = document.body.dataset.nav || '';
+  let active = document.body.dataset.nav || '';
 
   /* Read the camp id from the address bar, which is only present on camp.html. */
   const currentCampId = new URLSearchParams(window.location.search).get('camp') || '';
+
+  /* Camp pages all share one file, so the highlighted tab comes from which list the current camp belongs to rather than from the page itself. */
+  const currentCamp = currentCampId ? findCamp(currentCampId) : null;
+  if (currentCamp) active = currentCamp.group.navKey;
 
   /* Create the bar itself and the inner row that keeps the tabs aligned with the rest of the page content. */
   const bar = makeEl('nav', 'siteNavBar');
@@ -244,8 +236,8 @@ function renderSiteNav() {
   tabs.append(
     createNavLink('Home', 'index.html', active === 'home'),
     createNavMenu('MSI Camps', createCampsPanel(currentCampId), active === 'camps'),
+    createNavMenu('External Camps', createExternalCampsPanel(currentCampId), active === 'externalCamps'),
     createNavLink('Resources', 'campgrids.html', active === 'resources'),
-    createNavMenu('External Links', createExternalPanel(), false),
     createNavLink('About', 'about.html', active === 'about')
   );
 
@@ -295,10 +287,10 @@ function renderCampPage() {
   const main = document.getElementById('campPage');
   if (!main) return;
 
-  /* Read the requested camp id, then look it up. Unknown or missing ids fall back to the very first camp so the page is never blank. */
+  /* Read the requested camp id, then look it up. Unknown or missing ids fall back to the very first MSI camp so the page is never blank. */
   const requestedId = new URLSearchParams(window.location.search).get('camp');
-  const match = findCamp(requestedId) || { camp: campCategories[0].camps[0], category: campCategories[0] };
-  const { camp, category } = match;
+  const match = findCamp(requestedId) || { camp: msiCamps[0], group: campGroups[0] };
+  const { camp, group } = match;
 
   /* Each field falls back to the shared placeholder content whenever this camp has no wording of its own yet. */
   const tagline = camp.tagline || campContentPlaceholder.tagline;
@@ -307,14 +299,14 @@ function renderCampPage() {
   const schedule = camp.schedule || campContentPlaceholder.schedule;
   const gallery = camp.gallery || campContentPlaceholder.gallery;
 
-  /* Update the browser tab title so the camp name is visible in history and bookmarks. */
-  document.title = `${camp.name} | ${category.name} | CampGrids`;
+  /* Update the browser tab title so the camp name and its group are visible in history and bookmarks. */
+  document.title = `${camp.name} | ${group.label} | CampGrids`;
 
-  /* Build the page hero: the category name, the camp name, its summary line, and the short facts row. */
+  /* Build the page hero: the group name, the camp name, its summary line, and the short facts row. */
   const hero = makeEl('header', 'pageHero campHero');
   const heroCopy = makeEl('div', 'pageHeroCopy');
   heroCopy.append(
-    makeEl('p', 'eyebrow', category.name),
+    makeEl('p', 'eyebrow', group.label),
     makeEl('h1', '', camp.name),
     makeEl('p', 'pageLede', tagline)
   );
@@ -380,11 +372,11 @@ function renderCampPage() {
   gridLink.href = 'campgrids.html';
   nextLinks.appendChild(gridLink);
 
-  /* Add a link to each of the other camps in the same category, so visitors can compare them quickly. */
-  category.camps
+  /* Add a link to each of the other camps in the same group, so visitors can compare them quickly. */
+  group.camps
     .filter((entry) => entry.id !== camp.id)
     .forEach((entry) => {
-      const anchor = makeEl('a', 'quickLink qlPurple', `${category.name}: ${entry.name}`);
+      const anchor = makeEl('a', 'quickLink qlPurple', entry.name);
       anchor.href = campHref(entry.id);
       nextLinks.appendChild(anchor);
     });
@@ -393,24 +385,22 @@ function renderCampPage() {
   main.appendChild(next);
 }
 
-/* This fills the camp category cards on the homepage, so the homepage always matches the camp menu. */
-function renderCampCategoryCards() {
+/* This fills the camp cards on the homepage, so the homepage always matches the camp menu. */
+function renderCampCards() {
   /* Find the container. Pages without it simply skip this step. */
-  const host = document.getElementById('campCategoryCards');
+  const host = document.getElementById('campCards');
   if (!host) return;
 
-  /* Build one card for each camp category, listing the camps it contains. */
-  campCategories.forEach((category) => {
+  /* Build one card for each MSI camp. */
+  msiCamps.forEach((camp) => {
     const card = makeEl('article', 'categoryCard');
-    card.append(makeEl('h3', '', category.name), makeEl('p', 'sectionText', category.blurb));
+    card.append(makeEl('h3', '', camp.name), makeEl('p', 'sectionText', camp.blurb));
 
-    /* List the camps in this category as links straight into their pages. */
+    /* The card ends with a link into that camp's page. */
     const list = makeEl('div', 'categoryCardLinks');
-    category.camps.forEach((camp) => {
-      const anchor = makeEl('a', 'categoryCardLink', camp.name);
-      anchor.href = campHref(camp.id);
-      list.appendChild(anchor);
-    });
+    const anchor = makeEl('a', 'categoryCardLink', `Visit ${camp.name}`);
+    anchor.href = campHref(camp.id);
+    list.appendChild(anchor);
 
     card.appendChild(list);
     host.appendChild(card);
@@ -420,4 +410,4 @@ function renderCampCategoryCards() {
 /* These lines run on every page that loads this file. Each function checks for its own container first, so a page only gets the pieces it actually has room for. */
 renderSiteNav();
 renderCampPage();
-renderCampCategoryCards();
+renderCampCards();
