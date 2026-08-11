@@ -7,7 +7,10 @@
   <title>CampGrids Process</title>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body class="processPage">
+<body class="processPage" data-nav="">
+  <!-- This empty container is filled by site.js with the shared navigation bar used on every page. -->
+  <div id="siteNav"></div>
+
   <!-- Process page header. -->
   <header class="siteHeader processHeader">
     <div class="headerCopy">
@@ -21,7 +24,7 @@
   <nav class="quickLinks" aria-label="Process links">
     <span class="quickLinksLabel">Process Links</span>
     <div class="quickLinksList">
-      <a class="quickLink qlBlue" href="index.html">Return to Interface</a>
+      <a class="quickLink qlBlue" href="campgrids.html">Return to Interface</a>
     </div>
   </nav>
 
@@ -111,5 +114,8 @@
   <footer>
     <p>Camp Grids | Museum of Science and Industry</p>
   </footer>
+
+  <!-- site.js builds the navigation bar at the top of this page. -->
+  <script src="site.js"></script>
 </body>
 </html>

@@ -28,11 +28,19 @@ These diagrams show the intended flow of the project. They are the general workf
 
 ## Main Files
 
-`index.html` contains the page structure and the empty containers that JavaScript fills.
+`index.html` is the homepage. It introduces the site and lists the camp categories.
+
+`campgrids.html` is the project resource page. It contains the empty containers that `script.js` fills with the category cards.
+
+`camp.html` is the shared template for every camp page. The camp id in the address, such as `camp.html?camp=mini-makers-1`, decides which camp is shown.
+
+`about.html` explains what the site is and how its parts fit together.
+
+`site.js` holds the navigation bar, the external link list, the camp menu structure, and the camp page and gallery rendering.
 
 `styles.css` controls the layout, card styling, belt colors, quick links, process page, and placeholder image slots.
 
-`script.js` contains the quick links, generated `campData`, and the rendering logic for cards, belts, sections, and rows.
+`script.js` contains the generated `campData` and the rendering logic for cards, belts, sections, and rows on `campgrids.html`.
 
 `process.html` explains the workbook sync process with sample screenshots.
 
@@ -54,7 +62,7 @@ updateInterface.bat "Restored_CampGrids_27-06-26.xlsx"
 
 The batch file requires a workbook argument on purpose. That makes it harder to accidentally rebuild the site from the wrong file.
 
-After the command finishes, open or refresh `index.html`.
+After the command finishes, open or refresh `campgrids.html`.
 
 ## Image Naming
 
@@ -143,7 +151,7 @@ If that image is replaced with a new file using the same name, the header will u
 1. Add the image files to `assets/`.
 2. Make sure the filenames follow the naming rules above.
 3. Run `updateInterface.bat "YourWorkbook.xlsx"`.
-4. Refresh `index.html`.
+4. Refresh `campgrids.html`.
 
 If an image does not match a category or belt code, the site keeps using `assets/placeholder.jpg` for that spot. That fallback is intentional, so missing images do not break the page.
 
@@ -181,7 +189,7 @@ Add new projects in the workbook, not directly in the generated `campData` block
 4. Add a workbook hyperlink if the project has a link.
 5. Save the workbook.
 6. Run `updateInterface.bat "YourWorkbook.xlsx"`.
-7. Refresh `index.html`.
+7. Refresh `campgrids.html`.
 
 ## Interface Notes
 

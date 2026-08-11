@@ -3,13 +3,7 @@
 /* Shared image slot used anywhere a card, quick link, or project row needs a visual. */
 const placeholderSrc = 'assets/placeholder.jpg';
 
-/* This list controls the shortcut buttons at the top of the page. Each item has a label: the words shown on the button, href: the page or document the button opens, color: the CSS color class used for the button */
-const quickLinks = [
-  { label: 'Camp Portal', href: 'https://sites.google.com/view/fablabcamps/home', colorClass: 'qlBlue' },
-  { label: 'Camp Grid Sheet', href: 'https://docs.google.com/spreadsheets/d/13XSBDHuYkVl0Fgng4vzA6WdHMrDKTD67eLoiP7Y3z4E/edit?usp=sharing', colorClass: 'qlPurple' },
-  { label: 'TinkerCAD Portal', href: 'http://www.tinkercad.com/joinclass/HQPGBBSGD', colorClass: 'qlTeal' },
-  { label: 'Scratch Usernames', href: 'https://docs.google.com/spreadsheets/d/1Xmc2GbvR3rrxGoHHxbuT-zOhzrYbOokWfGLSPpNzNk0/edit?usp=sharing', colorClass: 'qlBlue' }
-];
+/* The shortcut buttons at the top of this page come from the externalLinks list in site.js, which also fills the External Links menu in the navigation bar. That keeps one list of outside links for the whole site, so campgrids.html must load site.js before this file. */
 
 /* Curriculum data: each category has a name, color, description, belt sections, project titles, links, and resource types. Add new projects in the workbook, then run updateInterface.bat to rebuild this block. */
 const campData = [
@@ -7123,48 +7117,98 @@ function beltClassName(beltId) {
   return `belt${beltId.charAt(0).toUpperCase()}${beltId.slice(1)}`;
 }
 
-/* This turns a resource type like "video" into a CSS class like "projectVideo". */
-function projectTypeClassName(type) {
-  return `project${type.charAt(0).toUpperCase()}${type.slice(1)}`;
+/* This turns a resource type like "video" into a CSS class like "itemVideo". */
+function itemTypeClassName(type) {
+  return `item${type.charAt(0).toUpperCase()}${type.slice(1)}`;
 }
 
-/* This builds one clickable resource or video row so grouped and ungrouped items look exactly the same. */
-function createProjectRow(item) {
-  /* Create the project link row. The project type class controls the consistent resource or video label styling. */
-  const anchor = el('a', `project ${projectTypeClassName(item.type)}`);
+/* The group heading already says the project name, so each button only needs the part of the title that is different, such as "Instructions" or "Video". This strips the repeated group name off the front of the item title. */
+function itemButtonLabel(item, groupTitle) {
+  /* Start from the full item title, such as "Angel Fish: Instructions". */
+  const title = item.title || '';
 
-  /* Use the item's link when present, otherwise keep the row on the current page. */
+  /* When the title starts with the group name, remove that name plus any colon or dash that follows it. */
+  if (groupTitle && title.toLowerCase().startsWith(groupTitle.toLowerCase())) {
+    const remainder = title.slice(groupTitle.length).replace(/^[\s:\-\u2013\u2014]+/, '').trim();
+    /* Use what is left only when there is something left. A lone resource whose title matches its group name leaves nothing behind. */
+    if (remainder) return remainder;
+  }
+
+  /* When the title is the same as the group name, fall back to the item type so the button still says what it opens. */
+  if (groupTitle && title.toLowerCase() === groupTitle.toLowerCase()) {
+    return item.type === 'video' ? 'Video' : 'Resource';
+  }
+
+  /* Numbered parts have group names like "Part 1" that do not appear in the item title, so this takes whatever follows the last colon instead, turning "1. Make a Whale: Instructions" into "Instructions". */
+  if (title.includes(':')) {
+    const tail = title.slice(title.lastIndexOf(':') + 1).trim();
+    if (tail) return tail;
+  }
+
+  /* Anything else keeps its own title, which covers items that do not follow the "Name: Part" pattern. */
+  return title;
+}
+
+/* This draws the small icon used by the icon button layout: a pencil for resources and a play arrow for videos. SVG elements need createElementNS instead of createElement, which is why this does not use the el helper. */
+function createItemIcon(type) {
+  /* The SVG namespace tells the browser to build a drawing element rather than a normal HTML element. */
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('class', 'itemIcon');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+
+  /* Pick the shape for this item type. Videos get a play arrow and everything else gets a pencil. */
+  const path = document.createElementNS(ns, 'path');
+  path.setAttribute('fill', 'currentColor');
+  path.setAttribute('d', type === 'video'
+    ? 'M8 5v14l11-7z'
+    : 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z');
+
+  svg.appendChild(path);
+  return svg;
+}
+
+/* Icon buttons only work when the icons inside a group are different from each other. A group holding two resources would show two identical pencils, so this checks whether every item in the group has its own type. */
+function groupTypesAreDistinct(items) {
+  const types = items.map((item) => item.type);
+  return types.length === new Set(types).size;
+}
+
+/* This builds one resource or video button. showIcon adds the pencil or play drawing, and hideLabel takes the words off the screen while leaving them readable by screen readers. */
+function createItemButton(item, groupTitle, showIcon, hideLabel) {
+  /* Create the button. It is a link because it opens a resource, and the type class controls its color. */
+  const anchor = el('a', `itemButton ${itemTypeClassName(item.type)}`);
+
+  /* Use the item's link when present, otherwise keep the button on the current page. */
   anchor.href = item.href || '#';
   setExternal(anchor);
 
-  /* Add an image slot only for resources, because video rows should stay text-only instead of showing a placeholder. */
-  if (item.type === 'resource') anchor.appendChild(placeholder('projectImage', `${item.title} image`, item.image));
+  /* Work out the short label, such as "Instructions" or "Video". */
+  const label = itemButtonLabel(item, groupTitle);
 
-  /* Create the text area for the row: title on top, type label below. */
-  const copy = el('span', 'projectCopy');
-  copy.append(el('span', 'projectName', item.title), el('span', 'projectType', item.type));
+  /* The full title is used for the hover tooltip and for assistive technology, so nothing is lost when only an icon is visible. */
+  anchor.title = item.title;
+  anchor.setAttribute('aria-label', item.title);
 
-  /* Put the text area into the link, then return the completed row to whichever section is building it. */
-  anchor.appendChild(copy);
+  /* Icon buttons show the drawing first. Text buttons stay text-only, which is what makes the two layouts different. */
+  if (showIcon) anchor.appendChild(createItemIcon(item.type));
+
+  /* The label is always added. When it is hidden, CSS takes it off the screen while leaving it readable by screen readers. */
+  anchor.appendChild(el('span', hideLabel ? 'itemButtonLabel visuallyHidden' : 'itemButtonLabel', label));
+
+  /* Return the finished button to whichever group is building it. */
   return anchor;
 }
 
-/* This writes item counts in normal English, so one independent resource says "1 item" instead of "1 items". */
-function itemCountLabel(count) {
-  /* Convert missing or unusual count values into a number so the label still renders predictably. */
-  const total = Number(count) || 0;
-
-  /* Return the count with the correct singular or plural word. */
-  return `${total} ${total === 1 ? 'item' : 'items'}`;
-}
-
-/* This builds the quickLink buttons at the top of the page. It looks for the empty <div id="quickLinks"></div> in index.html, then loops through the quickLinks list and adds one button for each item. */
+/* This builds the quickLink buttons at the top of the page. It looks for the empty <div id="quickLinks"></div> in campgrids.html, then loops through the shared externalLinks list from site.js and adds one button for each item. */
 function renderQuickLinks() {
-  /* Find the quickLinks container from index.html. If this id changes in the HTML, this line must change too. */
+  /* Find the quickLinks container from campgrids.html. If this id changes in the HTML, this line must change too. */
   const nav = document.getElementById('quickLinks');
 
-  /* Go through each shortcut in quickLinks and build a matching clickable link. */
-  quickLinks.forEach((link) => {
+  /* Go through each shortcut in externalLinks and build a matching clickable link. */
+  externalLinks.forEach((link) => {
     /* Create an <a> link and give it two classes: quickLink gives it the button shape, and qlColor gives it the color. */
     const anchor = el('a', `quickLink ${link.colorClass}`);
 
@@ -7180,13 +7224,78 @@ function renderQuickLinks() {
   });
 }
 
-/* This builds every category card on the page. It looks for <main id="categoryGrid"></main> in index.html, then uses the campData list to create cards, belt sections, and project/resource rows. */
+/* Both card layouts read the same three text fields on a category: purpose, purposeExample, and careers. Categories that do not carry their own wording yet fall back to these obvious placeholders, so it is easy to see at a glance which entries still need real writing. */
+const categoryInfoPlaceholder = {
+  purpose: 'Placeholder purpose text. Replace this with what campers actually practice, make, and use in this category.',
+  example: 'Placeholder example. Replace this with one concrete question a camper could investigate, such as how a paper plane shape and size affect its flight.',
+  careers: 'Placeholder careers text. Replace this with the fields, job titles, and companies that use these skills.'
+};
+
+/* The two purpose and careers layouts alternate down the page, so this picks one from the card position in campData. Even positions get the stacked layout and odd positions get the two-column layout. */
+function categoryInfoStyle(index) {
+  return index % 2 === 0 ? 'infoStacked' : 'infoColumns';
+}
+
+/* The two resource button layouts alternate the same way, using the same card position. Even positions get text buttons and odd positions get icon buttons, so a category always pairs the stacked purpose layout with text buttons, or the two-column purpose layout with icon buttons. */
+function categoryItemStyle(index) {
+  return index % 2 === 0 ? 'groupTextButtons' : 'groupIconButtons';
+}
+
+/* This builds one labelled block inside the purpose and careers area, such as the Purpose block or the Careers block. The example line is optional and is only passed in by the stacked layout. */
+function createInfoBlock(label, body, example) {
+  /* Create the block container that holds the small heading and its text. */
+  const block = el('div', 'infoBlock');
+
+  /* Add the small uppercase heading and the main sentence for this block. */
+  block.append(el('span', 'infoLabel', label), el('p', 'infoText', body));
+
+  /* Only the stacked layout passes an example, so skip this part when the example is empty. */
+  if (example) {
+    /* Create the example line and give the leading word its own span so CSS can emphasize it. */
+    const exampleLine = el('p', 'infoExample');
+    exampleLine.append(el('span', 'infoExampleLead', 'Example: '), document.createTextNode(example));
+    block.appendChild(exampleLine);
+  }
+
+  /* Return the finished block so the layout can place it. */
+  return block;
+}
+
+/* This builds the purpose and careers area that sits under the description inside an opened card. The index decides which of the two layouts this card uses. */
+function createCategoryInfo(category, index) {
+  /* Work out which layout this card gets, then create the container that carries both the shared class and the layout class. */
+  const style = categoryInfoStyle(index);
+  const info = el('section', `cardInfo ${style}`);
+
+  /* The stacked layout uses the longer headings and shows the example line. The two-column layout uses short headings and no example. */
+  const stacked = style === 'infoStacked';
+
+  /* Build the purpose block, falling back to placeholder wording whenever the category has none of its own yet. */
+  const purpose = createInfoBlock(
+    stacked ? 'Purpose & Uses' : 'Purpose',
+    category.purpose || categoryInfoPlaceholder.purpose,
+    stacked ? category.purposeExample || categoryInfoPlaceholder.example : ''
+  );
+
+  /* Build the careers block the same way. Only the heading changes between the two layouts. */
+  const careers = createInfoBlock(
+    stacked ? 'Careers, Fields & Companies' : 'Careers',
+    category.careers || categoryInfoPlaceholder.careers,
+    ''
+  );
+
+  /* Put both blocks into the container and hand the finished area back to the card builder. */
+  info.append(purpose, careers);
+  return info;
+}
+
+/* This builds every category card on the page. It looks for <main id="categoryGrid"></main> in campgrids.html, then uses the campData list to create cards, belt sections, and project/resource rows. */
 function renderCards() {
-  /* Find the empty card grid from index.html. All generated category cards will be placed inside this element. */
+  /* Find the empty card grid from campgrids.html. All generated category cards will be placed inside this element. */
   const grid = document.getElementById('categoryGrid');
 
-  /* Loop through every category from the workbook data. One category becomes one expandable card. */
-  campData.forEach((category) => {
+  /* Loop through every category from the workbook data. One category becomes one expandable card. The position is kept because it decides which purpose and careers layout the card uses. */
+  campData.forEach((category, index) => {
     /* Create the outer card container. The CSS variable --categoryColor gives this specific card its accent color. */
     const card = el('article', 'card');
     card.style.setProperty('--categoryColor', category.color);
@@ -7217,6 +7326,13 @@ function renderCards() {
     const intro = el('p', 'cardDescription', category.description);
     dropdown.appendChild(intro);
 
+    /* Add the purpose and careers area right below the description, using whichever of the two layouts this card position calls for. */
+    dropdown.appendChild(createCategoryInfo(category, index));
+
+    /* Work out which resource button layout this category uses, so every group inside it stays consistent. */
+    const itemStyle = categoryItemStyle(index);
+    const iconOnly = itemStyle === 'groupIconButtons';
+
     /* Loop through each belt in this category. Empty belt levels are skipped so the page does not show empty sections. */
     category.belts.forEach((belt) => {
       const groups = belt.groups && belt.groups.length ? belt.groups : [{ id: 'resources', title: 'Resources', items: belt.items || [], count: belt.count || 0 }];
@@ -7242,25 +7358,28 @@ function renderCards() {
       groups.forEach((group) => {
         if (!group.items || !group.items.length) return;
 
-        /* Create the wrapper that keeps independent resources and multi-item series aligned consistently inside the belt. */
-        const groupSection = el('section', `resourceGroup ${group.count === 1 ? 'singleItemGroup' : 'seriesGroup'}`);
+        /* Create the wrapper that keeps independent resources and multi-item series aligned consistently inside the belt. The layout class decides whether this group shows text buttons or icon buttons. */
+        const groupSection = el('section', `resourceGroup ${group.count === 1 ? 'singleItemGroup' : 'seriesGroup'} ${itemStyle}`);
 
-        /* Create the rectangular heading for the part, series, or independent one-item section. */
+        /* Create the rectangular heading for the part, series, or independent one-item section. It shows only the project name; the item count was removed because the buttons underneath already show how many there are. */
         const groupHeading = el('div', 'groupHeading');
-        groupHeading.append(el('span', 'groupName', group.title), el('span', 'groupCount', itemCountLabel(group.count)));
+        groupHeading.appendChild(el('span', 'groupName', group.title));
         groupSection.appendChild(groupHeading);
 
-        /* Create the visible row list for the resources and videos inside this specific group. */
-        const groupList = el('div', 'groupList');
+        /* Create the row of buttons for the resources and videos inside this specific group. */
+        const groupButtons = el('div', 'groupButtons');
 
-        /* Loop through every resource or video in this group and create one clickable row for each item. */
+        /* In the icon layout the words are hidden, but only when each item in this group has a different icon. A group with two resources keeps its labels so the buttons stay tellable apart. */
+        const hideLabels = iconOnly && groupTypesAreDistinct(group.items);
+
+        /* Loop through every resource or video in this group and create one button for each item. */
         group.items.forEach((item) => {
-          /* Add the completed project row into this rectangular group section. */
-          groupList.appendChild(createProjectRow(item));
+          /* Add the completed button into this rectangular group section. */
+          groupButtons.appendChild(createItemButton(item, group.title, iconOnly, hideLabels));
         });
 
-        /* Add the grouped rows to the section, then add the section to the belt list. */
-        groupSection.appendChild(groupList);
+        /* Add the buttons to the section, then add the section to the belt list. */
+        groupSection.appendChild(groupButtons);
         list.appendChild(groupSection);
       });
 

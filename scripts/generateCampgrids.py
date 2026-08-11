@@ -73,6 +73,18 @@ descriptions = {
     "3D Pen": "Draw, repair, and sculpt with a handheld 3D pen.",
 }
 
+# These fill the "Purpose" block inside an opened category card. Any category left out here, or left as an empty string, falls back to the visible placeholder wording in script.js.
+purposes = {
+}
+
+# These fill the example line under the purpose text. Only the stacked layout (style 1) shows this line, so categories using the two-column layout can be left out.
+purposeExamples = {
+}
+
+# These fill the "Careers" block inside an opened category card. Use them to list fields, job titles, and companies that use the skills in that category.
+careers = {
+}
+
 
 # This normalizes spreadsheet text so quotes, dashes, extra spaces, and hidden Unicode do not break the generated JavaScript.
 def cleanText(value: str) -> str:
@@ -360,6 +372,9 @@ def buildData(rows: list[tuple[int, dict[int, dict[str, str]]]]) -> list[dict]:
             "id": slug(name),
             "name": name,
             "description": descriptions.get(name, "Camp project resources and activities."),
+            "purpose": purposes.get(name, ""),
+            "purposeExample": purposeExamples.get(name, ""),
+            "careers": careers.get(name, ""),
             "color": categoryAccentColor,
             "image": categoryImage(assets, name),
             "belts": [{"name": belt, "id": slug(belt), "items": []} for belt in belts],

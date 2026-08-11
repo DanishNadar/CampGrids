@@ -38,5 +38,5 @@ if errorlevel 1 (
 )
 
 echo.
-echo Update complete. Open or refresh index.html to see the latest frontend content.
+echo Update complete. Open or refresh campgrids.html to see the latest frontend content.
 pause

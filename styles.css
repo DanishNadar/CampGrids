@@ -35,6 +35,166 @@ a {
   color: inherit;
 }
 
+/* This styles the shared navigation bar that site.js builds at the top of every page. It stays pinned to the top of the window as the visitor scrolls. */
+.siteNavBar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--paper);
+  border-bottom: 3px solid #e6531f;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+}
+
+/* This keeps the navigation contents lined up with the rest of the page content instead of touching the window edges. */
+.siteNavRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* This styles the site name on the left of the navigation bar, which also links back to the homepage. */
+.navBrand {
+  font-size: 1.12rem;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+}
+
+/* This pushes the tabs to the right side of the bar and keeps them in one row. */
+.siteNavTabs {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  margin-left: auto;
+}
+
+/* This styles every top-level tab, whether it is a plain link like Home or a button that opens a dropdown. */
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 58px;
+  padding: 0 15px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -3px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* This gives the tabs a clear hover and keyboard focus state. */
+.navLink:hover,
+.navLink:focus-visible {
+  color: #c2410c;
+  border-bottom-color: #f3b39c;
+}
+
+/* This marks the tab for the page the visitor is already on. */
+.navCurrent {
+  color: #c2410c;
+  border-bottom-color: #e6531f;
+}
+
+/* This is the small arrow on tabs that open a dropdown. The letter "v" is used in the JavaScript and CSS turns it into an arrow. */
+.navCaret {
+  font-size: 0.7rem;
+  transition: transform 0.2s ease;
+}
+
+/* This flips the arrow while its dropdown is open. */
+.navMenu.open .navCaret {
+  transform: rotate(180deg);
+}
+
+/* This holds a tab and its dropdown together so the panel can be positioned directly underneath the tab. */
+.navMenu {
+  position: relative;
+  display: flex;
+}
+
+/* This is the dropdown panel. It is hidden until JavaScript adds the open class to the tab wrapper. */
+.navPanel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  display: none;
+  gap: 3px;
+  min-width: 230px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+
+/* This reveals the dropdown when the tab is open. */
+.navMenu.open .navPanel {
+  display: grid;
+}
+
+/* The MSI Camps dropdown is wider because it shows one column per camp category. */
+.navPanelWide {
+  grid-template-columns: repeat(3, minmax(196px, 1fr));
+  gap: 20px;
+  padding: 18px;
+}
+
+/* This is one camp category column inside the MSI Camps dropdown. */
+.navColumn {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+}
+
+/* This styles the camp category name at the top of a dropdown column. */
+.navColumnTitle {
+  color: #c2410c;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* This styles the short sentence under a camp category name. */
+.navColumnBlurb {
+  margin-bottom: 7px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+/* This styles each individual link inside a dropdown panel. */
+.navPanelLink {
+  padding: 7px 9px;
+  border-radius: 7px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+/* This highlights a dropdown link on hover or keyboard focus. */
+.navPanelLink:hover,
+.navPanelLink:focus-visible {
+  background: #f8fafc;
+  color: #c2410c;
+}
+
+/* This marks the camp page the visitor is already reading. */
+.navPanelLink.navCurrent {
+  border-bottom: 0;
+  background: #fff1ea;
+}
+
 /* This styles the large top banner. The warm overlay keeps the title readable while the body background image continues behind the page. */
 .siteHeader {
   display: flex;
@@ -288,6 +448,69 @@ a {
   background: #f8fafc;
 }
 
+/* This is the purpose and careers area under the description of an opened card. Two layouts share these base rules: infoStacked lists the blocks full width, and infoColumns places them next to each other. */
+.cardInfo {
+  display: grid;
+  gap: 10px;
+  padding: 0 16px 14px;
+  background: #f8fafc;
+}
+
+/* Style 1: each block fills the whole card width, and the blocks stack one above the other. */
+.cardInfo.infoStacked {
+  grid-template-columns: 1fr;
+}
+
+/* Style 2: the two blocks sit side by side in equal columns. */
+.cardInfo.infoColumns {
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+}
+
+/* This styles one labelled block inside the purpose and careers area. The left edge uses --categoryColor so the block matches the card it belongs to. */
+.infoBlock {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--categoryColor);
+  border-radius: 6px;
+  background: var(--paper);
+}
+
+/* This styles the small heading above each block, such as "Purpose" or "Careers, Fields & Companies". */
+.infoLabel {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--categoryColor);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* This styles the main sentence inside each block. */
+.infoText {
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+/* This styles the optional example line. Only the stacked layout includes one. */
+.infoExample {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/* This emphasizes the leading "Example:" word so the sample question reads as a separate thought. */
+.infoExampleLead {
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 /* This separates one belt section from the next inside an opened card. */
 .beltSection {
   border-top: 1px solid var(--line);
@@ -360,7 +583,7 @@ a {
 
 /* This wraps one automatically detected part or series inside an opened belt. */
 .resourceGroup {
-  padding: 8px 12px 0;
+  padding: 8px 12px 12px;
   border-top: 1px solid rgba(15, 23, 42, 0.08);
 }
 
@@ -389,20 +612,12 @@ a {
   min-width: 0;
 }
 
-/* This styles the item count inside a group section heading. */
-.groupCount {
-  color: rgba(15, 23, 42, 0.72);
-  font-size: 0.72rem;
-  font-weight: 900;
-}
-
-/* This keeps the rows inside each generated group visible because parts and series are sections, not dropdowns. */
-.groupList {
-  display: grid;
+/* This lays out the resource and video buttons under a group heading. They sit in one row and wrap onto a new line when a group has several items. */
+.groupButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-top: 8px;
-  overflow: hidden;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 8px;
 }
 
 /* These lighter colors make group section headings feel related to their parent belt without being as strong. */
@@ -415,72 +630,89 @@ a {
 .beltBrown .groupHeading { background: #fed7aa; }
 .beltBlack .groupHeading { background: #e5e7eb; }
 
-/* This styles each project row. Each row is a link with a image slot on the left and text on the right. */
-.project {
-  display: flex;
+/* This styles each resource or video button under a group heading. Both layouts share this base, and the layout classes below change what goes inside it. */
+.itemButton {
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
-  min-height: 66px;
-  padding: 10px 14px;
-  color: var(--ink);
-  text-decoration: none;
-  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 2px solid rgba(15, 23, 42, 0.14);
+  border-radius: 10px;
   background: white;
-  transition: background 0.15s ease;
-}
-
-/* This keeps video text aligned with resource text even though video rows do not show an image placeholder. */
-.projectVideo {
-  padding-left: calc(14px + 58px + 12px);
-}
-
-/* This changes a project row's background when hovered or focused. It helps users see which resource they are about to open. */
-.project:hover,
-.project:focus-visible {
-  background: #f1f5f9;
-}
-
-/* This stacks the project title above the small project type label. */
-.projectCopy {
-  display: grid;
-  gap: 7px;
-  min-width: 0;
-}
-
-/* This styles the main project title in each row. */
-.projectName {
-  font-size: 0.93rem;
+  color: var(--ink);
+  font-size: 0.86rem;
   font-weight: 900;
-  line-height: 1.25;
+  text-decoration: none;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.07);
+  transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
 }
 
-/* This styles the small label under the project title. The interface only uses resource and video labels. */
-.projectType {
-  width: fit-content;
-  padding: 2px 7px;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 900;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+/* This gives every button a small lift on hover or keyboard focus so it is clear the button can be opened. */
+.itemButton:hover,
+.itemButton:focus-visible {
+  transform: translateY(-1px);
+  background: #f8fafc;
 }
 
-/* This gives resource rows one consistent label color, including setup documents like TinkerCAD setup. */
-.projectResource .projectType {
+/* Resource buttons keep the blue used by the old resource label, including setup documents like TinkerCAD setup. */
+.itemResource {
+  border-color: #bfdbfe;
   color: #1e3a8a;
-  background: #bfdbfe;
 }
 
-/* This gives video rows a stronger label so the type flip is easy to notice. */
-.projectVideo .projectType {
+.itemResource:hover,
+.itemResource:focus-visible {
+  border-color: #3b82f6;
+}
+
+/* Video buttons keep the orange used by the old video label, so the type is still obvious at a glance. */
+.itemVideo {
+  border-color: #fed7aa;
   color: #7c2d12;
-  background: #fed7aa;
+}
+
+.itemVideo:hover,
+.itemVideo:focus-visible {
+  border-color: #f97316;
+}
+
+/* This sizes the pencil and play icons inside the icon button layout. */
+.itemIcon {
+  width: 22px;
+  height: 22px;
+}
+
+/* Style 2: icon buttons are wider and taller than text buttons because the icon is the only thing showing. */
+.groupIconButtons .itemButton {
+  min-width: 76px;
+  min-height: 54px;
+  padding: 10px 18px;
+}
+
+/* The icon itself is larger in the icon layout so it stays easy to recognize. */
+.groupIconButtons .itemIcon {
+  width: 26px;
+  height: 26px;
+}
+
+/* This hides text from the screen while leaving it available to screen readers. Icon buttons use it so the resource name is still announced. */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  border: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
 }
 
 /* This is the shared style for all image slots. The dashed border keeps each image area clear and consistent. */
 .imagePlaceholder,
 .cardImage,
-.projectImage,
 .quickLinkImage {
   display: inline-block;
   flex: 0 0 auto;
@@ -494,12 +726,6 @@ a {
 .cardImage {
   width: 64px;
   height: 64px;
-}
-
-/* This sets the smaller image slot size used on project rows. */
-.projectImage {
-  width: 44px;
-  height: 44px;
 }
 
 /* This sets the tiny image slot size used inside quickLink buttons. The grey border keeps the placeholder visible on white buttons. */
@@ -654,7 +880,307 @@ footer {
 }
 
 /* This media query changes the layout on medium screens, such as tablets. The card grid becomes two columns, and the intro section stacks more naturally. */
+/* This is the white content panel used by the homepage, the about page, and the camp pages. It keeps standard page content readable over the site background image. */
+.pageMain {
+  max-width: 1180px;
+  margin: 26px auto 0;
+  padding: 10px 32px 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+
+/* This is the smaller page banner used by pages that do not need the full photo header, such as the about page. */
+.pageHero {
+  max-width: 1180px;
+  margin: 26px auto 0;
+  padding: 32px 32px 28px;
+  border: 1px solid var(--line);
+  border-top: 6px solid #e6531f;
+  border-radius: 12px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+
+/* When a hero is built inside the white content panel, as on camp pages, it drops its own panel styling so it does not look like a box inside a box. */
+.pageMain > .pageHero {
+  margin: 0;
+  padding: 22px 0 6px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+/* This styles the main title inside a page banner. */
+.pageHero h1 {
+  margin: 7px 0 12px;
+  font-size: clamp(1.9rem, 4.4vw, 2.9rem);
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+/* Small labels inside page banners and section headings use the MSI orange so they read as labels, not body text. */
+.pageHero .eyebrow,
+.pageSection .eyebrow {
+  color: #c2410c;
+}
+
+/* This styles the opening sentence under a page title. */
+.pageLede {
+  max-width: 70ch;
+  color: var(--muted);
+  font-size: 1.04rem;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+/* This separates one content section from the next inside the white page panel. */
+.pageSection {
+  padding: 30px 0;
+  border-top: 1px solid var(--line);
+}
+
+/* The first section on a page has nothing above it, so it does not need a divider line. */
+.pageSection:first-child {
+  border-top: 0;
+}
+
+/* This styles section headings on the standard pages. */
+.pageSection h2 {
+  margin: 6px 0 12px;
+  font-size: clamp(1.45rem, 3.2vw, 2.05rem);
+  font-weight: 900;
+}
+
+/* This styles the smaller headings used inside cards and blocks. */
+.pageSection h3 {
+  margin-bottom: 6px;
+  font-size: 1.04rem;
+  font-weight: 900;
+}
+
+/* This styles ordinary paragraph text on the standard pages. The max-width keeps lines short enough to read comfortably. */
+.sectionText {
+  max-width: 70ch;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 0.97rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+/* This is the row of buttons used under an introduction, such as the homepage calls to action. */
+.homeActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* This lays out the camp category cards on the homepage and the explanation blocks on the homepage and about page. */
+.categoryCards,
+.homeExplainerGrid,
+.aboutGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 16px;
+}
+
+/* This styles one camp category card on the homepage. */
+.categoryCard {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-top: 6px solid #e6531f;
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.10);
+}
+
+/* This styles the simpler blocks used for the homepage explanation and the about page sections. */
+.homeExplainerItem,
+.aboutItem {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+/* This arranges the camp links inside a category card. */
+.categoryCardLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* This styles each camp link inside a category card as a small rounded pill. */
+.categoryCardLink {
+  padding: 6px 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #f8fafc;
+  font-size: 0.84rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+/* This highlights a camp pill on hover or keyboard focus. */
+.categoryCardLink:hover,
+.categoryCardLink:focus-visible {
+  border-color: #e6531f;
+  color: #c2410c;
+}
+
+/* This is the short facts row under a camp title: ages, length, and location. */
+.campFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+/* This styles one fact in that row. */
+.campFact {
+  display: grid;
+  gap: 2px;
+  padding: 9px 14px;
+  border: 1px solid var(--line);
+  border-left: 4px solid #e6531f;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+/* This styles the small label above a camp fact. */
+.campFactLabel {
+  color: #c2410c;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* This styles the value of a camp fact. */
+.campFactValue {
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+/* This places what campers do and how the day runs side by side on a camp page. */
+.campDetail {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
+
+/* This styles the bulleted list of camp highlights. */
+.campList {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0 18px;
+  color: var(--muted);
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+/* This styles the time label in the typical day list. */
+.campSchedule dt {
+  margin-top: 13px;
+  color: #c2410c;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* The first time label sits directly under the heading, so it does not need the extra space above. */
+.campSchedule dt:first-child {
+  margin-top: 8px;
+}
+
+/* This styles the description beside each time label in the typical day list. */
+.campSchedule dd {
+  color: var(--muted);
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+/* This is the row of links at the bottom of a camp page. */
+.campNextLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* This lays out the camp photo gallery in a grid of tiles. */
+.galleryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+/* This styles one photo tile in the gallery. */
+.galleryItem {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.10);
+}
+
+/* This keeps every gallery photo the same shape, cropping rather than stretching photos that do not match. */
+.galleryImage {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: #eef2f7;
+}
+
+/* This styles the caption area under a gallery photo. */
+.galleryCaption {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px 12px;
+}
+
+/* This styles the small label that says whether the photo shows a camp space or a camper project. */
+.galleryKind {
+  color: #c2410c;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* This styles the caption sentence under a gallery photo. */
+.galleryText {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
 @media (max-width: 980px) {
+  /* On medium screens the camp menu panel and the standard page grids drop to two columns. */
+  .navPanelWide,
+  .categoryCards,
+  .homeExplainerGrid,
+  .aboutGrid,
+  .galleryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* The two camp detail columns stack so the lists keep their full width. */
+  .campDetail {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+
   /* On medium screens, two columns give cards enough width to remain readable. */
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -690,5 +1216,57 @@ footer {
   /* Quick links align to the left on phones so wrapped buttons read naturally. */
   .quickLinksList {
     justify-content: flex-start;
+  }
+
+  /* Two columns squeeze the purpose and careers text too tightly on phones, so that layout stacks as well. */
+  .cardInfo.infoColumns {
+    grid-template-columns: 1fr;
+  }
+
+  /* On phones the navigation tabs move to their own row under the site name and scroll sideways if they do not fit. */
+  .siteNavRow {
+    gap: 0;
+    padding: 8px 16px 0;
+  }
+
+  .siteNavTabs {
+    width: 100%;
+    margin-left: 0;
+    overflow-x: auto;
+  }
+
+  /* The tabs are shorter on phones so the bar does not take over the screen. */
+  .navLink {
+    min-height: 46px;
+    padding: 0 11px;
+    white-space: nowrap;
+  }
+
+  /* Dropdowns open from the left edge on phones and are capped so they never run off the screen. */
+  .navPanel {
+    right: auto;
+    left: 0;
+    max-width: calc(100vw - 32px);
+  }
+
+  /* Every multi-column layout on the standard pages becomes a single column on phones. */
+  .navPanelWide,
+  .categoryCards,
+  .homeExplainerGrid,
+  .aboutGrid,
+  .galleryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  /* The white page panel and page banner get tighter padding on small screens. */
+  .pageMain,
+  .pageHero {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .pageMain > .pageHero {
+    padding-left: 0;
+    padding-right: 0;
   }
 }

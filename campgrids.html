@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- This head section is browser setup information. Nothing here appears as a visible card on the page, but it tells the browser what character set to use, how to size the page on phones, what title to show in the browser tab, and which CSS file controls the design. -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampGrids Resources</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-nav="camps">
+  <!-- This empty container is filled by site.js with the shared navigation bar used on every page. -->
+  <div id="siteNav"></div>
+
+  <!-- This is the large top banner of the site. The background image comes from styles.css, and the text explains what visitors can do on the page. -->
+  <header class="siteHeader">
+    <!-- This is the MSI logo shown beside the CampGrids title. -->
+    <img class="headerLogo" src="assets/MSI_Logo.png" alt="Museum of Science and Industry logo">
+
+    <!-- This text block sits inside the header. The small "eyebrow" label gives context, the h1 is the main title, and the paragraph tells visitors what they can do on this page. -->
+    <div class="headerCopy">
+      <p class="eyebrow">Museum of Science and Industry</p>
+      <h1>CampGrids</h1>
+      <p>Pick a category, choose a belt level, and open the project resource.</p>
+    </div>
+  </header>
+
+  <!-- This navigation area is the row of shortcut buttons near the top of the page. The actual buttons are added by script.js from the shared externalLinks list in site.js, so the list only has to be edited in one place. -->
+  <nav class="quickLinks" aria-label="Quick links">
+    <span class="quickLinksLabel">Quick Links</span>
+
+    <!-- This empty container is a target for JavaScript. script.js finds this exact id, "quickLinks", and fills it with the shortcut buttons listed in the externalLinks array. -->
+    <div class="quickLinksList" id="quickLinks"></div>
+  </nav>
+
+  <!-- This introduction panel appears above the category cards. It explains why the page uses cards and blank image slots instead of showing the entire spreadsheet at once. -->
+  <section class="introPanel" aria-labelledby="campGridTitle">
+    <!-- This small heading group labels the card area. The id on the h2 connects to aria-labelledby above so screen readers know what this section is called. -->
+    <div>
+      <p class="eyebrow">Project Cards</p>
+      <h2 id="campGridTitle">Choose a Category</h2>
+    </div>
+  </section>
+
+  <!-- This is where all project category cards appear. It starts empty on purpose. script.js reads the campData list, creates one card for each category, and places those cards inside this grid. -->
+  <main class="grid" id="categoryGrid" aria-label="Project categories"></main>
+
+  <!-- This button opens the automation process notes after the project cards. -->
+  <section class="automationNotesLink" aria-label="Automation notes">
+    <a class="quickLink qlRed automationNotesButton" href="process.html">
+      Automation Notes
+    </a>
+  </section>
+
+  <!-- This footer is the small closing line at the bottom of the page. It gives the site a finished ending and identifies the program. -->
+  <footer>
+    <p>Camp Grids | Museum of Science and Industry</p>
+  </footer>
+
+  <!-- site.js loads first because it holds the shared navigation and the externalLinks list that script.js needs. script.js then fills the quick links and the category cards. -->
+  <script src="site.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

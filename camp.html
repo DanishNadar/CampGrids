@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Browser setup for the camp pages. Every camp shares this one file; the camp id in the address decides which camp is shown, and site.js updates the browser tab title to match. -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Camp | CampGrids</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-nav="camps">
+  <!-- This empty container is filled by site.js with the shared navigation bar used on every page. -->
+  <div id="siteNav"></div>
+
+  <!-- This container starts empty on purpose. site.js reads the camp id from the address, finds that camp in the campCategories list, and builds the hero, overview, daily schedule, photo gallery, and closing links inside it. -->
+  <main class="pageMain" id="campPage"></main>
+
+  <!-- The closing line shared by every page on the site. -->
+  <footer>
+    <p>Camp Grids | Museum of Science and Industry</p>
+  </footer>
+
+  <!-- site.js builds both the navigation bar and the whole camp page above. -->
+  <script src="site.js"></script>
+</body>
+</html>
