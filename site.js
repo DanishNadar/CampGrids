@@ -239,11 +239,12 @@ function renderSiteNav() {
   const brand = makeEl('a', 'navBrand', 'CampGrids');
   brand.href = 'index.html';
 
-  /* Build the four tabs from the sketch: Home, the MSI Camps menu, the External Links menu, and About. */
+  /* Build the tabs: the four from the sketch, plus Resources for the project grid, which is the part of the site campers and staff use most. */
   const tabs = makeEl('div', 'siteNavTabs');
   tabs.append(
     createNavLink('Home', 'index.html', active === 'home'),
     createNavMenu('MSI Camps', createCampsPanel(currentCampId), active === 'camps'),
+    createNavLink('Resources', 'campgrids.html', active === 'resources'),
     createNavMenu('External Links', createExternalPanel(), false),
     createNavLink('About', 'about.html', active === 'about')
   );
