@@ -19,28 +19,28 @@ const msiCamps = [
     id: 'tinker-tots',
     name: 'Tinker Tots',
     grades: 'Grades 0-0',
-    location: 'Tinker Studio',
+    location: 'Unknown',
     kind: 'themed'
   },
   {
     id: 'mini-makers',
     name: 'Mini Makers',
     grades: 'Grades 0-0',
-    location: 'Crime Lab',
+    location: 'Unknown',
     kind: 'themed'
   },
   {
     id: 'young-adventurers',
     name: 'Young Adventurers',
     grades: 'Grades 0-0',
-    location: 'The Grid Zone',
+    location: 'Unknown',
     kind: 'themed'
   },
   {
     id: 'young-makers',
     name: 'Young Makers',
     grades: 'Grades 0-0',
-    location: 'Balcony: Studio A & B',
+    location: 'Unknown',
     kind: 'grid',
     blurb: 'Learn various crafting methods, gain the opportunity to use digital fabrication machines, and compete to earn the most belts in our Camp Grid curriculum.',
     overview: [
@@ -52,21 +52,21 @@ const msiCamps = [
     id: 'explorers',
     name: 'Explorers',
     grades: 'Grades 0-0',
-    location: 'The Grid Zone',
+    location: 'Unknown',
     kind: 'themed'
   },
   {
     id: 'fab-lab-makers',
     name: 'Fab Lab Makers',
     grades: 'Grades 0-0',
-    location: 'Balcony: Studio C',
+    location: 'Unknown',
     kind: 'grid'
   },
   {
     id: 'fab-lab-apprentices',
     name: 'Fab Lab Apprentices',
     grades: 'Grades 0-0',
-    location: 'Fab Lab Studio',
+    location: 'Unknown',
     kind: 'grid'
   }
 ];
@@ -94,10 +94,10 @@ const campContentPlaceholder = {
     'Placeholder overview paragraph. Replace this with what campers explore during the week, the kinds of materials and machines they use, and what makes this camp different from the others.',
   ],
   schedule: [
-    { time: 'Morning', detail: 'Placeholder schedule item. Replace with how the day opens.' },
-    { time: 'Midday', detail: 'Placeholder schedule item. Replace with the main build or activity block.' },
-    { time: 'Afternoon', detail: 'Placeholder schedule item. Replace with testing, iteration, or free build time.' },
-    { time: 'Closing', detail: 'Placeholder schedule item. Replace with clean-up, sharing, and pick-up.' }
+    { time: 'Morning', detail: 'Placeholder schedule item.' },
+    { time: 'Midday', detail: 'Placeholder schedule item.' },
+    { time: 'Afternoon', detail: 'Placeholder schedule item.' },
+    { time: 'Closing', detail: 'Placeholder schedule item.' }
   ],
   /* These four themed weeks come from the MSI website and act as the shared starting point for every themed camp. Give a camp its own themedWeeks list to replace them. */
   themedWeeks: [
