@@ -92,7 +92,6 @@ const campContentPlaceholder = {
   blurb: 'Placeholder camp summary. Replace this with one sentence describing what this camp is about.',
   overview: [
     'Placeholder overview paragraph. Replace this with what campers explore during the week, the kinds of materials and machines they use, and what makes this camp different from the others.',
-    'Placeholder second paragraph. Replace this with how the camp is paced across the days, what campers take home at the end, and anything families should know before the first morning.'
   ],
   schedule: [
     { time: 'Morning', detail: 'Placeholder schedule item. Replace with how the day opens.' },
