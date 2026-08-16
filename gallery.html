@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Browser setup for the photo gallery pages. Every gallery shares this one file; the camp id in the address decides whose photos are shown, and an optional week id narrows it to one themed activity week. -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photo gallery | CampGrids</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-nav="camps">
+  <!-- This empty container is filled by site.js with the shared navigation bar used on every page. -->
+  <div id="siteNav"></div>
+
+  <!-- This container starts empty on purpose. site.js reads the camp and week from the address and builds the hero, the photo grid, and the link back to the camp page inside it. -->
+  <main class="pageMain" id="galleryPage"></main>
+
+  <!-- The closing line shared by every page on the site. -->
+  <footer>
+    <p>Camp Grids | Museum of Science and Industry</p>
+  </footer>
+
+  <!-- site.js builds both the navigation bar and the whole gallery page above. -->
+  <script src="site.js"></script>
+</body>
+</html>

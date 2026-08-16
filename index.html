@@ -11,54 +11,23 @@
   <!-- This empty container is filled by site.js with the shared navigation bar used on every page. -->
   <div id="siteNav"></div>
 
-  <!-- The homepage banner. It names the program and says in one line what the site is for. -->
+  <!-- The homepage banner. It names the program and welcomes visitors in one line. -->
   <header class="siteHeader">
     <img class="headerLogo" src="assets/MSI_Logo.png" alt="Museum of Science and Industry logo">
     <div class="headerCopy">
       <p class="eyebrow">Museum of Science and Industry</p>
-      <h1>CampGrids</h1>
-      <p>One place for MSI camp information, camp photos, and the activities campers work through at every belt level.</p>
+      <h1>Camps</h1>
+      <p>Welcome to MSI Camps! Find your camp and explore the projects we have.</p>
     </div>
   </header>
 
-  <main class="pageMain">
-    <!-- The opening band gives visitors the two things they are most likely to want: the camps, or the activities. -->
-    <section class="pageSection homeIntro">
-      <p class="eyebrow">Start here</p>
-      <h2>Find a camp, or open the activities</h2>
-      <p class="sectionText">Camp pages describe what each camp does, how a day runs, and show photos of the camp space and camper projects. The Activities page holds every project activity, sorted by category and belt level.</p>
-      <div class="homeActions">
-        <a class="quickLink qlBlue" href="campgrids.html">Open CampGrids activities</a>
-        <a class="quickLink qlPurple" href="about.html">About this site</a>
-      </div>
-    </section>
-
-    <!-- One card per camp. site.js fills this from the same camps list that builds the MSI Camps menu, so the two never disagree. -->
+  <!-- The camp list is the whole homepage. site.js fills it from the same camps list that builds the MSI Camps menu, so the two never disagree. -->
+  <main class="pageMain homeMain">
     <section class="pageSection" aria-labelledby="campsTitle">
-      <p class="eyebrow">MSI Camps</p>
-      <h2 id="campsTitle">Our camps</h2>
-      <p class="sectionText">Pick a camp to read what it covers, how a day runs, and to see photos of the space and camper projects.</p>
-      <div class="categoryCards" id="campCards"></div>
-    </section>
+      <h2 id="campsTitle">Our Camps</h2>
 
-    <!-- A short explanation of how the activities are organized, so the belt system is not a surprise. -->
-    <section class="pageSection homeExplainer">
-      <p class="eyebrow">How activities are organized</p>
-      <h2>Categories, belts, and projects</h2>
-      <div class="homeExplainerGrid">
-        <article class="homeExplainerItem">
-          <h3>Categories</h3>
-          <p class="sectionText">Each category is one kind of making, such as Origami, Paper Flight, or Electronics.</p>
-        </article>
-        <article class="homeExplainerItem">
-          <h3>Belt levels</h3>
-          <p class="sectionText">Inside a category, projects are grouped from White Belt through Black Belt as they get more involved.</p>
-        </article>
-        <article class="homeExplainerItem">
-          <h3>Activities</h3>
-          <p class="sectionText">Each belt lists the instructions, videos, and handouts a camper needs for that activity.</p>
-        </article>
-      </div>
+      <!-- One full-width row per camp, filled by renderCampCards in site.js. -->
+      <div class="campRows" id="campCards"></div>
     </section>
   </main>
 
@@ -67,7 +36,7 @@
     <p>Camp Grids | Museum of Science and Industry</p>
   </footer>
 
-  <!-- site.js builds the navigation bar and the camp category cards above. -->
+  <!-- site.js builds the navigation bar and the camp rows above. -->
   <script src="site.js"></script>
 </body>
 </html>

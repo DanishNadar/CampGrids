@@ -28,15 +28,17 @@ These diagrams show the intended flow of the project. They are the general workf
 
 ## Main Files
 
-`index.html` is the homepage. It introduces the site and lists the camp categories.
+`index.html` is the homepage. It welcomes visitors and lists every camp as a full-width row.
 
 `campgrids.html` is the Activities page, the core of the site. It contains the empty containers that `script.js` fills with the category cards.
 
 `camp.html` is the shared template for every camp page. The camp id in the address, such as `camp.html?camp=mini-makers`, decides which camp is shown.
 
+`gallery.html` is the shared template for the photo gallery pages. It takes a camp id and an optional themed week id, such as `gallery.html?camp=mini-makers&week=circuit-benders`.
+
 `about.html` explains what the site is and how its parts fit together.
 
-`site.js` holds the navigation bar, the external link list, the camp menu structure, and the camp page and gallery rendering.
+`site.js` holds the navigation bar, the external link list, the camp lists, and the rendering for the homepage camp rows, the camp pages, and the gallery pages. Each camp has a `kind`: `themed` camps show Themed Activity Weeks, `grid` camps show The Camp Grids section, and `info` camps show neither.
 
 `styles.css` controls the layout, card styling, belt colors, quick links, process page, and placeholder image slots.
 

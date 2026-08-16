@@ -141,59 +141,31 @@ a {
   display: grid;
 }
 
-/* The MSI Camps dropdown is wider because it shows one column per camp category. */
-.navPanelWide {
-  grid-template-columns: repeat(3, minmax(196px, 1fr));
-  gap: 20px;
-  padding: 18px;
-}
-
-/* This is one camp column inside the MSI Camps dropdown. The whole column is a link, so the name and its description are one large target. */
-.navColumn {
-  display: grid;
-  align-content: start;
-  gap: 3px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  text-decoration: none;
-}
-
-/* This highlights a camp column on hover or keyboard focus. */
-.navColumn:hover,
-.navColumn:focus-visible {
-  background: #f8fafc;
-}
-
-/* This marks the camp page the visitor is already reading. */
-.navColumn.navCurrent {
-  border-bottom: 0;
-  background: #fff1ea;
-}
-
-/* This styles the camp name at the top of a dropdown column. */
-.navColumnTitle {
-  color: #c2410c;
-  font-size: 0.76rem;
+/* This styles the camp name inside a dropdown row. */
+.navPanelName {
+  font-size: 0.9rem;
   font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
-/* This styles the short sentence under a camp name. */
-.navColumnBlurb {
+/* This styles the grade levels shown beside a camp name in a dropdown row. */
+.navPanelGrades {
   color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 700;
-  line-height: 1.35;
+  font-size: 0.76rem;
+  font-weight: 800;
 }
 
-/* This styles each individual link inside a dropdown panel. */
+/* This styles each individual camp row inside a dropdown panel. The name sits on the left and the grade levels sit on the right. */
 .navPanelLink {
-  padding: 7px 9px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 10px;
   border-radius: 7px;
   font-size: 0.88rem;
   font-weight: 800;
   text-decoration: none;
+  white-space: nowrap;
 }
 
 /* This highlights a dropdown link on hover or keyboard focus. */
@@ -439,10 +411,11 @@ a {
   transform: rotate(180deg);
 }
 
-/* This hides each card's project list by default. max-height: 0 means the dropdown takes up no visible space until opened. */
+/* This hides each card's project list by default. max-height: 0 means the dropdown takes up no visible space until opened. contain: paint is needed as well: overflow: hidden only stops the collapsed rows from being drawn, but the browser still counts their full height when working out how far the page can scroll, which left a large empty gap under the footer. */
 .cardDropdown {
   max-height: 0;
   overflow: hidden;
+  contain: paint;
   transition: max-height 0.35s ease;
 }
 
@@ -581,11 +554,12 @@ a {
 .beltBrown .beltHeading { background: #92400e; color: #fff7ed; }
 .beltBlack .beltHeading { background: #111827; color: #f9fafb; }
 
-/* This wraps the project/resource rows within one belt section. */
+/* This wraps the project/resource rows within one belt section. It needs the same contain: paint as the card dropdown, so a collapsed belt inside an opened card does not add empty scrolling space either. */
 .projectList {
   display: grid;
   max-height: 0;
   overflow: hidden;
+  contain: paint;
   transition: max-height 0.28s ease;
 }
 
@@ -950,6 +924,11 @@ footer {
   line-height: 1.55;
 }
 
+/* A camp overview can run to several paragraphs, so each one after the first needs space above it. */
+.pageLede + .pageLede {
+  margin-top: 12px;
+}
+
 /* This separates one content section from the next inside the white page panel. */
 .pageSection {
   padding: 30px 0;
@@ -993,18 +972,143 @@ footer {
   margin-top: 14px;
 }
 
-/* This lays out the camp category cards on the homepage and the explanation blocks on the homepage and about page. */
-.categoryCards,
-.homeExplainerGrid,
+/* This lays out the explanation blocks on the about page. */
 .aboutGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
+  margin: 16px 0;
+}
+
+/* This styles the simpler blocks used for the about page subsections. */
+.aboutItem {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+/* The homepage is just the camp list, so its panel drops the side padding and lets the rows run edge to edge. */
+.homeMain {
+  padding-left: 0;
+  padding-right: 0;
+  overflow: hidden;
+}
+
+/* The homepage heading still needs the padding the rows give up. */
+.homeMain .pageSection > h2 {
+  padding: 0 32px;
+}
+
+/* This stacks the full-width camp rows on the homepage. */
+.campRows {
+  display: grid;
   margin-top: 16px;
 }
 
-/* This styles one camp category card on the homepage. */
-.categoryCard {
+/* This is one camp row: a photo on the left and the camp copy on the right. */
+.campRow {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  align-items: center;
+  gap: 28px;
+  padding: 24px 32px;
+}
+
+/* Rows alternate between a light band and an MSI orange band down the page. */
+.campRow:nth-child(odd) {
+  background: #eceff3;
+}
+
+.campRow:nth-child(even) {
+  background: #e6531f;
+}
+
+/* This frames the camp photo on the left of a row. */
+.campRowImage {
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--paper);
+}
+
+/* This keeps every camp thumbnail the same shape, cropping rather than stretching photos that do not match. */
+.campRowPhoto {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: #eef2f7;
+}
+
+/* This is the white text panel beside the photo. */
+.campRowCopy {
+  padding: 22px 24px;
+  background: var(--paper);
+}
+
+/* This puts the camp name and its grade levels on one line. */
+.campRowTitle {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+/* This styles the grade levels beside a camp name. */
+.campRowGrades {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+/* The row button keeps the shared quick link shape but sits under the description. */
+.campRowButton {
+  margin-top: 6px;
+  padding-left: 18px;
+}
+
+/* On the light rows the button keeps the MSI orange border. On the orange rows it switches to grey so the button still reads clearly against the band. */
+.campRow:nth-child(even) .campRowButton {
+  border-color: #cbd5e1;
+}
+
+.campRow:nth-child(even) .campRowButton:hover,
+.campRow:nth-child(even) .campRowButton:focus-visible {
+  border-color: #94a3b8;
+}
+
+/* This is the wide photo strip across the top of a camp page, above the camp name. */
+.campHeroImage {
+  overflow: hidden;
+  margin: 0 -32px;
+  border-radius: 12px 12px 0 0;
+  background: #eef2f7;
+}
+
+/* This keeps the camp hero photo a consistent wide shape on every camp page. */
+.campHeroPhoto {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 1;
+  object-fit: cover;
+}
+
+/* This lays out the themed activity week cards on camps that run themed weeks. */
+.themedWeeks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+/* This styles one themed activity week card. */
+.themedWeek {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   padding: 18px;
   border: 1px solid var(--line);
   border-top: 6px solid #e6531f;
@@ -1013,42 +1117,31 @@ footer {
   box-shadow: 0 12px 24px rgba(15, 23, 42, 0.10);
 }
 
-/* This styles the simpler blocks used for the homepage explanation and the about page sections. */
-.homeExplainerItem,
-.aboutItem {
-  padding: 16px;
+/* The gallery button sits at the bottom of its card, so cards of different text lengths still line their buttons up. */
+.themedWeekButton {
+  margin-top: auto;
+  padding-left: 18px;
+}
+
+/* This frames the placeholder team photo on the about page. */
+.aboutTeamFigure {
+  max-width: 460px;
+  margin-top: 16px;
+}
+
+/* This keeps the team photo a consistent shape. */
+.aboutTeamImage {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: #f8fafc;
+  background: #eef2f7;
+  margin-bottom: 6px;
 }
 
-/* This arranges the camp links inside a category card. */
-.categoryCardLinks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-/* This styles each camp link inside a category card as a small rounded pill. */
-.categoryCardLink {
-  padding: 6px 13px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: #f8fafc;
-  font-size: 0.84rem;
-  font-weight: 900;
-  text-decoration: none;
-}
-
-/* This highlights a camp pill on hover or keyboard focus. */
-.categoryCardLink:hover,
-.categoryCardLink:focus-visible {
-  border-color: #e6531f;
-  color: #c2410c;
-}
-
-/* This is the short facts row under a camp title: ages, length, and location. */
+/* This is the short facts row under a camp title: grade levels and location. */
 .campFacts {
   display: flex;
   flex-wrap: wrap;
@@ -1181,12 +1274,16 @@ footer {
 
 @media (max-width: 980px) {
   /* On medium screens the camp menu panel and the standard page grids drop to two columns. */
-  .navPanelWide,
-  .categoryCards,
-  .homeExplainerGrid,
   .aboutGrid,
   .galleryGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* The camp rows give the photo less room so the copy panel keeps a readable width. */
+  .campRow {
+    grid-template-columns: 220px 1fr;
+    gap: 20px;
+    padding: 20px 24px;
   }
 
   /* The two camp detail columns stack so the lists keep their full width. */
@@ -1264,12 +1361,35 @@ footer {
   }
 
   /* Every multi-column layout on the standard pages becomes a single column on phones. */
-  .navPanelWide,
-  .categoryCards,
-  .homeExplainerGrid,
   .aboutGrid,
-  .galleryGrid {
+  .galleryGrid,
+  .themedWeeks {
     grid-template-columns: 1fr;
+  }
+
+  /* On phones the camp photo sits above the camp copy instead of beside it. */
+  .campRow {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .campRowPhoto {
+    aspect-ratio: 16 / 9;
+  }
+
+  /* The homepage heading padding matches the tighter row padding. */
+  .homeMain .pageSection > h2 {
+    padding: 0 18px;
+  }
+
+  /* The camp hero photo keeps a taller crop so it is not a thin sliver on a narrow screen. */
+  .campHeroImage {
+    margin: 0 -18px;
+  }
+
+  .campHeroPhoto {
+    aspect-ratio: 3 / 1;
   }
 
   /* The white page panel and page banner get tighter padding on small screens. */
