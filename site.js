@@ -380,7 +380,7 @@ function createGridSection(camp) {
   /* Both buttons sit under the list: one opens the curriculum itself, the other opens this camp's photos. */
   const buttons = makeEl('div', 'campNextLinks');
 
-  const gridLink = makeEl('a', 'quickLink qlBlue', 'Open CampGrids activities');
+  const gridLink = makeEl('a', 'quickLink qlBlue', 'Open The Grid');
   gridLink.href = 'campgrids.html';
 
   const galleryLink = makeEl('a', 'quickLink', 'Gallery');
@@ -463,7 +463,7 @@ function renderCampPage() {
   next.append(makeEl('p', 'eyebrow', 'Keep exploring'), makeEl('h2', '', 'Where to go next'));
 
   const nextLinks = makeEl('div', 'campNextLinks');
-  const gridLink = makeEl('a', 'quickLink qlBlue', 'Open CampGrids activities');
+    const gridLink = makeEl('a', 'quickLink qlBlue', 'Open The Grid');
   gridLink.href = 'campgrids.html';
   nextLinks.appendChild(gridLink);
 
