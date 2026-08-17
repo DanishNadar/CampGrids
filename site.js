@@ -79,10 +79,28 @@ const externalCamps = [
   { id: 'external-camp-4', name: 'Camp 4', kind: 'info' }
 ];
 
+/* Each navigation dropdown ends with a featured block on its right: a photo, a short pitch, and one button. These are placeholders. To feature something real, replace the wording here, point image at a file in the assets folder, and point href at the page the button should open. */
+const navFeaturePlaceholder = {
+  msi: {
+    image: '',
+    title: 'Placeholder Featured Camp',
+    text: 'Placeholder pitch for the camp being promoted this season. Replace this with one or two short sentences.',
+    linkLabel: 'Learn More',
+    href: 'index.html'
+  },
+  external: {
+    image: '',
+    title: 'Placeholder Partner Camp',
+    text: 'Placeholder pitch for a partnership camp running away from the museum. Replace this with one or two short sentences.',
+    linkLabel: 'Learn More',
+    href: 'index.html'
+  }
+};
+
 /* This ties the two camp lists together. Every camp page, dropdown, and sibling link works from this one structure, so adding a third kind of camp later only means adding an entry here. */
 const campGroups = [
-  { id: 'msi', label: 'MSI Camps', navKey: 'camps', camps: msiCamps },
-  { id: 'external', label: 'External Camps', navKey: 'externalCamps', camps: externalCamps }
+  { id: 'msi', label: 'MSI Camps', navKey: 'camps', camps: msiCamps, feature: navFeaturePlaceholder.msi },
+  { id: 'external', label: 'External Camps', navKey: 'externalCamps', camps: externalCamps, feature: navFeaturePlaceholder.external }
 ];
 
 /* Every camp page reads these fields. A camp that does not carry its own wording yet falls back to this placeholder content, so the page layout is complete and it is obvious which text still needs writing. */
@@ -183,8 +201,11 @@ function campField(camp, field) {
 /* This builds one top-level navigation tab that is a plain link, such as Home or About. */
 function createNavLink(label, href, isCurrent) {
   /* Create the link, set where it goes, and give it the shared tab styling. */
-  const anchor = makeEl('a', 'navLink', label);
+  const anchor = makeEl('a', 'navLink');
   anchor.href = href;
+
+  /* The words go inside their own span so the underline that slides in on hover can size itself to the text rather than to the whole tab. */
+  anchor.appendChild(makeEl('span', 'navLabel', label));
 
   /* Mark the tab for the page the visitor is already on, so it can be highlighted and announced correctly. */
   if (isCurrent) {
@@ -204,7 +225,11 @@ function createNavMenu(label, panel, isCurrent) {
   const button = makeEl('button', 'navLink navMenuButton');
   button.type = 'button';
   button.setAttribute('aria-expanded', 'false');
-  button.append(document.createTextNode(label), makeEl('span', 'navCaret', 'v'));
+
+  /* The label sits in its own span for the sliding underline, and the caret is an empty span that CSS draws as a triangle. It is hidden from screen readers because the button already announces whether it is expanded. */
+  const caret = makeEl('span', 'navCaret');
+  caret.setAttribute('aria-hidden', 'true');
+  button.append(makeEl('span', 'navLabel', label), caret);
 
   /* Highlight the tab when the visitor is already on one of the pages inside this menu. */
   if (isCurrent) button.classList.add('navCurrent');
@@ -214,8 +239,7 @@ function createNavMenu(label, panel, isCurrent) {
     event.stopPropagation();
     const willOpen = !wrapper.classList.contains('open');
     closeAllNavMenus();
-    wrapper.classList.toggle('open', willOpen);
-    button.setAttribute('aria-expanded', String(willOpen));
+    if (willOpen) openNavMenu(wrapper);
   });
 
   /* Put the button and the dropdown panel into the wrapper and return the finished tab. */
@@ -223,22 +247,71 @@ function createNavMenu(label, panel, isCurrent) {
   return wrapper;
 }
 
-/* This closes every open dropdown in the navigation bar. It runs when a new menu opens, when the visitor clicks elsewhere, and when Escape is pressed. */
+/* This opens one dropdown. The panel scrolls open from no height to the height of its own contents, and the browser can only animate towards a real number, so the contents are measured here and that measurement is written onto the panel. scrollHeight reports how tall the contents are even while the panel is squashed shut, which is exactly what is needed. */
+function openNavMenu(wrapper) {
+  const panel = wrapper.querySelector('.navPanel');
+  const button = wrapper.querySelector('.navMenuButton');
+
+  wrapper.classList.add('open');
+  if (button) button.setAttribute('aria-expanded', 'true');
+  if (panel) panel.style.maxHeight = `${panel.scrollHeight}px`;
+}
+
+/* This closes every open dropdown in the navigation bar. It runs when a new menu opens, when the visitor clicks elsewhere, and when Escape is pressed. Clearing the measured height hands the panel back to the stylesheet, which holds it at no height, so it scrolls shut the same way it scrolled open. */
 function closeAllNavMenus() {
   document.querySelectorAll('.navMenu.open').forEach((menu) => {
     menu.classList.remove('open');
+
     const button = menu.querySelector('.navMenuButton');
     if (button) button.setAttribute('aria-expanded', 'false');
+
+    const panel = menu.querySelector('.navPanel');
+    if (panel) panel.style.maxHeight = '';
   });
 }
 
-/* This builds a dropdown panel listing one camp per row. Both camp menus use it, so the MSI Camps menu and the External Camps menu look and behave the same. Descriptions are deliberately left out because they are already on the homepage. */
-function createCampMenuPanel(camps, currentCampId) {
-  /* Create the narrow panel that holds the camp links. */
-  const panel = makeEl('div', 'navPanel');
+/* A measured height stops being correct as soon as the window is resized, because the panel switches between its side-by-side and stacked layouts and its links rewrap. Re-measuring any open panel keeps it from being cut off or leaving a gap below its contents. */
+function refreshOpenNavMenus() {
+  document.querySelectorAll('.navMenu.open .navPanel').forEach((panel) => {
+    /* The panel is currently held at its old measured height, so it has to be released before it can be measured again. Reading scrollHeight in between forces the browser to work out the new height straight away rather than waiting until after this function has finished. */
+    panel.style.maxHeight = '';
+    panel.style.maxHeight = `${panel.scrollHeight}px`;
+  });
+}
 
-  /* Turn each camp into one row inside the panel. */
-  camps.forEach((camp) => {
+/* This builds the featured block on the right of a dropdown: a photo, a title, a sentence, and one button. */
+function createNavFeature(feature) {
+  const wrap = makeEl('div', 'navPanelFeature');
+
+  /* The photo across the top, falling back to the shared placeholder when no file has been supplied yet. It is deliberately not lazy-loaded: the panel is collapsed to nothing until it is opened, so a lazy image would wait until the visitor opened the menu and then load in front of them. */
+  const image = makeEl('img', 'navFeatureImage');
+  image.src = feature.image || sitePlaceholderImage;
+  image.alt = feature.title;
+
+  /* The accent-colored card under the photo holds the wording and the button. */
+  const card = makeEl('div', 'navFeatureCard');
+  card.append(
+    makeEl('p', 'navFeatureTitle', feature.title),
+    makeEl('p', 'navFeatureText', feature.text)
+  );
+
+  const button = makeEl('a', 'navFeatureButton', feature.linkLabel);
+  button.href = feature.href;
+  card.appendChild(button);
+
+  wrap.append(image, card);
+  return wrap;
+}
+
+/* This builds a dropdown panel: a list of camp links down the light left side, and the group's featured block on the right. Both camp menus use it, so the MSI Camps menu and the External Camps menu look and behave the same. Descriptions are deliberately left out of the links because they are already on the homepage. */
+function createCampMenuPanel(group, currentCampId) {
+  /* Create the full-width panel and the two-column layout inside it. The inner wrapper is what slides down as the panel opens, so the panel itself has to stay a plain clipped box. */
+  const panel = makeEl('div', 'navPanel');
+  const inner = makeEl('div', 'navPanelInner');
+
+  /* Turn each camp into one link down the left side. */
+  const links = makeEl('div', 'navPanelLinks');
+  group.camps.forEach((camp) => {
     const anchor = makeEl('a', 'navPanelLink');
     anchor.href = campHref(camp.id);
 
@@ -251,9 +324,11 @@ function createCampMenuPanel(camps, currentCampId) {
       anchor.setAttribute('aria-current', 'page');
     }
 
-    panel.appendChild(anchor);
+    links.appendChild(anchor);
   });
 
+  inner.append(links, createNavFeature(group.feature));
+  panel.appendChild(inner);
   return panel;
 }
 
@@ -286,8 +361,8 @@ function renderSiteNav() {
   const tabs = makeEl('div', 'siteNavTabs');
   tabs.append(
     createNavLink('Home', 'index.html', active === 'home'),
-    createNavMenu('MSI Camps', createCampMenuPanel(msiCamps, currentCampId), active === 'camps'),
-    createNavMenu('External Camps', createCampMenuPanel(externalCamps, currentCampId), active === 'externalCamps'),
+    createNavMenu('MSI Camps', createCampMenuPanel(campGroups[0], currentCampId), active === 'camps'),
+    createNavMenu('External Camps', createCampMenuPanel(campGroups[1], currentCampId), active === 'externalCamps'),
     createNavLink('About', 'about.html', active === 'about')
   );
 
@@ -303,6 +378,9 @@ function renderSiteNav() {
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') closeAllNavMenus();
   });
+
+  /* Resizing the window changes how tall an open panel needs to be, so its measured height is worked out again. */
+  window.addEventListener('resize', refreshOpenNavMenus);
 }
 
 /* This builds a grid of photos. Each photo is a figure with a caption, and the small label above the caption says whether the photo is of the camp space or of a camper project. */

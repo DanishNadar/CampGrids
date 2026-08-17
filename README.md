@@ -38,9 +38,9 @@ These diagrams show the intended flow of the project. They are the general workf
 
 `about.html` explains what the site is and how its parts fit together.
 
-`site.js` holds the navigation bar, the external link list, the camp lists, and the rendering for the homepage camp rows, the camp pages, and the gallery pages. Each camp has a `kind`: `themed` camps show Themed Activity Weeks, `grid` camps show The Camp Grids section, and `info` camps show neither.
+`site.js` holds the navigation bar, the external link list, the camp lists, and the rendering for the homepage camp rows, the camp pages, and the gallery pages. Each camp has a `kind`: `themed` camps show Themed Activity Weeks, `grid` camps show The Camp Grids section, and `info` camps show neither. Each camp menu in the navigation bar opens a full-width dropdown with the camp links on the left and a featured block on the right; the featured photo, wording, and button link come from `navFeaturePlaceholder` near the top of the file and are placeholders until real content is supplied.
 
-`styles.css` controls the layout, card styling, belt colors, quick links, process page, and placeholder image slots.
+`styles.css` controls the layout, card styling, belt colors, quick links, process page, and placeholder image slots. The brand color lives in the `--accent` and `--accentStrong` variables at the top of the file, so changing the site's color means editing those two lines. Belt colors are deliberately separate, because a belt's color is its name rather than a design choice.
 
 `script.js` contains the generated `campData` and the rendering logic for cards, belts, sections, and rows on `campgrids.html`.
 

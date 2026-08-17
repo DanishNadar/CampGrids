@@ -16,9 +16,18 @@
   --page: #f1f5f9;
   --line: #dbe4ef;
   --shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
+
+  /* These are the brand accent swatches. --accent is the headline color used for bands, borders, the navigation underline, and the featured card in the dropdown. --accentStrong is the same hue darkened, used wherever the accent has to be readable as text on white, because the plain accent is too light for that. Changing the brand color later only means changing these two lines. */
+  --accent: #2596be;
+  --accentStrong: #1d7291;
+
+  /* This is the light grey behind the camp links in a navigation dropdown. It is a touch warmer and darker than --page so an open dropdown reads as a panel sitting over the page. */
+  --menuPanel: #edf0f2;
 }
 
-/* This controls the whole page. It sets the main font, text color, title background image, and enough white overlay to keep the lower content readable. */
+/* This controls the whole page. It sets the main font, text color, title background image, and enough white overlay to keep the lower content readable.
+
+   The background image file is painted in the old orange brand colors. Rather than edit the image, the layers below recolor it: the bottom layer is a flat accent color, and background-blend-mode blends the image onto it in "luminosity" mode. Luminosity keeps only the lights and darks of the image and takes its color from the layer underneath, so the grid pattern survives but comes out in the accent color instead of orange. The three blend values line up with the three background layers in order, so only the middle one, the image, is blended. */
 body {
   min-height: 100vh;
   font-family: 'Nunito', 'Arial Rounded MT Bold', Arial, sans-serif;
@@ -26,7 +35,8 @@ body {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(248, 250, 252, 0.70) 420px, rgba(248, 250, 252, 0.84)),
     url("assets/CampGrids_TitleBG.png") top center / cover fixed no-repeat,
-    var(--page);
+    var(--accent);
+  background-blend-mode: normal, luminosity, normal;
   padding-bottom: 52px;
 }
 
@@ -35,14 +45,13 @@ a {
   color: inherit;
 }
 
-/* This styles the shared navigation bar that site.js builds at the top of every page. It stays pinned to the top of the window as the visitor scrolls. */
+/* This styles the shared navigation bar that site.js builds at the top of every page. It stays pinned to the top of the window as the visitor scrolls. Because it is a positioned element, the full-width dropdown panels inside it measure their width against this bar rather than against the tab they hang from. */
 .siteNavBar {
   position: sticky;
   top: 0;
   z-index: 30;
   background: var(--paper);
-  border-bottom: 3px solid #e6531f;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.10);
 }
 
 /* This keeps the navigation contents lined up with the rest of the page content instead of touching the window edges. */
@@ -72,113 +81,278 @@ a {
   margin-left: auto;
 }
 
-/* This styles every top-level tab, whether it is a plain link like Home or a button that opens a dropdown. */
+/* This styles every top-level tab, whether it is a plain link like Home or a button that opens a dropdown. The tab itself carries no underline: the sliding underline belongs to the label inside it, so the line hugs the words and stops before the arrow. */
 .navLink {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  min-height: 58px;
-  padding: 0 15px;
+  gap: 9px;
+  min-height: 64px;
+  padding: 0 18px;
   border: 0;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -3px;
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 0.92rem;
+  font-size: 0.98rem;
   font-weight: 900;
   text-decoration: none;
   cursor: pointer;
+  transition: color 0.2s ease;
 }
 
-/* This gives the tabs a clear hover and keyboard focus state. */
-.navLink:hover,
+/* Keyboard users get a plain dark rectangle around the whole tab, which is easier to see against the white bar than a colored outline would be. The offset pulls the rectangle just inside the tab so it never overlaps its neighbours. */
 .navLink:focus-visible {
-  color: #c2410c;
-  border-bottom-color: #f3b39c;
+  outline: 2px solid var(--ink);
+  outline-offset: -6px;
 }
 
-/* This marks the tab for the page the visitor is already on. */
-.navCurrent {
-  color: #c2410c;
-  border-bottom-color: #e6531f;
+/* The tab text turns accent-colored on hover, while its dropdown is open, and on the page the visitor is already on. */
+.navLink:hover,
+.navLink:focus-visible,
+.navCurrent,
+.navMenu.open > .navMenuButton {
+  color: var(--accentStrong);
 }
 
-/* This is the small arrow on tabs that open a dropdown. The letter "v" is used in the JavaScript and CSS turns it into an arrow. */
+/* This wraps the words of a tab so the underline below can measure itself against the text rather than the whole tab. */
+.navLabel {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 3px;
+}
+
+/* This is the underline itself. It is always present but squashed to nothing wide, so it can grow out from the middle rather than appearing all at once. */
+.navLabel::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Hovering the tab, opening its dropdown, or being on that page grows the underline to full width. */
+.navLink:hover .navLabel::after,
+.navLink:focus-visible .navLabel::after,
+.navCurrent .navLabel::after,
+.navMenu.open > .navMenuButton .navLabel::after {
+  transform: scaleX(1);
+}
+
+/* This is the small triangle on tabs that open a dropdown. It is drawn with borders rather than typed as a letter, so it stays a crisp triangle whatever font the visitor has. */
 .navCaret {
-  font-size: 0.7rem;
-  transition: transform 0.2s ease;
+  width: 0;
+  height: 0;
+  border-top: 7px solid var(--accent);
+  border-right: 6px solid transparent;
+  border-left: 6px solid transparent;
+  transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
-/* This flips the arrow while its dropdown is open. */
+/* This flips the triangle to point up while its dropdown is open. */
 .navMenu.open .navCaret {
   transform: rotate(180deg);
 }
 
-/* This holds a tab and its dropdown together so the panel can be positioned directly underneath the tab. */
+/* This holds a tab and its dropdown together. It is deliberately not positioned, so the panel inside it stretches across the whole navigation bar instead of only the width of this tab. */
 .navMenu {
-  position: relative;
   display: flex;
 }
 
-/* This is the dropdown panel. It is hidden until JavaScript adds the open class to the tab wrapper. */
+/* This is the dropdown panel. It spans the full width of the bar and hangs directly below it. When closed it is squashed to no height at all and clipped, which is what lets it scroll open smoothly instead of blinking into place. visibility is what actually takes it out of the page while closed, so keyboard users do not tab into a panel they cannot see.
+
+   The open height is not set here. A height has to be an actual number for the browser to animate towards it, and "as tall as the contents" is not a number. So site.js measures the panel when it opens and sets that exact height on the element itself. Guessing a generous height here instead would make the panel finish opening early and then keep animating against nothing, which is visible as the contents sliding after the panel has already stopped growing. */
 .navPanel {
   position: absolute;
   top: 100%;
   right: 0;
-  display: none;
-  gap: 3px;
-  min-width: 230px;
-  padding: 10px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--paper);
-  box-shadow: var(--shadow);
+  left: 0;
+  z-index: 1;
+  max-height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  background: var(--menuPanel);
+  box-shadow: 0 20px 30px rgba(15, 23, 42, 0.16);
+  transition:
+    max-height 0.42s cubic-bezier(0.22, 0.61, 0.36, 1),
+    visibility 0s linear 0.42s;
 }
 
-/* This reveals the dropdown when the tab is open. */
+/* Removing the delay on visibility means the panel appears the instant it starts opening. Only its closing is delayed, so it stays on screen until it has finished collapsing. */
 .navMenu.open .navPanel {
+  visibility: visible;
+  transition:
+    max-height 0.42s cubic-bezier(0.22, 0.61, 0.36, 1),
+    visibility 0s linear 0s;
+}
+
+/* The contents slide down slightly behind the top of the panel as it opens, so the panel reads as sheet of content being pulled down rather than a box being stretched. */
+.navPanelInner {
   display: grid;
+  grid-template-columns: 1fr minmax(300px, 32%);
+  align-items: stretch;
+  transform: translateY(-24px);
+  transition: transform 0.42s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
-/* This styles the camp name inside a dropdown row. */
+.navMenu.open .navPanelInner {
+  transform: translateY(0);
+}
+
+/* This is the light left side of the panel that holds the camp links. The left padding lines the links up with the page content on wide screens and falls back to a plain gap on narrow ones. */
+.navPanelLinks {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 40px 40px 46px max(40px, calc((100% - 1180px) / 2 + 24px));
+}
+
+/* This styles each camp link in the panel. It is only as wide as its own text so the growing underline and the hover shift stay tight to the words. */
+.navPanelLink {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 2px;
+  color: var(--ink);
+  text-decoration: none;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+/* This styles the camp name inside a panel row. */
 .navPanelName {
-  font-size: 0.9rem;
-  font-weight: 900;
+  position: relative;
+  font-size: 1.15rem;
+  font-weight: 800;
 }
 
-/* This styles the grade levels shown beside a camp name in a dropdown row. */
+/* The camp name carries the same growing underline as the tabs above, so the whole bar behaves consistently. */
+.navPanelName::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -3px;
+  left: 0;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.26s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* This styles the grade levels shown beside a camp name in a panel row. */
 .navPanelGrades {
   color: var(--muted);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   font-weight: 800;
 }
 
-/* This styles each individual camp row inside a dropdown panel. The name sits on the left and the grade levels sit on the right. */
-.navPanelLink {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 8px 10px;
-  border-radius: 7px;
-  font-size: 0.88rem;
-  font-weight: 800;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-/* This highlights a dropdown link on hover or keyboard focus. */
+/* This highlights a panel row on hover or keyboard focus: the name turns accent-colored, its underline grows in from the left, and the row nudges right. */
 .navPanelLink:hover,
 .navPanelLink:focus-visible {
-  background: #f8fafc;
-  color: #c2410c;
+  color: var(--accentStrong);
+  transform: translateX(4px);
 }
 
-/* This marks the camp page the visitor is already reading. */
+.navPanelLink:hover .navPanelName::after,
+.navPanelLink:focus-visible .navPanelName::after {
+  transform: scaleX(1);
+}
+
+.navPanelLink:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+}
+
+/* This marks the camp page the visitor is already reading. Its underline stays drawn rather than waiting for a hover. */
 .navPanelLink.navCurrent {
-  border-bottom: 0;
-  background: #fff1ea;
+  color: var(--accentStrong);
+}
+
+.navPanelLink.navCurrent .navPanelName::after {
+  transform: scaleX(1);
+}
+
+/* This is the featured column on the right of the panel: a photo above, and an accent-colored card below it. */
+.navPanelFeature {
+  display: flex;
+  flex-direction: column;
+}
+
+/* This keeps the featured photo a consistent shape whatever image is dropped in. The height cap matters on very wide monitors: without it the photo would keep growing with the column and push the panel past the height its opening animation allows for. */
+.navFeatureImage {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  aspect-ratio: 2 / 1;
+  object-fit: cover;
+  background: #dfe4e8;
+}
+
+/* This is the accent-colored card under the featured photo. It stretches to fill whatever height is left so the panel's right side has no gap at the bottom. */
+.navFeatureCard {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 26px 30px 30px;
+  background: var(--accent);
+  color: var(--paper);
+}
+
+/* This styles the featured item's title. */
+.navFeatureTitle {
+  font-size: 1.3rem;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+/* This styles the sentence under the featured title. The max-width stops the sentence stretching into one long line on a wide monitor. */
+.navFeatureText {
+  max-width: 44ch;
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/* This is the outlined button at the bottom of the featured card. It is white on the accent band rather than the site's usual white-with-accent-border button, because it sits on a colored background. */
+.navFeatureButton {
+  margin-top: 6px;
+  padding: 11px 26px;
+  border: 2px solid var(--paper);
+  color: var(--paper);
+  font-size: 0.95rem;
+  font-weight: 900;
+  text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+/* Hovering the featured button fills it in, swapping the two colors around. */
+.navFeatureButton:hover,
+.navFeatureButton:focus-visible {
+  background: var(--paper);
+  color: var(--accentStrong);
+}
+
+/* Some visitors ask their computer to keep animation to a minimum, usually because movement on screen makes them unwell. This turns the sliding and growing off for them. The dropdown still opens and closes and the underlines still appear, they just arrive immediately rather than travelling into place. */
+@media (prefers-reduced-motion: reduce) {
+  .navPanel,
+  .navPanelInner,
+  .navLabel::after,
+  .navPanelName::after,
+  .navCaret,
+  .navPanelLink {
+    transition-duration: 0.01s;
+  }
+
+  .navPanelInner {
+    transform: none;
+  }
 }
 
 /* This styles the large top banner. The warm overlay keeps the title readable while the body background image continues behind the page. */
@@ -191,9 +365,11 @@ a {
   padding: 46px 28px 42px;
   color: white;
   background:
-    linear-gradient(90deg, rgba(52, 20, 18, 0.62), rgba(190, 67, 28, 0.28)),
+    linear-gradient(90deg, rgba(9, 40, 51, 0.62), rgba(37, 150, 190, 0.28)),
     url("assets/CampGrids_TitleBG.png") center 38% / cover no-repeat,
-    #e6531f;
+    var(--accent);
+  /* Same trick as the body background: the flat accent underneath supplies the color and the image supplies only the light and dark of the grid pattern, so the banner reads as the accent color rather than the orange the image file was painted in. */
+  background-blend-mode: normal, luminosity, normal;
 }
 
 /* This limits the width of the header text. Without this, long lines can stretch too far across large screens and become harder to read. */
@@ -272,7 +448,7 @@ a {
   gap: 10px;
   min-height: 44px;
   padding: 9px 18px 9px 12px;
-  border: 2px solid #e6531f;
+  border: 2px solid var(--accent);
   border-radius: 12px;
   color: #020617;
   background: #ffffff;
@@ -286,7 +462,7 @@ a {
 .quickLink:hover,
 .quickLink:focus-visible {
   transform: translateY(-2px);
-  border-color: #c2410c;
+  border-color: var(--accentStrong);
   box-shadow: 0 14px 24px rgba(15, 23, 42, 0.16);
 }
 
@@ -885,7 +1061,7 @@ footer {
   margin: 26px auto 0;
   padding: 32px 32px 28px;
   border: 1px solid var(--line);
-  border-top: 6px solid #e6531f;
+  border-top: 6px solid var(--accent);
   border-radius: 12px;
   background: var(--paper);
   box-shadow: var(--shadow);
@@ -912,7 +1088,7 @@ footer {
 /* Small labels inside page banners and section headings use the MSI orange so they read as labels, not body text. */
 .pageHero .eyebrow,
 .pageSection .eyebrow {
-  color: #c2410c;
+  color: var(--accentStrong);
 }
 
 /* This styles the opening sentence under a page title. */
@@ -1021,7 +1197,7 @@ footer {
 }
 
 .campRow:nth-child(even) {
-  background: #e6531f;
+  background: var(--accent);
 }
 
 /* This frames the camp photo on the left of a row. */
@@ -1111,7 +1287,7 @@ footer {
   align-items: flex-start;
   padding: 18px;
   border: 1px solid var(--line);
-  border-top: 6px solid #e6531f;
+  border-top: 6px solid var(--accent);
   border-radius: 10px;
   background: var(--paper);
   box-shadow: 0 12px 24px rgba(15, 23, 42, 0.10);
@@ -1155,14 +1331,14 @@ footer {
   gap: 2px;
   padding: 9px 14px;
   border: 1px solid var(--line);
-  border-left: 4px solid #e6531f;
+  border-left: 4px solid var(--accent);
   border-radius: 8px;
   background: #f8fafc;
 }
 
 /* This styles the small label above a camp fact. */
 .campFactLabel {
-  color: #c2410c;
+  color: var(--accentStrong);
   font-size: 0.68rem;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -1195,7 +1371,7 @@ footer {
 /* This styles the time label in the typical day list. */
 .campSchedule dt {
   margin-top: 13px;
-  color: #c2410c;
+  color: var(--accentStrong);
   font-size: 0.72rem;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -1257,7 +1433,7 @@ footer {
 
 /* This styles the small label that says whether the photo shows a camp space or a camper project. */
 .galleryKind {
-  color: #c2410c;
+  color: var(--accentStrong);
   font-size: 0.68rem;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -1340,24 +1516,43 @@ footer {
     padding: 8px 16px 0;
   }
 
+  /* The tabs wrap onto a second line when they do not fit rather than scrolling sideways. Sideways scrolling would need overflow on this row, and that would crop the dropdown panel hanging below it. */
   .siteNavTabs {
     width: 100%;
     margin-left: 0;
-    overflow-x: auto;
+    flex-wrap: wrap;
   }
 
   /* The tabs are shorter on phones so the bar does not take over the screen. */
   .navLink {
-    min-height: 46px;
+    min-height: 50px;
     padding: 0 11px;
+    font-size: 0.9rem;
     white-space: nowrap;
   }
 
-  /* Dropdowns open from the left edge on phones and are capped so they never run off the screen. */
-  .navPanel {
-    right: auto;
-    left: 0;
-    max-width: calc(100vw - 32px);
+  /* On phones the panel stacks: the camp links first, then the featured photo and card underneath. A stacked panel is far taller than a side-by-side one, but nothing needs adjusting for that, because the open height is measured rather than written down. */
+  .navPanelInner {
+    grid-template-columns: 1fr;
+  }
+
+  /* The links side loses the wide alignment padding, because there is no page content to line up with on a narrow screen. */
+  .navPanelLinks {
+    gap: 0;
+    padding: 22px 18px 24px;
+  }
+
+  .navPanelName {
+    font-size: 1.02rem;
+  }
+
+  /* The featured photo is shorter on phones so the camp links are not pushed off the screen by it. */
+  .navFeatureImage {
+    aspect-ratio: 3 / 1;
+  }
+
+  .navFeatureCard {
+    padding: 20px 18px 24px;
   }
 
   /* Every multi-column layout on the standard pages becomes a single column on phones. */
