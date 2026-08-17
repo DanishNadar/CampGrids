@@ -21,8 +21,8 @@
   --accent: #e05f29;
   --accentStrong: #aa4418;
 
-  /* This is the light grey behind the camp links in a navigation dropdown. It is a touch warmer and darker than --page so an open dropdown reads as a panel sitting over the page. */
-  --menuPanel: #edf0f2;
+  /* This is the light neutral grey behind the camp links in a navigation dropdown, matching the grey the reference museum site uses for the same panel. */
+  --menuPanel: #f0f0f0;
 }
 
 /* This controls the whole page. It sets the main font, text color, title background image, and enough white overlay to keep the lower content readable. The grid pattern in the background image is painted in very nearly the same orange as --accent, so the image is shown as it is rather than being recolored. */
@@ -70,8 +70,9 @@ a {
   text-decoration: none;
 }
 
-/* This pushes the tabs to the right side of the bar and keeps them in one row. */
+/* This pushes the tabs to the right side of the bar and keeps them in one row. It is also what the dropdown panels measure themselves against, so every panel opens in the same place, lined up with the right-hand end of the tabs, rather than each one hanging from its own tab. */
 .siteNavTabs {
+  position: relative;
   display: flex;
   align-items: stretch;
   gap: 2px;
@@ -159,20 +160,21 @@ a {
   display: flex;
 }
 
-/* This is the dropdown panel. It spans the full width of the bar and hangs directly below it. When closed it is squashed to no height at all and clipped, which is what lets it scroll open smoothly instead of blinking into place. visibility is what actually takes it out of the page while closed, so keyboard users do not tab into a panel they cannot see.
+/* This is the dropdown panel. It is a compact card that hangs below the bar, lined up with the right-hand end of the tabs, and is a fixed width rather than stretching across the window. When closed it is squashed to no height at all and clipped, which is what lets it scroll open smoothly instead of blinking into place. visibility is what actually takes it out of the page while closed, so keyboard users do not tab into a panel they cannot see.
 
    The open height is not set here. A height has to be an actual number for the browser to animate towards it, and "as tall as the contents" is not a number. So site.js measures the panel when it opens and sets that exact height on the element itself. Guessing a generous height here instead would make the panel finish opening early and then keep animating against nothing, which is visible as the contents sliding after the panel has already stopped growing. */
 .navPanel {
   position: absolute;
   top: 100%;
   right: 0;
-  left: 0;
   z-index: 1;
+  width: 660px;
+  max-width: calc(100vw - 32px);
   max-height: 0;
   overflow: hidden;
   visibility: hidden;
   background: var(--menuPanel);
-  box-shadow: 0 20px 30px rgba(15, 23, 42, 0.16);
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.18);
   transition:
     max-height 0.42s cubic-bezier(0.22, 0.61, 0.36, 1),
     visibility 0s linear 0.42s;
@@ -186,12 +188,12 @@ a {
     visibility 0s linear 0s;
 }
 
-/* The contents slide down slightly behind the top of the panel as it opens, so the panel reads as sheet of content being pulled down rather than a box being stretched. */
+/* The contents slide down slightly behind the top of the panel as it opens, so the panel reads as a sheet of content being pulled down rather than a box being stretched. The links take whatever width is left and the featured column is a fixed size, which keeps the two sides in the same proportion the reference uses. */
 .navPanelInner {
   display: grid;
-  grid-template-columns: 1fr minmax(300px, 32%);
+  grid-template-columns: 1fr 300px;
   align-items: stretch;
-  transform: translateY(-24px);
+  transform: translateY(-20px);
   transition: transform 0.42s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
@@ -199,32 +201,31 @@ a {
   transform: translateY(0);
 }
 
-/* This is the light left side of the panel that holds the camp links. The left padding lines the links up with the page content on wide screens and falls back to a plain gap on narrow ones. */
+/* This is the light left side of the panel that holds the camp links. */
 .navPanelLinks {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
-  padding: 40px 40px 46px max(40px, calc((100% - 1180px) / 2 + 24px));
+  padding: 26px 24px 30px 32px;
 }
 
-/* This styles each camp link in the panel. It is only as wide as its own text so the growing underline and the hover shift stay tight to the words. */
+/* This styles each camp link in the panel. It is only as wide as its own text so the growing underline stays tight to the words. */
 .navPanelLink {
   position: relative;
   display: inline-flex;
   align-items: baseline;
-  gap: 12px;
-  padding: 10px 2px;
+  gap: 10px;
+  padding: 12px 2px;
   color: var(--ink);
   text-decoration: none;
-  transition: color 0.2s ease, transform 0.2s ease;
+  transition: color 0.2s ease;
 }
 
-/* This styles the camp name inside a panel row. */
+/* This styles the camp name inside a panel row. The reference sets these links at roughly the size of the tabs above and in a lighter weight than the rest of the site, so they read as a quiet list rather than as headings. */
 .navPanelName {
   position: relative;
-  font-size: 1.15rem;
-  font-weight: 800;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 /* The camp name carries the same growing underline as the tabs above, so the whole bar behaves consistently. */
@@ -241,18 +242,17 @@ a {
   transition: transform 0.26s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
-/* This styles the grade levels shown beside a camp name in a panel row. */
+/* This styles the grade levels shown beside a camp name in a panel row. They stay small and grey so the camp name is what the eye lands on. */
 .navPanelGrades {
   color: var(--muted);
-  font-size: 0.8rem;
-  font-weight: 800;
+  font-size: 0.74rem;
+  font-weight: 700;
 }
 
-/* This highlights a panel row on hover or keyboard focus: the name turns accent-colored, its underline grows in from the left, and the row nudges right. */
+/* This highlights a panel row on hover or keyboard focus: the name turns accent-colored and its underline grows in from the left. */
 .navPanelLink:hover,
 .navPanelLink:focus-visible {
   color: var(--accentStrong);
-  transform: translateX(4px);
 }
 
 .navPanelLink:hover .navPanelName::after,
@@ -280,12 +280,11 @@ a {
   flex-direction: column;
 }
 
-/* This keeps the featured photo a consistent shape whatever image is dropped in. The height cap matters on very wide monitors: without it the photo would keep growing with the column and push the panel past the height its opening animation allows for. */
+/* This keeps the featured photo a consistent shape whatever image is dropped in. The featured column is a fixed width, so this shape decides the photo's height outright. */
 .navFeatureImage {
   display: block;
   width: 100%;
-  max-height: 260px;
-  aspect-ratio: 2 / 1;
+  aspect-ratio: 21 / 10;
   object-fit: cover;
   background: #dfe4e8;
 }
@@ -296,35 +295,34 @@ a {
   flex: 1;
   flex-direction: column;
   align-items: flex-start;
-  gap: 10px;
-  padding: 26px 30px 30px;
+  gap: 7px;
+  padding: 20px 22px 24px;
   background: var(--accent);
   color: var(--paper);
 }
 
 /* This styles the featured item's title. */
 .navFeatureTitle {
-  font-size: 1.3rem;
-  font-weight: 900;
-  line-height: 1.15;
+  font-size: 1.02rem;
+  font-weight: 800;
+  line-height: 1.2;
 }
 
-/* This styles the sentence under the featured title. The max-width stops the sentence stretching into one long line on a wide monitor. */
+/* This styles the sentence under the featured title. */
 .navFeatureText {
-  max-width: 44ch;
-  font-size: 0.98rem;
-  font-weight: 700;
-  line-height: 1.4;
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.35;
 }
 
 /* This is the outlined button at the bottom of the featured card. It is white on the accent band rather than the site's usual white-with-accent-border button, because it sits on a colored background. */
 .navFeatureButton {
-  margin-top: 6px;
-  padding: 11px 26px;
+  margin-top: 5px;
+  padding: 9px 20px;
   border: 2px solid var(--paper);
   color: var(--paper);
-  font-size: 0.95rem;
-  font-weight: 900;
+  font-size: 0.85rem;
+  font-weight: 800;
   text-decoration: none;
   transition: background 0.2s ease, color 0.2s ease;
 }
@@ -361,16 +359,13 @@ a {
   min-height: 250px;
   padding: 46px 28px 42px;
   color: white;
-  background:
-    linear-gradient(90deg, rgba(52, 20, 9, 0.62), rgba(224, 95, 41, 0.28)),
-    url("assets/CampGrids_TitleBG.png") center 38% / cover no-repeat,
-    var(--accent);
+  /* A flat band of the brand color. This used to be the grid background image under a dark-to-orange gradient, which made the banner read as brown on the left and orange on the right rather than as one brand color. */
+  background: var(--accent);
 }
 
-/* This limits the width of the header text. Without this, long lines can stretch too far across large screens and become harder to read. */
+/* This limits the width of the header text. Without this, long lines can stretch too far across large screens and become harder to read. There is no text shadow: it existed to lift the white text off the busy photo that used to be behind it, and on a flat band of color it only makes the lettering look smudged. */
 .headerCopy {
   max-width: 760px;
-  text-shadow: 0 2px 8px rgba(2, 6, 23, 0.55);
 }
 
 /* This styles the MSI logo beside the title so it stays crisp and balanced in the header. */
@@ -1526,28 +1521,26 @@ footer {
     white-space: nowrap;
   }
 
+  /* A fixed-width card is wider than a phone, so on phones the panel spans the full width of the bar instead. */
+  .navPanel {
+    right: 0;
+    left: 0;
+    width: auto;
+    max-width: none;
+  }
+
   /* On phones the panel stacks: the camp links first, then the featured photo and card underneath. A stacked panel is far taller than a side-by-side one, but nothing needs adjusting for that, because the open height is measured rather than written down. */
   .navPanelInner {
     grid-template-columns: 1fr;
   }
 
-  /* The links side loses the wide alignment padding, because there is no page content to line up with on a narrow screen. */
   .navPanelLinks {
-    gap: 0;
-    padding: 22px 18px 24px;
-  }
-
-  .navPanelName {
-    font-size: 1.02rem;
+    padding: 18px 18px 22px;
   }
 
   /* The featured photo is shorter on phones so the camp links are not pushed off the screen by it. */
   .navFeatureImage {
     aspect-ratio: 3 / 1;
-  }
-
-  .navFeatureCard {
-    padding: 20px 18px 24px;
   }
 
   /* Every multi-column layout on the standard pages becomes a single column on phones. */
