@@ -17,17 +17,15 @@
   --line: #dbe4ef;
   --shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
 
-  /* These are the brand accent swatches. --accent is the headline color used for bands, borders, the navigation underline, and the featured card in the dropdown. --accentStrong is the same hue darkened, used wherever the accent has to be readable as text on white, because the plain accent is too light for that. Changing the brand color later only means changing these two lines. */
-  --accent: #2596be;
-  --accentStrong: #1d7291;
+  /* These are the brand accent swatches. --accent is the headline color used for bands, borders, the navigation underline, and the featured card in the dropdown. --accentStrong is the same orange darkened, used wherever the accent has to be readable as text on white, because the plain accent is too light for that. Changing the brand color later only means changing these two lines. */
+  --accent: #e05f29;
+  --accentStrong: #aa4418;
 
   /* This is the light grey behind the camp links in a navigation dropdown. It is a touch warmer and darker than --page so an open dropdown reads as a panel sitting over the page. */
   --menuPanel: #edf0f2;
 }
 
-/* This controls the whole page. It sets the main font, text color, title background image, and enough white overlay to keep the lower content readable.
-
-   The background image file is painted in the old orange brand colors. Rather than edit the image, the layers below recolor it: the bottom layer is a flat accent color, and background-blend-mode blends the image onto it in "luminosity" mode. Luminosity keeps only the lights and darks of the image and takes its color from the layer underneath, so the grid pattern survives but comes out in the accent color instead of orange. The three blend values line up with the three background layers in order, so only the middle one, the image, is blended. */
+/* This controls the whole page. It sets the main font, text color, title background image, and enough white overlay to keep the lower content readable. The grid pattern in the background image is painted in very nearly the same orange as --accent, so the image is shown as it is rather than being recolored. */
 body {
   min-height: 100vh;
   font-family: 'Nunito', 'Arial Rounded MT Bold', Arial, sans-serif;
@@ -35,8 +33,7 @@ body {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(248, 250, 252, 0.70) 420px, rgba(248, 250, 252, 0.84)),
     url("assets/CampGrids_TitleBG.png") top center / cover fixed no-repeat,
-    var(--accent);
-  background-blend-mode: normal, luminosity, normal;
+    var(--page);
   padding-bottom: 52px;
 }
 
@@ -365,11 +362,9 @@ a {
   padding: 46px 28px 42px;
   color: white;
   background:
-    linear-gradient(90deg, rgba(9, 40, 51, 0.62), rgba(37, 150, 190, 0.28)),
+    linear-gradient(90deg, rgba(52, 20, 9, 0.62), rgba(224, 95, 41, 0.28)),
     url("assets/CampGrids_TitleBG.png") center 38% / cover no-repeat,
     var(--accent);
-  /* Same trick as the body background: the flat accent underneath supplies the color and the image supplies only the light and dark of the grid pattern, so the banner reads as the accent color rather than the orange the image file was painted in. */
-  background-blend-mode: normal, luminosity, normal;
 }
 
 /* This limits the width of the header text. Without this, long lines can stretch too far across large screens and become harder to read. */
