@@ -18,8 +18,8 @@
   --shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
 
   /* These are the brand accent swatches. --accent is the headline color used for bands, borders, the navigation underline, and the featured card in the dropdown. --accentStrong is the same orange darkened, used wherever the accent has to be readable as text on white, because the plain accent is too light for that. Changing the brand color later only means changing these two lines. */
-  --accent: #e05f29;
-  --accentStrong: #aa4418;
+  --accent: #FE5000;
+  --accentStrong: #FE5000;
 
   /* This is the light neutral grey behind the camp links in a navigation dropdown, matching the grey the reference museum site uses for the same panel. */
   --menuPanel: #f0f0f0;
