@@ -359,7 +359,7 @@ create trigger class_teachers_validate_role before insert or update on public.cl
 create trigger class_enrollments_validate_role before insert or update on public.class_enrollments
   for each row execute procedure public.validate_role_specific_profile();
 
--- Atomic sequence means fyu, fyu1, fyu2 ... are allocated consistently even
+-- Atomic sequence means dnadar, dnadar1, dnadar2 ... are allocated consistently even
 -- when a spreadsheet import sends multiple records at once.
 create or replace function public.allocate_student_username(p_class_id uuid, p_first_name text, p_last_name text)
 returns text language plpgsql security definer set search_path = public as $$

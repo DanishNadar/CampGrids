@@ -171,7 +171,7 @@
         <div class="workspaceGrid managerGrid">
           <article class="toolCard">
             <div class="cardHeading"><div><p class="eyebrow">Roster import</p><h3>Upload campers</h3></div><a class="smallLink" href="data:text/csv;charset=utf-8,first_name,last_name,grade%0AFannie,Yu,5" download="campgrids-roster-template.csv">CSV template</a></div>
-            <p class="helperText">Spreadsheet headers: <code>first_name</code>, <code>last_name</code>, optional grade, guardian fields, and temporary password. Usernames are assigned safely as <code>fyu</code>, <code>fyu1</code>, and so on.</p>
+            <p class="helperText">Spreadsheet headers: <code>first_name</code>, <code>last_name</code>, optional grade, guardian fields, and temporary password. Usernames are assigned safely as <code>dnadar</code>, <code>dnadar1</code>, and so on.</p>
             <form id="rosterImportForm" class="stackForm"><label class="fileField"><input name="roster" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" required><span>Choose roster spreadsheet</span></label><button class="primaryButton" type="submit">Create student accounts</button></form>
           </article>
           <article class="toolCard">
