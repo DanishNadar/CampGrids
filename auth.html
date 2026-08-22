@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account | CampGrids</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-nav="account">
+  <div id="siteNav"></div>
+
+  <main class="accountShell">
+    <section class="accountIntro">
+      <p class="eyebrow">CampGrids accounts</p>
+      <h1>One place for every camp role.</h1>
+      <p>Students track their own work, teachers manage classes and reports, and MSI administrators maintain the live site.</p>
+    </section>
+
+    <section class="authCard" aria-labelledby="signInTitle">
+      <div class="authTabs" role="tablist" aria-label="Account actions">
+        <button class="authTab isActive" type="button" role="tab" aria-selected="true" data-auth-tab="login">Sign in</button>
+        <button class="authTab" type="button" role="tab" aria-selected="false" data-auth-tab="register">Teacher registration</button>
+      </div>
+
+      <form id="loginForm" class="authPanel" novalidate>
+        <div class="formHeading">
+          <h2 id="signInTitle">Welcome back</h2>
+          <p>Students sign in with their CampGrids username. Teachers and MSI staff can use an email address or their username.</p>
+        </div>
+        <label class="fieldLabel">I am signing in as
+          <select id="loginKind" name="kind">
+            <option value="student">Student</option>
+            <option value="staff">Teacher or MSI staff</option>
+          </select>
+        </label>
+        <label class="fieldLabel"><span id="identityLabel">Student username</span>
+          <input id="loginIdentity" name="identity" autocomplete="username" required placeholder="e.g. fyu">
+        </label>
+        <label class="fieldLabel">Password
+          <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <button class="primaryButton" type="submit">Sign in</button>
+      </form>
+
+      <form id="registerForm" class="authPanel" hidden novalidate>
+        <div class="formHeading">
+          <h2>Create a teacher account</h2>
+          <p>MSI administrators approve and promote staff accounts separately. This form can never create an administrator.</p>
+        </div>
+        <div class="formTwoCols">
+          <label class="fieldLabel">First name<input name="firstName" autocomplete="given-name" required></label>
+          <label class="fieldLabel">Last name<input name="lastName" autocomplete="family-name" required></label>
+        </div>
+        <label class="fieldLabel">Work email<input name="email" type="email" autocomplete="email" required></label>
+        <label class="fieldLabel">Teacher username<input name="username" autocomplete="username" pattern="[A-Za-z0-9]+" required placeholder="e.g. fannieyu"></label>
+        <label class="fieldLabel">Password<input name="password" type="password" autocomplete="new-password" minlength="10" required></label>
+        <button class="primaryButton" type="submit">Create teacher account</button>
+      </form>
+      <p id="authNotice" class="formNotice" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <footer><p>Camp Grids | Museum of Science and Industry</p></footer>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="supabase-client.js"></script>
+  <script src="site.js"></script>
+  <script src="live-content.js"></script>
+  <script src="account.js"></script>
+</body>
+</html>

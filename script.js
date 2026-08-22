@@ -7177,7 +7177,7 @@ function groupTypesAreDistinct(items) {
 }
 
 /* This builds one resource or video button. showIcon adds the pencil or play drawing, and hideLabel takes the words off the screen while leaving them readable by screen readers. */
-function createItemButton(item, groupTitle, showIcon, hideLabel) {
+function createItemButton(item, groupTitle, showIcon, hideLabel, activityContext = {}) {
   /* Create the button. It is a link because it opens a resource, and the type class controls its color. */
   const anchor = el('a', `itemButton ${itemTypeClassName(item.type)}`);
 
@@ -7191,6 +7191,18 @@ function createItemButton(item, groupTitle, showIcon, hideLabel) {
   /* The full title is used for the hover tooltip and for assistive technology, so nothing is lost when only an icon is visible. */
   anchor.title = item.title;
   anchor.setAttribute('aria-label', item.title);
+
+  /* Student resource opens are recorded in their private profile timeline when
+     the optional Supabase integration is configured. Logging is deliberately
+     non-blocking, so a resource still opens even if the network is unavailable. */
+  anchor.addEventListener('click', () => {
+    window.CampGridsApp?.logGridActivity(item.type, {
+      title: item.title,
+      group: groupTitle,
+      href: item.href || '',
+      ...activityContext
+    });
+  });
 
   /* Icon buttons show the drawing first. Text buttons stay text-only, which is what makes the two layouts different. */
   if (showIcon) anchor.appendChild(createItemIcon(item.type));
@@ -7206,6 +7218,10 @@ function createItemButton(item, groupTitle, showIcon, hideLabel) {
 function renderQuickLinks() {
   /* Find the quickLinks container from campgrids.html. If this id changes in the HTML, this line must change too. */
   const nav = document.getElementById('quickLinks');
+
+  /* Other pages can load this file to reuse the printable Grid data without
+     rendering the public quick-link strip. */
+  if (!nav) return;
 
   /* Go through each shortcut in externalLinks and build a matching clickable link. */
   externalLinks.forEach((link) => {
@@ -7294,6 +7310,10 @@ function renderCards() {
   /* Find the empty card grid from campgrids.html. All generated category cards will be placed inside this element. */
   const grid = document.getElementById('categoryGrid');
 
+  /* A teacher dashboard also uses the data to build printable assignments, but
+     it has no public card grid to render into. */
+  if (!grid) return;
+
   /* Loop through every category from the workbook data. One category becomes one expandable card. The position is kept because it decides which purpose and careers layout the card uses. */
   campData.forEach((category, index) => {
     /* Create the outer card container. The CSS variable --categoryColor gives this specific card its accent color. */
@@ -7375,7 +7395,10 @@ function renderCards() {
         /* Loop through every resource or video in this group and create one button for each item. */
         group.items.forEach((item) => {
           /* Add the completed button into this rectangular group section. */
-          groupButtons.appendChild(createItemButton(item, group.title, iconOnly, hideLabels));
+          groupButtons.appendChild(createItemButton(item, group.title, iconOnly, hideLabels, {
+            category: category.name,
+            belt: belt.name
+          }));
         });
 
         /* Add the buttons to the section, then add the section to the belt list. */
@@ -7409,6 +7432,10 @@ function toggleDropdown(button, dropdown) {
   /* Update the accessibility state so assistive technology knows whether the dropdown is open. */
   button.setAttribute('aria-expanded', String(open));
 }
+
+/* The dashboard reuses this source of truth to make printable assignment sheets
+   from the live Grid rather than maintaining a second hand-written list. */
+window.CampGridsData = campData;
 
 /* These two lines actually start the page. First we render the quick links. Then we render the category cards. */
 renderQuickLinks();

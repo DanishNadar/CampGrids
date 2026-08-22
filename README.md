@@ -4,6 +4,17 @@ CampGrids is a static browser for MSI camp grid activities. The idea was propose
 
 The site takes what used to live in a large spreadsheet and turns it into a set of category cards, belt sections, and resource/video rows. The intention was to make the camp materials easier to scan without losing the structure of the original workbook.
 
+## Accounts, classes, and MSI administration
+
+CampGrids now includes a Supabase-backed application layer alongside the public Grid:
+
+- `auth.html` provides student, teacher, and MSI staff sign-in. Student usernames are assigned atomically as first-initial + last-name (`fyu`, `fyu1`, `fyu2`…), while teachers can use their email or username.
+- `dashboard.html` gives teachers unique class codes, CSV roster imports that provision student accounts, per-class completion/accuracy/belt KPIs, progress reviews, belt awards, credential exports, class CSV exports, and printable Grid assignment sheets.
+- Student activity—sign-in, Grid resource/video opens, assignment submissions/completions, and belt awards—is recorded in the student profile timeline.
+- MSI admins can create published pages, add them to the live navigation, and maintain dropdown options from their dashboard. Those controls update connected browsers live when Supabase Realtime is enabled.
+
+The complete Supabase schema, RLS access rules, and secure roster-provisioning Edge Function are in [`supabase/`](supabase/README.md). Copy `supabase-config.example.js` to `supabase-config.js`, add your project URL and anon key, run the SQL migration, and deploy the function before using the account tools.
+
 ## How It Works
 
 The workbook is still the place where project information should be edited. After the workbook is updated, `updateInterface.bat` sends it into `scripts/generateCampgrids.py`, which rebuilds the generated data inside `script.js`.

@@ -363,7 +363,8 @@ function renderSiteNav() {
     createNavLink('Home', 'index.html', active === 'home'),
     createNavMenu('MSI Camps', createCampMenuPanel(campGroups[0], currentCampId), active === 'camps'),
     createNavMenu('External Camps', createCampMenuPanel(campGroups[1], currentCampId), active === 'externalCamps'),
-    createNavLink('About', 'about.html', active === 'about')
+    createNavLink('About', 'about.html', active === 'about'),
+    createNavLink('Account', 'auth.html', active === 'account' || active === 'dashboard')
   );
 
   /* Assemble the bar and put it on the page. */
