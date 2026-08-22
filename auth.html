@@ -17,29 +17,35 @@
     </section>
 
     <section class="authCard" aria-labelledby="signInTitle">
-      <div class="authTabs" role="tablist" aria-label="Account actions">
-        <button class="authTab isActive" type="button" role="tab" aria-selected="true" data-auth-tab="login">Sign in</button>
-        <button class="authTab" type="button" role="tab" aria-selected="false" data-auth-tab="register">Teacher registration</button>
+      <div class="authTabs authTabsThree" role="tablist" aria-label="Account actions">
+        <button class="authTab isActive" type="button" role="tab" aria-selected="true" data-auth-tab="class">Class login</button>
+        <button class="authTab" type="button" role="tab" aria-selected="false" data-auth-tab="teacher">Teacher sign in</button>
+        <button class="authTab" type="button" role="tab" aria-selected="false" data-auth-tab="register">Create teacher account</button>
       </div>
 
-      <form id="loginForm" class="authPanel" novalidate>
+      <form id="classLoginForm" class="authPanel" novalidate>
         <div class="formHeading">
-          <h2 id="signInTitle">Welcome back</h2>
-          <p>Students sign in with their CampGrids username. Teachers and MSI staff can use an email address or their username.</p>
+          <h2 id="signInTitle">Join your class</h2>
+          <p>Use the CampGrids username and password given to you by your teacher, plus your class code.</p>
         </div>
-        <label class="fieldLabel">I am signing in as
-          <select id="loginKind" name="kind">
-            <option value="student">Student</option>
-            <option value="staff">Teacher or MSI staff</option>
-          </select>
+        <label class="fieldLabel">Class code
+          <input name="classCode" autocomplete="off" autocapitalize="characters" required pattern="[A-Za-z0-9]{7,12}" placeholder="e.g. F89IO73">
         </label>
-        <label class="fieldLabel"><span id="identityLabel">Student username</span>
-          <input id="loginIdentity" name="identity" autocomplete="username" required placeholder="e.g. fyu">
-        </label>
+        <label class="fieldLabel">Student username<input name="username" autocomplete="username" required placeholder="e.g. fyu"></label>
         <label class="fieldLabel">Password
-          <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+          <input name="password" type="password" autocomplete="current-password" required>
         </label>
-        <button class="primaryButton" type="submit">Sign in</button>
+        <button class="primaryButton" type="submit">Enter class</button>
+      </form>
+
+      <form id="teacherLoginForm" class="authPanel" hidden novalidate>
+        <div class="formHeading">
+          <h2>Teacher sign in</h2>
+          <p>Use your work email address or your assigned teacher username.</p>
+        </div>
+        <label class="fieldLabel">Email address or teacher username<input name="identity" autocomplete="username" required placeholder="name@msi.org or fannieyu"></label>
+        <label class="fieldLabel">Password<input name="password" type="password" autocomplete="current-password" required></label>
+        <button class="primaryButton" type="submit">Sign in as teacher</button>
       </form>
 
       <form id="registerForm" class="authPanel" hidden novalidate>

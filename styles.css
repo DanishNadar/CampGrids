@@ -68,9 +68,13 @@
 
 .authCard { overflow: hidden; }
 .authTabs { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--line); }
+.authTabsThree { grid-template-columns: repeat(3, 1fr); }
 .authTab { border: 0; padding: 17px 14px; background: #f8fafc; color: var(--muted); font: inherit; font-weight: 700; cursor: pointer; }
 .authTab.isActive { color: var(--ink); background: white; box-shadow: inset 0 -3px var(--accent); }
 .authPanel { display: grid; gap: 17px; padding: 30px; }
+.authPanel[hidden] { display: none; }
+.adminAccessShell { display: grid; place-items: center; min-height: 100vh; padding: 28px; }
+.adminAccessCard { width: min(100%, 480px); }.adminAccessCard > .formHeading { padding: 30px 30px 0; }.adminAccessCard h1 { margin-top: 6px; font-size: 1.9rem; letter-spacing: -.04em; }
 .formHeading h2 { font-size: 1.55rem; letter-spacing: -0.03em; }
 .formHeading p,
 .helperText,
@@ -171,6 +175,7 @@
   .formTwoCols,
   .formThreeCols,
   .compactForm { grid-template-columns: 1fr; }.kpiCard { min-height: 105px; }
+  .authTabsThree { grid-template-columns: 1fr; }
   .cardHeading,
   .sectionHeading { flex-direction: column; }.compactField { width: 100%; }.exportActions { justify-content: start; }.classCode { flex-wrap: wrap; }.classCode strong { margin-right: 0; }.assignmentActions { grid-template-columns: 1fr; }.primaryButton,
   .secondaryButton { width: 100%; }.beltSummary { align-items: start; }

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MSI administration</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="workspacePage">
+  <main class="adminAccessShell">
+    <section class="authCard adminAccessCard" aria-labelledby="adminTitle">
+      <div class="formHeading"><p class="eyebrow">MSI personnel only</p><h1 id="adminTitle">Administration access</h1><p>Sign in with your MSI administrator account.</p></div>
+      <form id="adminLoginForm" class="authPanel" novalidate>
+        <label class="fieldLabel">Email address or admin username<input name="identity" autocomplete="username" required></label>
+        <label class="fieldLabel">Password<input name="password" type="password" autocomplete="current-password" required></label>
+        <button class="primaryButton" type="submit">Sign in to administration</button>
+      </form>
+      <p id="adminNotice" class="formNotice" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../supabase-config.js"></script>
+  <script src="../supabase-client.js"></script>
+  <script src="admin-login.js"></script>
+</body>
+</html>

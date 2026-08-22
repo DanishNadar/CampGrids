@@ -391,6 +391,27 @@ returns text language sql stable security definer set search_path = public as $$
   limit 1
 $$;
 
+-- A class code is checked after student authentication, rather than being used
+-- as a password substitute. Returning the class id lets the browser retain the
+-- student's selected class safely for their session.
+create or replace function public.verify_student_class_code(p_class_code text)
+returns uuid language plpgsql stable security definer set search_path = public as $$
+declare matching_class_id uuid;
+begin
+  if public.current_role() <> 'student' then raise exception 'Only student accounts can enter a class'; end if;
+  select ce.class_id into matching_class_id
+  from public.class_enrollments ce
+  join public.classes c on c.id = ce.class_id
+  where ce.student_id = auth.uid()
+    and ce.exited_at is null
+    and c.status = 'active'
+    and c.code = upper(trim(p_class_code))
+  limit 1;
+  if matching_class_id is null then raise exception 'This student is not enrolled in that class'; end if;
+  return matching_class_id;
+end;
+$$;
+
 create or replace function public.log_student_event(
   p_event_type public.event_type,
   p_class_id uuid default null,
@@ -584,7 +605,7 @@ grant usage on schema public to anon, authenticated;
 grant select on public.camps, public.content_pages, public.navigation_items, public.dropdown_options to anon;
 grant select, insert, update, delete on all tables in schema public to authenticated;
 grant usage, select on all sequences in schema public to authenticated;
-grant execute on function public.resolve_login_email(text), public.is_teacher_of(uuid), public.allocate_student_username(uuid, text, text), public.log_student_event(public.event_type, uuid, uuid, jsonb), public.record_audit_event(text, text, uuid, jsonb) to anon, authenticated;
+grant execute on function public.resolve_login_email(text), public.verify_student_class_code(text), public.is_teacher_of(uuid), public.allocate_student_username(uuid, text, text), public.log_student_event(public.event_type, uuid, uuid, jsonb), public.record_audit_event(text, text, uuid, jsonb) to anon, authenticated;
 
 -- Bootstrap the first MSI admin manually after the user has authenticated once:
 -- update public.profiles set role = 'admin' where email = 'msi-admin@example.org';
