@@ -132,7 +132,7 @@
         <article class="toolCard">
           <div class="cardHeading"><div><p class="eyebrow">New class</p><h2>Start a group</h2></div><span class="infoTag">Unique code</span></div>
           <form id="createClassForm" class="stackForm">
-            <label class="fieldLabel">Class name<input name="name" required maxlength="140" placeholder="e.g. Young Makers — Week 1"></label>
+            <label class="fieldLabel">Class name<input name="name" required maxlength="140" placeholder="e.g. Young Makers - Week 1"></label>
             <div class="formTwoCols"><label class="fieldLabel">Starts<input name="startsOn" type="date"></label><label class="fieldLabel">Ends<input name="endsOn" type="date"></label></div>
             <label class="fieldLabel">Teacher notes<textarea name="notes" rows="2" placeholder="Optional internal notes"></textarea></label>
             <button class="primaryButton" type="submit">Create class &amp; code</button>
@@ -171,7 +171,7 @@
         <div class="workspaceGrid managerGrid">
           <article class="toolCard">
             <div class="cardHeading"><div><p class="eyebrow">Roster import</p><h3>Upload campers</h3></div><a class="smallLink" href="data:text/csv;charset=utf-8,first_name,last_name,grade%0AFannie,Yu,5" download="campgrids-roster-template.csv">CSV template</a></div>
-            <p class="helperText">Spreadsheet headers: <code>first_name</code>, <code>last_name</code>, optional grade, guardian fields, and temporary password. Usernames are assigned safely as <code>dnadar</code>, <code>dnadar1</code>, and so on.</p>
+            <p class="helperText">Use the CSV template to upload student/camper information.</p>
             <form id="rosterImportForm" class="stackForm"><label class="fileField"><input name="roster" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" required><span>Choose roster spreadsheet</span></label><button class="primaryButton" type="submit">Create student accounts</button></form>
           </article>
           <article class="toolCard">

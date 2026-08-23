@@ -14,7 +14,7 @@
 
 Set the Supabase Auth **Site URL** to the CampGrids production URL (not another project), and add the exact CampGrids `auth.html` URL to **Redirect URLs**. The teacher registration code supplies that URL as its `emailRedirectTo` value; Supabase only honors it when it is in the allow list.
 
-If you installed an earlier copy of `schema.sql`, run new files in `supabase/migrations/` in the SQL editor as they are added. In particular, run `20260822_create_class_rpc.sql` to enable the RLS-safe teacher class creation flow.
+If you installed an earlier copy of `schema.sql`, run new files in `supabase/migrations/` in the SQL editor as they are added. Run `20260822_create_class_rpc.sql` to enable the RLS-safe teacher class creation flow, followed by `20260822_fix_role_validation_triggers.sql` to correct class-owner role validation.
 
 The roster upload accepts `.csv`, `.xlsx`, and `.xls` files with headers `first_name`, `last_name`, `grade`, `guardian_name`, `guardian_email`, and optional `temporary_password`. The dashboard shows generated student credentials immediately after the import so teachers can distribute them once.
 

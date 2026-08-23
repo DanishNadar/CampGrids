@@ -341,23 +341,34 @@ $$;
 create trigger classes_assign_code before insert or update of code on public.classes
   for each row execute procedure public.assign_class_code();
 
-create or replace function public.validate_role_specific_profile()
+create or replace function public.validate_class_teacher_role()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
-  if tg_table_name = 'class_teachers' and not exists (
+  if not exists (
     select 1 from public.profiles where id = new.teacher_id and role in ('teacher', 'admin')
-  ) then raise exception 'Only a teacher or admin can teach a class'; end if;
-  if tg_table_name = 'class_enrollments' and not exists (
+  ) then
+    raise exception 'Only a teacher or admin can teach a class';
+  end if;
+  return new;
+end;
+$$;
+
+create or replace function public.validate_class_enrollment_role()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if not exists (
     select 1 from public.profiles where id = new.student_id and role = 'student'
-  ) then raise exception 'Only a student can be enrolled in a class'; end if;
+  ) then
+    raise exception 'Only a student can be enrolled in a class';
+  end if;
   return new;
 end;
 $$;
 
 create trigger class_teachers_validate_role before insert or update on public.class_teachers
-  for each row execute procedure public.validate_role_specific_profile();
+  for each row execute procedure public.validate_class_teacher_role();
 create trigger class_enrollments_validate_role before insert or update on public.class_enrollments
-  for each row execute procedure public.validate_role_specific_profile();
+  for each row execute procedure public.validate_class_enrollment_role();
 
 -- Atomic sequence means dnadar, dnadar1, dnadar2 ... are allocated consistently even
 -- when a spreadsheet import sends multiple records at once.
