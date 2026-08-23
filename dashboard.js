@@ -42,13 +42,11 @@
     const activeRoster = classData.roster.filter((entry) => !entry.exited_at);
     const possible = activeRoster.length * classData.assignments.length;
     const completed = classData.progress.filter((entry) => entry.status === 'complete').length;
-    const graded = classData.progress.filter((entry) => entry.score !== null && entry.score !== undefined);
-    const accuracy = graded.length ? graded.reduce((sum, entry) => sum + Number(entry.score), 0) / graded.length : null;
     const belts = classData.awards.reduce((count, award) => {
       count[award.belt] = (count[award.belt] || 0) + 1;
       return count;
     }, {});
-    return { campers: activeRoster.length, completion: possible ? (completed / possible) * 100 : 0, completed, possible, accuracy, belts };
+    return { campers: activeRoster.length, completion: possible ? (completed / possible) * 100 : 0, completed, possible, belts };
   }
 
   async function loadTeacherClasses() {
@@ -115,8 +113,6 @@
     const totalCampers = state.classes.reduce((sum, classData) => sum + classKpis(classData).campers, 0);
     const aggregatePossible = state.classes.reduce((sum, classData) => sum + classKpis(classData).possible, 0);
     const aggregateCompleted = state.classes.reduce((sum, classData) => sum + classKpis(classData).completed, 0);
-    const accuracies = state.classes.map(classKpis).filter((kpi) => kpi.accuracy !== null);
-    const averageAccuracy = accuracies.length ? accuracies.reduce((sum, kpi) => sum + kpi.accuracy, 0) / accuracies.length : null;
     const current = selectedClass();
     const currentKpis = current ? classKpis(current) : null;
 
@@ -126,7 +122,6 @@
         <article class="kpiCard"><span>Active classes</span><strong>${state.classes.filter((entry) => entry.status === 'active').length}</strong><small>${state.classes.length} total</small></article>
         <article class="kpiCard"><span>Campers</span><strong>${totalCampers}</strong><small>Across your classes</small></article>
         <article class="kpiCard"><span>Completion</span><strong>${aggregatePossible ? Math.round((aggregateCompleted / aggregatePossible) * 100) : 0}%</strong><small>${aggregateCompleted} of ${aggregatePossible} assignment records</small></article>
-        <article class="kpiCard"><span>Accuracy</span><strong>${averageAccuracy === null ? '—' : `${Math.round(averageAccuracy)}%`}</strong><small>Scored work only</small></article>
       </section>
       <section class="workspaceGrid teacherTopGrid">
         <article class="toolCard">
@@ -158,11 +153,9 @@
       const info = entry.profiles || {};
       const studentProgress = classData.progress.filter((progress) => progress.enrollment_id === entry.id);
       const complete = studentProgress.filter((progress) => progress.status === 'complete').length;
-      const accuracyRows = studentProgress.filter((progress) => progress.score !== null && progress.score !== undefined);
-      const accuracy = accuracyRows.length ? Math.round(accuracyRows.reduce((sum, progress) => sum + Number(progress.score), 0) / accuracyRows.length) : '—';
       const studentBelts = classData.awards.filter((award) => award.enrollment_id === entry.id).length;
-      return `<tr><td><strong>${escapeHtml(`${info.first_name || ''} ${info.last_name || ''}`)}</strong><small>${escapeHtml(info.username || '')}</small></td><td>${complete}/${classData.assignments.length}</td><td>${accuracy === '—' ? '—' : `${accuracy}%`}</td><td>${studentBelts}</td></tr>`;
-    }).join('') : '<tr><td colspan="4" class="emptyTable">No campers yet. Upload a roster to create student accounts.</td></tr>';
+      return `<tr><td><strong>${escapeHtml(`${info.first_name || ''} ${info.last_name || ''}`)}</strong><small>${escapeHtml(info.username || '')}</small></td><td>${complete}/${classData.assignments.length}</td><td>${studentBelts}</td></tr>`;
+    }).join('') : '<tr><td colspan="3" class="emptyTable">No campers yet. Upload a roster to create student accounts.</td></tr>';
     return `
       <section class="managerSection">
         <div class="sectionHeading"><div><p class="eyebrow">Manage ${escapeHtml(classData.name)}</p><h2>Roster, work, and reporting</h2></div><div class="exportActions"><button class="secondaryButton" type="button" data-action="export-class">Export class CSV</button><button class="secondaryButton" type="button" data-action="print-grid">Print Grid assignment</button></div></div>
@@ -190,7 +183,7 @@
               <label class="fieldLabel">Camper<select name="enrollmentId" required>${rosterOptions(classData)}</select></label>
               <label class="fieldLabel">Assignment<select name="assignmentId" required>${progressOptions(classData)}</select></label>
               <label class="fieldLabel">Status<select name="status"><option value="in_progress">In progress</option><option value="submitted">Submitted</option><option value="complete">Complete</option></select></label>
-              <label class="fieldLabel">Accuracy %<input name="score" type="number" min="0" max="100" step="0.01"></label>
+              <label class="fieldLabel">Score %<input name="score" type="number" min="0" max="100" step="0.01"></label>
               <button class="primaryButton" type="submit">Save review</button>
             </form>
           </article>
@@ -206,7 +199,7 @@
           </article>
         </div>
         <article class="toolCard rosterCard"><div class="cardHeading"><div><p class="eyebrow">Class roster</p><h3>${classData.roster.length} camper${classData.roster.length === 1 ? '' : 's'}</h3></div><div class="beltSummary">${beltSummary(classKpis(classData))}</div></div>
-          <div class="tableScroll"><table class="dataTable"><thead><tr><th>Camper</th><th>Completion</th><th>Accuracy</th><th>Belts</th></tr></thead><tbody>${rosterRows}</tbody></table></div>
+          <div class="tableScroll"><table class="dataTable"><thead><tr><th>Camper</th><th>Completion</th><th>Belts</th></tr></thead><tbody>${rosterRows}</tbody></table></div>
         </article>
       </section>`;
   }
@@ -238,16 +231,14 @@
   function exportClass(classData) {
     const rows = classData.roster.map((entry) => {
       const progress = classData.progress.filter((item) => item.enrollment_id === entry.id);
-      const graded = progress.filter((item) => item.score !== null && item.score !== undefined);
       const awards = classData.awards.filter((item) => item.enrollment_id === entry.id);
       return [
         `${entry.profiles.first_name} ${entry.profiles.last_name}`, entry.profiles.username,
         classData.assignments.length ? `${Math.round((progress.filter((item) => item.status === 'complete').length / classData.assignments.length) * 100)}%` : '0%',
-        graded.length ? `${Math.round(graded.reduce((sum, item) => sum + Number(item.score), 0) / graded.length)}%` : '',
         awards.map((award) => `${award.category}: ${award.belt}`).join('; '),
       ];
     });
-    downloadCsv(`${classData.code}-progress.csv`, ['Camper', 'Username', 'Completion', 'Accuracy', 'Belts'], rows);
+    downloadCsv(`${classData.code}-progress.csv`, ['Camper', 'Username', 'Completion', 'Belts'], rows);
   }
 
   function printGridAssignment(classData, activity = flattenGrid()[0]) {
@@ -420,8 +411,6 @@
     const enrollment = enrollments.find((entry) => entry.class_id === activeClassId);
     const progress = (progressResult.data || []).filter((entry) => entry.enrollment_id === enrollment?.id);
     const awards = (awardsResult.data || []).filter((entry) => entry.class_enrollments?.class_id === activeClassId);
-    const complete = progress.filter((entry) => entry.status === 'complete').length;
-    const graded = progress.filter((entry) => entry.score !== null && entry.score !== undefined);
     const activityRows = (eventResult.data || []).filter((entry) => !entry.class_id || entry.class_id === activeClassId);
     const assignmentRows = assignments.length ? assignments.map((assignment) => {
       const record = progress.find((entry) => entry.assignment_id === assignment.id);
@@ -431,7 +420,6 @@
     workspace.innerHTML = `
       ${actionsHeader('Student dashboard', `Hi, ${state.profile.first_name}.`, 'Your CampGrids work, earned belts, and activity timeline are all in one place.')}
       <section class="studentClassBar"><label class="fieldLabel">My class<select id="studentClassPicker">${enrollments.map((entry) => `<option value="${entry.class_id}" ${entry.class_id === activeClassId ? 'selected' : ''}>${escapeHtml(`${entry.classes.name} · ${entry.classes.code}`)}</option>`).join('')}</select></label><a class="secondaryButton" href="campgrids.html">Explore the Grid</a></section>
-      // <section class="kpiGrid"><article class="kpiCard"><span>Assignments complete</span><strong>${complete}/${assignments.length}</strong><small>Keep building</small></article><article class="kpiCard"><span>Accuracy</span><strong>${graded.length ? `${Math.round(graded.reduce((sum, entry) => sum + Number(entry.score), 0) / graded.length)}%` : '—'}</strong><small>From reviewed work</small></article><article class="kpiCard"><span>Belts earned</span><strong>${awards.length}</strong><small>${awards.map((entry) => entry.belt).join(' · ') || 'Your next one is waiting'}</small></article></section>
       <section class="studentLayout"><div><div class="sectionHeading"><div><p class="eyebrow">My assignments</p><h2>What to work on</h2></div></div>${assignmentRows}</div><aside class="studentTimeline"><p class="eyebrow">Profile timeline</p><h2>Recent activity</h2>${activityRows.length ? `<ol>${activityRows.map((entry) => `<li><span>${escapeHtml(entry.event_type.replaceAll('_', ' '))}</span><small>${dateValue(entry.occurred_at)}${entry.metadata?.title ? ` · ${escapeHtml(entry.metadata.title)}` : ''}</small></li>`).join('')}</ol>` : '<p class="emptyCopy">Your Grid activity will appear here as you work.</p>'}<div class="studentBelts"><p class="eyebrow">My belts</p>${awards.length ? awards.map((award) => `<span class="beltPill belt${escapeHtml(award.belt)}">${escapeHtml(`${award.category} · ${award.belt}`)}</span>`).join('') : '<p class="emptyCopy">No belts awarded yet.</p>'}</div></aside></section>`;
     document.getElementById('studentClassPicker')?.addEventListener('change', (event) => { window.localStorage.setItem('campgrids-active-class', event.target.value); renderStudent().catch(handleError); });
     document.querySelector('[data-action="sign-out"]')?.addEventListener('click', signOut);

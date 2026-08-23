@@ -9,7 +9,7 @@ The site takes what used to live in a large spreadsheet and turns it into a set 
 CampGrids now includes a Supabase-backed application layer alongside the public Grid:
 
 - `auth.html` provides student, teacher, and MSI staff sign-in. Student usernames are assigned atomically as first-initial + last-name (`dnadar`, `dnadar1`, `dnadar2`…), while teachers can use their email or username.
-- `dashboard.html` gives teachers unique class codes, CSV roster imports that provision student accounts, per-class completion/accuracy/belt KPIs, progress reviews, belt awards, credential exports, class CSV exports, and printable Grid assignment sheets.
+- `dashboard.html` gives teachers unique class codes, CSV roster imports that provision student accounts, per-class completion and belt KPIs, progress reviews, belt awards, credential exports, class CSV exports, and printable Grid assignment sheets.
 - Student activity—sign-in, Grid resource/video opens, assignment submissions/completions, and belt awards—is recorded in the student profile timeline.
 - MSI admins can create published pages, add them to the live navigation, and maintain dropdown options from their dashboard. Those controls update connected browsers live when Supabase Realtime is enabled.
 
