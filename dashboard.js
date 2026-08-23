@@ -134,7 +134,7 @@
           </form>
         </article>
         <article class="toolCard classAtGlance">
-          <div class="cardHeading"><div><p class="eyebrow">Class at a glance</p><h2>${current ? escapeHtml(current.name) : 'No class selected'}</h2></div>${classSelector()}</div>
+          <div class="cardHeading"><div><p class="eyebrow">Class overview</p><h2>${current ? escapeHtml(current.name) : 'No class selected'}</h2></div>${classSelector()}</div>
           ${current ? `<div class="classCode"><span>Class code</span><strong>${escapeHtml(current.code)}</strong><button class="copyButton" data-copy-code="${escapeHtml(current.code)}" type="button">Copy</button></div>
           <div class="beltSummary"><span class="summaryLabel">Belts earned</span>${beltSummary(currentKpis)}</div>` : ''}
         </article>
@@ -167,7 +167,7 @@
             <form id="rosterImportForm" class="stackForm"><label class="fileField"><input name="roster" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" required><span>Choose roster spreadsheet</span></label><button class="primaryButton" type="submit">Create student accounts</button></form>
           </article>
           <article class="toolCard">
-            <div class="cardHeading"><div><p class="eyebrow">Assignments</p><h3>Build from the live Grid</h3></div></div>
+            <div class="cardHeading"><div><p class="eyebrow">Assignments</p><h3>Build activities from the live Grid</h3></div></div>
             <form id="assignmentForm" class="stackForm">
               <label class="fieldLabel">Grid activity<select name="gridActivity">${gridOptions()}</select></label>
               <label class="fieldLabel">Teacher instructions<textarea name="instructions" rows="2" placeholder="What should campers document, build, or submit?"></textarea></label>
