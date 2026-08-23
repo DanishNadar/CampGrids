@@ -359,7 +359,7 @@ function renderSiteNav() {
 
   /* Build the four tabs from the sketch: Home, the MSI Camps menu, the External Camps menu, and About. */
   const tabs = makeEl('div', 'siteNavTabs');
-  const accountLink = createNavLink('Account', 'auth.html', active === 'account' || active === 'dashboard' || active === 'profile');
+  const accountLink = createNavLink('Account', 'auth.html', active === 'account' || active === 'dashboard' || active === 'profile' || active === 'settings');
   accountLink.id = 'accountNavLink';
   accountLink.classList.add('navProfileLink');
 

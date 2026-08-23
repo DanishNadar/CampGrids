@@ -141,7 +141,6 @@
         <article class="toolCard classAtGlance">
           <div class="cardHeading"><div><p class="eyebrow">Class at a glance</p><h2>${current ? escapeHtml(current.name) : 'No class selected'}</h2></div>${classSelector()}</div>
           ${current ? `<div class="classCode"><span>Class code</span><strong>${escapeHtml(current.code)}</strong><button class="copyButton" data-copy-code="${escapeHtml(current.code)}" type="button">Copy</button></div>
-          <div class="classKpiLine"><span><b>${currentKpis.campers}</b> campers</span><span><b>${Math.round(currentKpis.completion)}%</b> complete</span><span><b>${currentKpis.accuracy === null ? '—' : `${Math.round(currentKpis.accuracy)}%`}</b> accuracy</span></div>
           <div class="beltSummary"><span class="summaryLabel">Belts earned</span>${beltSummary(currentKpis)}</div>` : ''}
         </article>
       </section>

@@ -22,17 +22,22 @@
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(380px, 0.95fr);
   gap: 42px;
-  align-items: center;
+  align-items: stretch;
   min-height: calc(100vh - 170px);
   padding: 52px 0;
 }
 
 .accountIntro {
-  padding: clamp(22px, 5vw, 56px);
-  border-radius: 20px;
-  color: white;
-  background: linear-gradient(135deg, #172033 0%, #263758 63%, #fe5000 160%);
-  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 100%;
+  padding: clamp(22px, 4vw, 42px);
+  border: 1px solid #f4aa87;
+  border-radius: 16px;
+  color: var(--ink);
+  background: linear-gradient(160deg, rgba(255, 247, 237, .98), rgba(249, 201, 180, .92));
+  box-shadow: 0 12px 34px rgba(144, 61, 20, 0.13);
 }
 
 .accountIntro h1,
@@ -47,12 +52,13 @@
 .accountIntro p:not(.eyebrow),
 .workspaceHeader > div > p {
   max-width: 620px;
-  color: inherit;
+  color: var(--muted);
   font-size: 1.05rem;
   line-height: 1.62;
 }
 
-.accountIntro .eyebrow { color: #ffb897; }
+.accountIntro .eyebrow { color: var(--accentStrong); }
+.accountImagePlaceholder { display: grid; flex: 1 1 auto; min-height: 285px; align-content: center; justify-items: center; gap: 8px; border: 2px dashed #e78555; border-radius: 11px; color: #9a3412; background: rgba(255,255,255,.56); text-align: center; }.accountImagePlaceholder span { font-size: clamp(1.25rem, 2vw, 1.6rem); font-weight: 700; letter-spacing: -.03em; }.accountImagePlaceholder small { color: #7c2d12; font-size: .86rem; font-weight: 600; }.accountIntroCaption { display: grid; gap: 6px; }.accountIntroCaption h1 { font-size: clamp(2.15rem, 4vw, 3.35rem); }
 
 .authCard,
 .toolCard,
@@ -151,18 +157,21 @@
 .studentClassBar { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin: 20px 0; padding: 15px; border: 1px solid var(--line); border-radius: 12px; background: white; }.studentClassBar .fieldLabel { width: min(440px, 100%); }.studentLayout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(270px, .65fr); gap: 18px; }.studentAssignment { display: flex; justify-content: space-between; gap: 18px; margin-bottom: 12px; padding: 19px; }.studentAssignment h3 { margin: 4px 0 6px; font-size: 1.15rem; }.studentAssignment p:not(.eyebrow) { color: var(--muted); line-height: 1.45; }.studentAssignment small { display: block; margin-top: 8px; color: var(--muted); }.assignmentActions { display: grid; align-content: start; gap: 8px; min-width: 120px; }.statusPill { padding: 5px 7px; border-radius: 100px; background: #e2e8f0; color: #334155; font-size: .72rem; font-weight: 700; text-align: center; text-transform: capitalize; }.statusPill.submitted { color: #9a6700; background: #fef3c7; }.statusPill.complete { color: #166534; background: #dcfce7; }.statusPill.in_progress { color: #1d4ed8; background: #dbeafe; }.studentTimeline { padding: 22px; }.studentTimeline ol { display: grid; gap: 12px; margin-top: 16px; list-style: none; }.studentTimeline li { display: grid; gap: 3px; padding-left: 12px; border-left: 2px solid #fdba9a; text-transform: capitalize; }.studentTimeline li span { font-size: .87rem; font-weight: 700; }.studentTimeline li small { color: var(--muted); font-size: .76rem; }.studentBelts { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 26px; }.studentBelts .eyebrow { flex-basis: 100%; }
 .loadingState { max-width: 680px; margin: 90px auto; padding: 42px; }.loadingState h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); }.loadingState p:not(.eyebrow) { color: var(--muted); line-height: 1.5; }.loadingState .primaryButton { margin-top: 16px; }
 .managedPage { padding: 44px 0; }.managedHero { margin: 0; }.managedArticle { max-width: 820px; margin: 22px auto; padding: clamp(24px, 5vw, 54px); }.managedArticle h2 { margin: 28px 0 8px; font-size: 1.5rem; }.managedArticle p + p { margin-top: 16px; }
-.profileShell { padding: 42px 0 10px; }.profileGrid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; margin-top: 18px; }.profileIdentity { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 16px; }.profileAvatar { display: grid; place-items: center; width: 68px; height: 68px; border-radius: 50%; color: white; background: var(--ink); font-size: 1.3rem; font-weight: 700; }.profileIdentity h2 { margin-top: 3px; font-size: 1.5rem; letter-spacing: -.04em; }.profileIdentity > div > p:last-child { margin-top: 4px; color: var(--muted); }.profileIdentity dl { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-top: 16px; border-top: 1px solid var(--line); }.profileIdentity dt { color: var(--muted); font-size: .7rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }.profileIdentity dd { margin-top: 4px; overflow-wrap: anywhere; font-size: .9rem; font-weight: 600; }.profileClasses { margin-top: 18px; padding: 23px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,.96); box-shadow: 0 12px 34px rgba(15,23,42,.08); }.profileClasses h2 { margin: 4px 0 16px; font-size: 1.4rem; letter-spacing: -.035em; }.classChipList { display: flex; flex-wrap: wrap; gap: 10px; }.classChip { display: grid; gap: 3px; min-width: 170px; padding: 12px; border: 1px solid #b9c7d5; border-radius: 9px; background: #f8fafc; }.classChip small { color: var(--muted); font-size: .78rem; }
+.profileShell { padding: 42px 0 10px; }.profileGrid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; margin-top: 18px; }.profileActions { display: flex; flex-wrap: wrap; justify-content: end; gap: 8px; }.profileIdentity { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 16px; }.profileAvatar { display: grid; place-items: center; width: 68px; height: 68px; border-radius: 50%; color: white; background: var(--ink); font-size: 1.3rem; font-weight: 700; }.profileIdentity h2 { margin-top: 3px; font-size: 1.5rem; letter-spacing: -.04em; }.profileIdentity > div > p:last-child { margin-top: 4px; color: var(--muted); }.profileIdentity dl { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-top: 16px; border-top: 1px solid var(--line); }.profileIdentity dt { color: var(--muted); font-size: .7rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }.profileIdentity dd { margin-top: 4px; overflow-wrap: anywhere; font-size: .9rem; font-weight: 600; }.profileAbout { display: grid; align-content: start; gap: 11px; }.profileAbout h2 { letter-spacing: -.035em; }.profileAbout p { color: var(--muted); line-height: 1.55; }.profileAbout .primaryButton { margin-top: 6px; }.profileClasses { margin-top: 18px; padding: 23px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,.96); box-shadow: 0 12px 34px rgba(15,23,42,.08); }.profileClasses h2 { margin: 4px 0 16px; font-size: 1.4rem; letter-spacing: -.035em; }.classChipList { display: flex; flex-wrap: wrap; gap: 10px; }.classChip { display: grid; gap: 3px; min-width: 170px; padding: 12px; border: 1px solid #b9c7d5; border-radius: 9px; background: #f8fafc; }.classChip small { color: var(--muted); font-size: .78rem; }.settingsGrid { display: grid; grid-template-columns: minmax(0, 650px); margin-top: 18px; }
 
 @media (max-width: 800px) { .profileGrid { grid-template-columns: 1fr; }.profileIdentity dl { grid-template-columns: 1fr; } }
 .printDocument { display: none; }
 
 @media (max-width: 980px) {
-  .accountShell,
   .teacherTopGrid,
   .managerGrid,
   .studentLayout { grid-template-columns: 1fr; }
   .adminGrid { grid-template-columns: repeat(2, 1fr); }
   .kpiGrid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 760px) {
+  .accountShell { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {

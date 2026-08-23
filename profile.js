@@ -26,23 +26,13 @@
       classes = data || [];
     }
     host.innerHTML = `
-      <header class="workspaceHeader"><div><p class="eyebrow">My CampGrids profile</p><h1>${escapeHtml(`${profile.first_name} ${profile.last_name}`)}</h1><p>${escapeHtml(roleName(profile.role))} account</p></div><a class="secondaryButton" href="${app.dashboardHref(profile.role)}">Open workspace</a></header>
+      <header class="workspaceHeader"><div><p class="eyebrow">My CampGrids profile</p><h1>${escapeHtml(`${profile.first_name} ${profile.last_name}`)}</h1><p>${escapeHtml(roleName(profile.role))} account</p></div><div class="profileActions"><a class="secondaryButton" href="settings.html">Settings</a><a class="secondaryButton" href="${app.dashboardHref(profile.role)}">Open workspace</a></div></header>
       <p id="profileNotice" class="workspaceNotice" role="status" aria-live="polite"></p>
       <section class="profileGrid">
         <article class="toolCard profileIdentity"><span class="profileAvatar">${escapeHtml(`${profile.first_name?.[0] || ''}${profile.last_name?.[0] || ''}`.toUpperCase())}</span><div><p class="eyebrow">Account</p><h2>${escapeHtml(`${profile.first_name} ${profile.last_name}`)}</h2><p>${escapeHtml(roleName(profile.role))}</p></div><dl><div><dt>Email</dt><dd>${escapeHtml(profile.email || 'Not available')}</dd></div><div><dt>Username</dt><dd>${escapeHtml(profile.username || 'Not assigned')}</dd></div></dl></article>
-        <article class="toolCard"><p class="eyebrow">Personal details</p><h2>Update your name</h2><form id="profileForm" class="stackForm"><div class="formTwoCols"><label class="fieldLabel">First name<input name="firstName" required value="${escapeHtml(profile.first_name)}"></label><label class="fieldLabel">Last name<input name="lastName" required value="${escapeHtml(profile.last_name)}"></label></div><button class="primaryButton" type="submit">Save profile</button></form></article>
+        <article class="toolCard profileAbout"><p class="eyebrow">Account settings</p><h2>Personal preferences</h2><p>Your name and future account preferences are kept in Settings, separate from this read-only profile view.</p><a class="primaryButton" href="settings.html">Open settings</a></article>
       </section>
       ${profile.role === 'student' ? `<section class="profileClasses"><p class="eyebrow">My active classes</p><h2>Class access</h2>${classes.length ? `<div class="classChipList">${classes.map((entry) => `<span class="classChip"><b>${escapeHtml(entry.classes?.name || 'CampGrids class')}</b><small>${escapeHtml(entry.classes?.code || '')}</small></span>`).join('')}</div>` : '<p class="emptyCopy">You are not enrolled in an active class yet.</p>'}</section>` : ''}`;
-    document.getElementById('profileForm')?.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const data = new FormData(event.currentTarget);
-      const { error } = await client.from('profiles').update({ first_name: String(data.get('firstName')).trim(), last_name: String(data.get('lastName')).trim() }).eq('id', profile.id);
-      if (error) return notice(error.message, 'isError');
-      await app.getProfile(true);
-      await app.updateAccountNavigation();
-      await render();
-      notice('Your profile has been updated.', 'isSuccess');
-    });
   }
   render().catch((error) => { host.innerHTML = `<section class="loadingState"><p class="eyebrow">Profile unavailable</p><h1>${escapeHtml(error.message)}</h1></section>`; });
 })();
