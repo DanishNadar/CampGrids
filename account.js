@@ -96,11 +96,16 @@
       const { data, error } = await window.CampGridsApp.getClient().auth.signUp({
         email: String(form.get('email')).trim().toLowerCase(),
         password: String(form.get('password')),
-        options: { data: {
-          role: 'teacher', username,
-          first_name: String(form.get('firstName')).trim(),
-          last_name: String(form.get('lastName')).trim(),
-        } },
+        options: {
+          /* Send confirmation back to this CampGrids account page instead of
+             falling back to an unrelated project configured as Site URL. */
+          emailRedirectTo: new URL('auth.html', window.location.href).href,
+          data: {
+            role: 'teacher', username,
+            first_name: String(form.get('firstName')).trim(),
+            last_name: String(form.get('lastName')).trim(),
+          }
+        },
       });
       if (error) throw error;
       if (data.session) {

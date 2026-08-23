@@ -412,6 +412,42 @@ begin
 end;
 $$;
 
+-- Class creation runs inside the database so the authenticated teacher becomes
+-- the owner automatically. This avoids relying on a browser-supplied owner id
+-- and works consistently with RLS enabled.
+create or replace function public.create_class(
+  p_name text,
+  p_starts_on date default null,
+  p_ends_on date default null,
+  p_notes text default null
+)
+returns table (
+  id uuid,
+  code varchar,
+  name text,
+  status public.class_status,
+  starts_on date,
+  ends_on date,
+  notes text,
+  created_at timestamptz
+)
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null or public.current_role() not in ('teacher', 'admin') then
+    raise exception 'An active teacher or MSI administrator account is required to create a class';
+  end if;
+  if nullif(trim(p_name), '') is null then raise exception 'A class name is required'; end if;
+  if p_ends_on is not null and p_starts_on is not null and p_ends_on < p_starts_on then
+    raise exception 'The class end date must be on or after the start date';
+  end if;
+
+  return query
+  insert into public.classes (name, owner_id, status, starts_on, ends_on, notes)
+  values (trim(p_name), auth.uid(), 'active', p_starts_on, p_ends_on, nullif(trim(p_notes), ''))
+  returning classes.id, classes.code, classes.name, classes.status, classes.starts_on, classes.ends_on, classes.notes, classes.created_at;
+end;
+$$;
+
 create or replace function public.log_student_event(
   p_event_type public.event_type,
   p_class_id uuid default null,
@@ -558,7 +594,11 @@ create policy "admin profile: admins manage" on public.admin_profiles for all us
 create policy "camps: public read" on public.camps for select using (true);
 create policy "camps: admins manage" on public.camps for all using (public.is_admin()) with check (public.is_admin());
 create policy "classes: teacher/student scope" on public.classes for select using (public.is_teacher_of(id) or public.is_enrolled_in(id));
-create policy "classes: teachers create" on public.classes for insert with check (owner_id = auth.uid() and public.current_role() in ('teacher', 'admin'));
+create policy "classes: teachers create" on public.classes for insert with check (
+  owner_id = auth.uid() and exists (
+    select 1 from public.profiles where id = auth.uid() and role in ('teacher', 'admin') and is_active
+  )
+);
 create policy "classes: teachers update" on public.classes for update using (public.is_teacher_of(id)) with check (public.is_teacher_of(id));
 create policy "classes: admins delete" on public.classes for delete using (public.is_admin());
 create policy "class teachers: scoped read" on public.class_teachers for select using (public.is_teacher_of(class_id) or public.is_enrolled_in(class_id));
@@ -605,7 +645,7 @@ grant usage on schema public to anon, authenticated;
 grant select on public.camps, public.content_pages, public.navigation_items, public.dropdown_options to anon;
 grant select, insert, update, delete on all tables in schema public to authenticated;
 grant usage, select on all sequences in schema public to authenticated;
-grant execute on function public.resolve_login_email(text), public.verify_student_class_code(text), public.is_teacher_of(uuid), public.allocate_student_username(uuid, text, text), public.log_student_event(public.event_type, uuid, uuid, jsonb), public.record_audit_event(text, text, uuid, jsonb) to anon, authenticated;
+grant execute on function public.resolve_login_email(text), public.verify_student_class_code(text), public.create_class(text, date, date, text), public.is_teacher_of(uuid), public.allocate_student_username(uuid, text, text), public.log_student_event(public.event_type, uuid, uuid, jsonb), public.record_audit_event(text, text, uuid, jsonb) to anon, authenticated;
 
 -- Bootstrap the first MSI admin manually after the user has authenticated once:
 -- update public.profiles set role = 'admin' where email = 'msi-admin@example.org';

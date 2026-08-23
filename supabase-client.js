@@ -105,6 +105,30 @@ window.CampGridsApp = (() => {
     return role === 'student' ? 'dashboard.html#student' : 'dashboard.html';
   }
 
+  async function updateAccountNavigation() {
+    const link = document.getElementById('accountNavLink');
+    if (!link || !configured()) return;
+    try {
+      const profile = await getProfile();
+      const label = link.querySelector('.navLabel');
+      if (!profile || !label) return;
+      const name = `${profile.first_name} ${profile.last_name}`.trim();
+      link.href = 'profile.html';
+      link.title = `Open ${name}'s profile`;
+      label.textContent = name || profile.username || 'My profile';
+      let avatar = link.querySelector('.navProfileAvatar');
+      if (!avatar) {
+        avatar = document.createElement('span');
+        avatar.className = 'navProfileAvatar';
+        avatar.setAttribute('aria-hidden', 'true');
+        link.prepend(avatar);
+      }
+      avatar.textContent = `${profile.first_name?.[0] || ''}${profile.last_name?.[0] || ''}`.toUpperCase() || 'P';
+    } catch (error) {
+      console.warn('CampGrids account navigation could not be personalized:', error.message);
+    }
+  }
+
   return {
     configured,
     configurationMessage,
@@ -116,5 +140,6 @@ window.CampGridsApp = (() => {
     logGridActivity,
     audit,
     dashboardHref,
+    updateAccountNavigation,
   };
 })();

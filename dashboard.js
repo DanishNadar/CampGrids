@@ -121,7 +121,7 @@
     const currentKpis = current ? classKpis(current) : null;
 
     workspace.innerHTML = `
-      ${actionsHeader('Teacher workspace', 'Class management, without spreadsheet archaeology.', 'Create secure classes, import rosters, review work, and export the data your team needs.')}
+      ${actionsHeader('Teacher workspace', 'Convenient Class Management', 'Create secure classes, import rosters, review work, and export the data your team needs.')}
       <section class="kpiGrid" aria-label="Teaching overview">
         <article class="kpiCard"><span>Active classes</span><strong>${state.classes.filter((entry) => entry.status === 'active').length}</strong><small>${state.classes.length} total</small></article>
         <article class="kpiCard"><span>Campers</span><strong>${totalCampers}</strong><small>Across your classes</small></article>
@@ -295,11 +295,15 @@
   async function createClass(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const { data, error } = await app.getClient().from('classes').insert({
-      name: String(form.get('name')).trim(), owner_id: state.profile.id, status: 'active',
-      starts_on: form.get('startsOn') || null, ends_on: form.get('endsOn') || null, notes: form.get('notes') || null,
-    }).select().single();
+    const { data: createdRows, error } = await app.getClient().rpc('create_class', {
+      p_name: String(form.get('name')).trim(),
+      p_starts_on: form.get('startsOn') || null,
+      p_ends_on: form.get('endsOn') || null,
+      p_notes: form.get('notes') || null,
+    });
     if (error) throw error;
+    const data = createdRows?.[0];
+    if (!data) throw new Error('The class was not created. Please try again.');
     await app.audit('class_created', 'class', data.id, { name: data.name, code: data.code });
     state.selectedClassId = data.id;
     await loadTeacherClasses(); renderTeacher(); notice(`Class created. Its unique code is ${data.code}.`, 'isSuccess');

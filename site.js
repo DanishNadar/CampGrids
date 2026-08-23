@@ -359,12 +359,16 @@ function renderSiteNav() {
 
   /* Build the four tabs from the sketch: Home, the MSI Camps menu, the External Camps menu, and About. */
   const tabs = makeEl('div', 'siteNavTabs');
+  const accountLink = createNavLink('Account', 'auth.html', active === 'account' || active === 'dashboard' || active === 'profile');
+  accountLink.id = 'accountNavLink';
+  accountLink.classList.add('navProfileLink');
+
   tabs.append(
     createNavLink('Home', 'index.html', active === 'home'),
     createNavMenu('MSI Camps', createCampMenuPanel(campGroups[0], currentCampId), active === 'camps'),
     createNavMenu('External Camps', createCampMenuPanel(campGroups[1], currentCampId), active === 'externalCamps'),
     createNavLink('About', 'about.html', active === 'about'),
-    createNavLink('Account', 'auth.html', active === 'account' || active === 'dashboard')
+    accountLink
   );
 
   /* Assemble the bar and put it on the page. */
@@ -642,3 +646,4 @@ renderSiteNav();
 renderCampPage();
 renderGalleryPage();
 renderCampCards();
+window.CampGridsApp?.updateAccountNavigation?.();
