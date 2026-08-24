@@ -7,7 +7,7 @@ Campers use only a class code and CampGrids username. They cannot access another
 Teachers and MSI administrators must complete two steps before they can access any camper data:
 
 1. Their assigned teacher email/username or administrator email, plus password.
-2. A one-time, email-delivered sign-in link sent to the email address on their CampGrids account.
+2. A one-time code sent to the email address on their CampGrids account.
 
 The database records the second step against the exact Supabase session for eight hours. Row-level security requires that verified staff session for teacher class access, administrative controls, roster imports, and all other staff access to camper records. A password-only session is not enough.
 
@@ -29,24 +29,38 @@ The database records the second step against the exact Supabase session for eigh
 6. In **Database -> Replication**, add `navigation_items` and `dropdown_options` to `supabase_realtime` if administrators' live-site changes should appear in open browsers immediately.
 7. Serve the site over a local or hosted web server. Supabase Auth does not work reliably from `file://` URLs.
 
-### Configure free email verification
+### Configure Gmail-delivered verification codes
 
-The Supabase Free plan's default sender does not permit template edits, so CampGrids deliberately uses its secure Magic Link as the email second factor. No custom SMTP is required for the demo. The link returns to `verify.html`, which binds the verified email session to the password sign-in request and opens the correct teacher or administrator workspace.
+Supabase continues to issue and verify the one-time code; Gmail only delivers it through a private SMTP connection. Do not place a Gmail password or app password in this repository, an Edge Function secret, or chat.
 
-In **Authentication -> URL Configuration** add this exact redirect URL:
+1. In the Google account that will send the messages, enable **2-Step Verification** and generate a new, dedicated **App Password** named `CampGrids Supabase SMTP`.
+2. In Supabase, go to **Authentication -> Emails -> SMTP Settings**, enable custom SMTP, and enter:
 
-```text
-https://camp-grids.vercel.app/verify.html**
-```
+   | Setting | Value |
+   | --- | --- |
+   | Sender email | Your full Gmail or Google Workspace address |
+   | Sender name | CampGrids |
+   | Host | `smtp.gmail.com` |
+   | Port | `465` with TLS, or `587` with STARTTLS |
+   | Username | The same full Gmail address |
+   | Password | The Google App Password (entered only in the Supabase dashboard) |
 
-If your production domain changes, set the Edge Function secret to that origin and redeploy it:
+3. Save the SMTP settings. The Email Templates editor becomes available. Open **Authentication -> Emails -> Magic Link** and remove every `{{ .ConfirmationURL }}` reference. Use this subject and body:
 
-```powershell
-npx supabase secrets set CAMPGRIDS_APP_ORIGIN=https://your-production-domain.example --project-ref hofninqlkcuzgboslodq
-npx supabase functions deploy request-staff-email-2fa --project-ref hofninqlkcuzgboslodq --use-api
-```
+   ```text
+   Subject: Your CampGrids verification code
+   ```
 
-The built-in sender is suitable for testing only: it has recipient and rate limits. For a live program, configure custom SMTP in **Authentication -> Emails -> SMTP Settings**, verify its sending domain, and disable click tracking for authentication links.
+   ```html
+   <h2>CampGrids verification code</h2>
+   <p>Enter this one-time code to finish signing in:</p>
+   <p style="font-size: 28px; font-weight: 700; letter-spacing: 0.16em;">{{ .Token }}</p>
+   <p>This code expires shortly. Do not share it.</p>
+   ```
+
+Using `{{ .Token }}` sends the numeric one-time code consumed by the CampGrids form. Gmail/Google Workspace delivery quotas and organizational SMTP policies still apply; use a dedicated sending account, not a personal mailbox, for a real camp program.
+
+If CampGrids reports that Gmail SMTP could not send a code, first confirm that the sender email and SMTP username are the same full Gmail address, the port/security pair is `465` + TLS or `587` + STARTTLS, and the value in Supabase is a newly generated Google App Password rather than the ordinary Gmail password. The sanitized browser error is intentional; the provider response is available to project administrators in **Edge Functions -> request-staff-email-2fa -> Logs**.
 
 ## Existing project migration
 
@@ -58,7 +72,7 @@ For a new project, `schema.sql` already contains the final email-2FA design; do 
 supabase functions delete admin-phone-login
 ```
 
-If the sign-in page says it could not send the verification email, open **Edge Functions** in the Supabase dashboard and confirm that `request-staff-email-2fa` exists and is active. A `404 Requested function was not found` response means it has not been deployed yet. Deploy it with:
+If the sign-in page says it could not send a code, open **Edge Functions** in the Supabase dashboard and confirm that `request-staff-email-2fa` exists and is active. A `404 Requested function was not found` response means it has not been deployed yet. Deploy it with:
 
 ```powershell
 supabase functions deploy request-staff-email-2fa --project-ref hofninqlkcuzgboslodq
@@ -116,14 +130,14 @@ Administrator usernames are still generated as first initial + last name: `Danis
 
 - Reset an administrator password in **Authentication -> Users**. Do not place a plaintext password in SQL, frontend JavaScript, or source control.
 - Change `is_active` to `false` in `public.profiles` to revoke CampGrids access immediately; existing email-verified sessions will fail the database check.
-- Keep the staff user's email current. The verification link always goes to `profiles.email`, which is created from the Auth email identity.
+- Keep the staff user's email current. The verification code always goes to `profiles.email`, which is created from the Auth email identity.
 - Create teacher accounts only from the verified administrator dashboard. That workflow supplies a teacher's initial password and email; the teacher must then complete emailed 2FA at sign-in.
 
 ## Verification checklist
 
-1. Sign in at `/admin` with an administrator email address and password. A secure link should arrive at that email address.
-2. Open the link. The administrator dashboard should load only after it is accepted.
-3. Sign in through the Teacher tab with a teacher username/email and password. The teacher dashboard should load only after the emailed link is opened.
+1. Sign in at `/admin` with an administrator email address and password. A code should arrive at that email address.
+2. Enter the code. The administrator dashboard should load only after it is accepted.
+3. Sign in through the Teacher tab with a teacher username/email and password. The teacher dashboard should load only after an email code is accepted.
 4. Open a staff dashboard with a password-only session or after more than eight hours. It must redirect to sign-in and must not expose camper data.
 5. Sign in as a camper with a valid class code and username. No password or staff email code should be requested.
 

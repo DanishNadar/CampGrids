@@ -35,28 +35,17 @@ Deno.serve(async (request) => {
     return fail(error?.message || "We could not start email verification", 403);
   }
 
-  // The hosted Supabase sender on the Free plan sends a magic link. Return it
-  // to this dedicated CampGrids page, carrying the short-lived ticket that
-  // binds the email proof to the password-authenticated staff request.
-  let redirectTo: URL;
-  try {
-    const body = await request.json();
-    redirectTo = new URL(String(body?.redirectTo || ""));
-  } catch (_) {
-    return fail("A CampGrids verification return address is required", 400);
-  }
-  const configuredOrigin = Deno.env.get("CAMPGRIDS_APP_ORIGIN") || "https://camp-grids.vercel.app";
-  if (redirectTo.origin !== configuredOrigin || redirectTo.pathname !== "/verify.html") {
-    return fail("The verification return address is not approved", 400);
-  }
-  redirectTo.searchParams.set("staff_ticket", challenge.ticket);
-
   const service = createClient(url, serviceRole, { auth: { autoRefreshToken: false, persistSession: false } });
   const { error: otpError } = await service.auth.signInWithOtp({
     email: challenge.email,
-    options: { shouldCreateUser: false, emailRedirectTo: redirectTo.href },
+    options: { shouldCreateUser: false },
   });
-  if (otpError) return fail(otpError.message || "We could not send the verification email", 429);
+  if (otpError) {
+    // Keep SMTP diagnostic details in the protected function logs, while the
+    // browser receives an actionable message without provider internals.
+    console.error("Staff email OTP delivery failed", { message: otpError.message, status: otpError.status });
+    return fail("Gmail SMTP could not send the verification code. Confirm the SMTP host, port, sender address, and a newly generated Google App Password in Supabase, then try again.", 502);
+  }
 
   return new Response(JSON.stringify({ email: challenge.email, ticket: challenge.ticket }), { headers });
 });

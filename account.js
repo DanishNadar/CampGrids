@@ -7,6 +7,7 @@
   const teacherResendCode = document.getElementById('teacherResendCode');
   const teacherStartOver = document.getElementById('teacherStartOver');
   const teacherCredentialFields = [...teacherLoginForm.querySelectorAll('[data-teacher-credential]')];
+  const teacherVerificationCode = teacherLoginForm.elements.verificationCode;
   const teacherState = { email: '', ticket: '' };
 
   function setNotice(message, state = '') {
@@ -30,6 +31,8 @@
   function resetTeacherVerification() {
     teacherState.email = '';
     teacherState.ticket = '';
+    teacherVerificationCode.value = '';
+    teacherVerificationCode.disabled = true;
     teacherVerificationStep.hidden = true;
     teacherSendCode.hidden = false;
     teacherCredentialFields.forEach((field) => {
@@ -45,6 +48,8 @@
     });
     teacherSendCode.hidden = true;
     teacherVerificationStep.hidden = false;
+    teacherVerificationCode.disabled = false;
+    teacherVerificationCode.focus();
   }
 
   function setActiveTab(tab) {
@@ -76,9 +81,8 @@
   }
 
   async function requestStaffEmailCode(app) {
-    const redirectTo = new URL('/verify.html', window.location.origin).href;
-    const { data: request, error } = await app.getClient().functions.invoke('request-staff-email-2fa', { body: { redirectTo } });
-    if (error) throw new Error(await functionErrorMessage(error, 'We could not send the verification email. Please try again.'));
+    const { data: request, error } = await app.getClient().functions.invoke('request-staff-email-2fa', { body: {} });
+    if (error) throw new Error(await functionErrorMessage(error, 'We could not send the verification code. Please try again.'));
     if (request?.error) throw new Error(request.error);
     if (!request?.email || !request?.ticket) throw new Error('We could not start email verification. Please try again.');
     teacherState.email = request.email;
@@ -127,10 +131,26 @@
       await app.getClient().auth.signOut();
       throw new Error('This is not an active teacher account.');
     }
-    setNotice('Sending a secure sign-in link to your work email...');
+    setNotice('Sending a verification code to your work email...');
     await requestStaffEmailCode(app);
     showTeacherVerification();
-    setNotice(`A secure sign-in link was sent to ${teacherState.email}.`, 'isSuccess');
+    setNotice(`A verification code was sent to ${teacherState.email}.`, 'isSuccess');
+  }
+
+  async function verifyTeacherEmailCode(app) {
+    const code = String(teacherVerificationCode.value || '').replace(/\D/g, '');
+    if (!/^\d{6,8}$/.test(code)) throw new Error('Enter the verification code from your email.');
+    setNotice('Verifying code...');
+    const { error } = await app.getClient().auth.verifyOtp({ email: teacherState.email, token: code, type: 'email' });
+    if (error) throw new Error(error.message || 'The verification code was not accepted.');
+    const { data: verified, error: verifiedError } = await app.getClient().rpc('complete_staff_email_2fa', { p_ticket: teacherState.ticket });
+    if (verifiedError || !verified) throw new Error('The email verification session could not be confirmed. Please request a new code.');
+    const profile = await app.getProfile(true);
+    if (profile?.role !== 'teacher' || !profile.is_active) {
+      await app.getClient().auth.signOut();
+      throw new Error('This is not an active teacher account.');
+    }
+    window.location.assign(app.dashboardHref('teacher'));
   }
 
   teacherLoginForm.addEventListener('submit', async (event) => {
@@ -138,7 +158,8 @@
     const app = window.CampGridsApp;
     if (!app.configured()) return setNotice(app.configurationMessage, 'isError');
     try {
-      await beginTeacherLogin(app, new FormData(teacherLoginForm));
+      if (teacherState.ticket) await verifyTeacherEmailCode(app);
+      else await beginTeacherLogin(app, new FormData(teacherLoginForm));
     } catch (error) {
       setNotice(error.message || 'We could not sign you in.', 'isError');
     }
@@ -148,11 +169,13 @@
     const app = window.CampGridsApp;
     if (!teacherState.ticket || !app.configured()) return;
     try {
-      setNotice('Sending a new verification email...');
+      setNotice('Sending a new verification code...');
       await requestStaffEmailCode(app);
-      setNotice(`A new sign-in link was sent to ${teacherState.email}.`, 'isSuccess');
+      teacherVerificationCode.value = '';
+      teacherVerificationCode.focus();
+      setNotice(`A new verification code was sent to ${teacherState.email}.`, 'isSuccess');
     } catch (error) {
-      setNotice(error.message || 'We could not resend the verification email.', 'isError');
+      setNotice(error.message || 'We could not resend the verification code.', 'isError');
     }
   });
 

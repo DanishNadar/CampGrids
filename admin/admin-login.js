@@ -6,6 +6,7 @@
   const resendButton = document.getElementById('adminResendCode');
   const startOverButton = document.getElementById('adminStartOver');
   const credentialFields = [...form.querySelectorAll('[data-admin-credential]')];
+  const verificationCode = form.elements.verificationCode;
   const state = { email: '', ticket: '' };
   const setNotice = (message, stateName = '') => { notice.textContent = message; notice.className = `formNotice ${stateName}`; };
   const functionErrorMessage = async (error, fallback) => {
@@ -20,6 +21,8 @@
   function resetVerificationForm() {
     state.email = '';
     state.ticket = '';
+    verificationCode.value = '';
+    verificationCode.disabled = true;
     verificationStep.hidden = true;
     sendCodeButton.hidden = false;
     credentialFields.forEach((field) => {
@@ -35,12 +38,13 @@
     });
     sendCodeButton.hidden = true;
     verificationStep.hidden = false;
+    verificationCode.disabled = false;
+    verificationCode.focus();
   }
 
   async function requestEmailCode(app) {
-    const redirectTo = new URL('/verify.html', window.location.origin).href;
-    const { data: request, error } = await app.getClient().functions.invoke('request-staff-email-2fa', { body: { redirectTo } });
-    if (error) throw new Error(await functionErrorMessage(error, 'We could not send the verification email. Please try again.'));
+    const { data: request, error } = await app.getClient().functions.invoke('request-staff-email-2fa', { body: {} });
+    if (error) throw new Error(await functionErrorMessage(error, 'We could not send the verification code. Please try again.'));
     if (request?.error) throw new Error(request.error);
     if (!request?.email || !request?.ticket) throw new Error('We could not start email verification. Please try again.');
     state.email = request.email;
@@ -64,10 +68,30 @@
       await app.getClient().auth.signOut();
       throw new Error(`The signed-in email (${email}) is not an MSI administrator account. Promote this exact email in Supabase before trying again.`);
     }
-    setNotice('Sending a secure sign-in link to your MSI email...');
+    setNotice('Sending a verification code to your MSI email...');
     await requestEmailCode(app);
     showVerificationForm();
-    setNotice(`A secure sign-in link was sent to ${state.email}.`, 'isSuccess');
+    setNotice(`A verification code was sent to ${state.email}.`, 'isSuccess');
+  }
+
+  async function finishAdminLogin(app) {
+    const { data: verified, error: verifiedError } = await app.getClient().rpc('complete_staff_email_2fa', { p_ticket: state.ticket });
+    if (verifiedError || !verified) throw new Error('The email verification session could not be confirmed. Please request a new code.');
+    const profile = await app.getProfile(true);
+    if (profile?.role !== 'admin' || !profile.is_active) {
+      await app.getClient().auth.signOut();
+      throw new Error('This account does not have MSI administrator access.');
+    }
+    window.location.assign('../dashboard.html');
+  }
+
+  async function verifyEmailCode(app) {
+    const code = String(verificationCode.value || '').replace(/\D/g, '');
+    if (!/^\d{6,8}$/.test(code)) throw new Error('Enter the verification code from your email.');
+    setNotice('Verifying code...');
+    const { error } = await app.getClient().auth.verifyOtp({ email: state.email, token: code, type: 'email' });
+    if (error) throw new Error(error.message || 'The verification code was not accepted.');
+    await finishAdminLogin(app);
   }
 
   form.addEventListener('submit', async (event) => {
@@ -75,7 +99,8 @@
     const app = window.CampGridsApp;
     if (!app.configured()) return setNotice(app.configurationMessage, 'isError');
     try {
-      await beginAdminLogin(app, new FormData(form));
+      if (state.ticket) await verifyEmailCode(app);
+      else await beginAdminLogin(app, new FormData(form));
     } catch (error) {
       setNotice(error.message || 'We could not sign you in.', 'isError');
     }
@@ -85,11 +110,13 @@
     const app = window.CampGridsApp;
     if (!state.ticket || !app.configured()) return;
     try {
-      setNotice('Sending a new verification email...');
+      setNotice('Sending a new verification code...');
       await requestEmailCode(app);
-      setNotice(`A new sign-in link was sent to ${state.email}.`, 'isSuccess');
+      verificationCode.value = '';
+      verificationCode.focus();
+      setNotice(`A new verification code was sent to ${state.email}.`, 'isSuccess');
     } catch (error) {
-      setNotice(error.message || 'We could not resend the verification email.', 'isError');
+      setNotice(error.message || 'We could not resend the verification code.', 'isError');
     }
   });
 
