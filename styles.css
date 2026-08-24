@@ -80,7 +80,9 @@
 .authTab { border: 0; padding: 17px 14px; background: #f8fafc; color: var(--muted); font: inherit; font-weight: 700; cursor: pointer; }
 .authTab.isActive { color: var(--ink); background: white; box-shadow: inset 0 -3px var(--accent); }
 .authPanel { display: grid; gap: 17px; padding: 30px; }
-.authPanel[hidden] { display: none; }
+/* Author CSS for layout can override the browser's default [hidden] rule.
+   Keep multi-step sign-in panels out of the layout until JavaScript opens them. */
+[hidden] { display: none !important; }
 .adminAccessShell { display: grid; place-items: center; min-height: 100vh; padding: 28px; }
 .adminAccessCard { width: min(100%, 480px); }.adminAccessCard > .formHeading { padding: 30px 30px 0; }.adminAccessCard h1 { margin-top: 6px; font-size: 1.9rem; letter-spacing: -.04em; }
 .formHeading h2 { font-size: 1.55rem; letter-spacing: -0.03em; }

@@ -71,9 +71,13 @@
     const { error: signInError } = await app.getClient().auth.signInWithPassword({ email, password });
     if (signInError) throw signInError;
     const profile = await app.getProfile(true);
-    if (profile?.role !== 'admin' || !profile.is_active) {
+    if (!profile?.is_active) {
       await app.getClient().auth.signOut();
-      throw new Error('This account does not have MSI administrator access.');
+      throw new Error('This CampGrids account is inactive. Contact MSI IT for access.');
+    }
+    if (profile.role !== 'admin') {
+      await app.getClient().auth.signOut();
+      throw new Error(`The signed-in email (${email}) is not an MSI administrator account. Promote this exact email in Supabase before trying again.`);
     }
     setNotice('Sending a verification code to your MSI email...');
     await requestEmailCode(app);
