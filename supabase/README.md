@@ -69,6 +69,8 @@ If CampGrids reports that Gmail SMTP could not send a code, first confirm that t
 
 Supabase limits passwordless code requests for the same recipient to one per 60 seconds. If the first code arrives, Gmail SMTP is working; wait for the countdown before asking for another code and use the code that already arrived. The sign-in pages enforce this cooldown, and the latest migration preserves the original CampGrids verification ticket when an early resend is rejected.
 
+An accepted request means Supabase Auth successfully handed the message to the configured SMTP server; it does not prove that a recipient inbox displayed it. If a request is accepted but nothing arrives after several minutes, open the sending Gmail account's **Sent** folder first. If it is present there, check the recipient's Spam folder and any Microsoft 365/Google Workspace quarantine. If it is absent, open **Supabase Dashboard -> Edge Functions -> request-staff-email-2fa -> Logs** and look for `Staff email OTP delivery failed`; copy the error text from that log before changing SMTP settings.
+
 ## Existing project migration
 
 If this project previously used the phone-based implementation, run [`20260823_zz_staff_email_2fa.sql`](migrations/20260823_zz_staff_email_2fa.sql) once in the SQL editor after the earlier migrations. It deletes the retired phone allowlist and phone-session records, then installs the email-2FA tables, functions, and RLS rules. Then run [`20260824_admin_grid_and_teacher_csv.sql`](migrations/20260824_admin_grid_and_teacher_csv.sql) to add the Mother Grid, class sub-grids, and CSV-only teacher provisioning, followed by [`20260824_zz_fix_staff_email_otp_resend.sql`](migrations/20260824_zz_fix_staff_email_otp_resend.sql) to make code resends safe.

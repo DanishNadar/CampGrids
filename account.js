@@ -175,7 +175,7 @@
     await requestStaffEmailCode(app);
     showTeacherVerification();
     startTeacherResendCooldown();
-    setNotice(`A verification code was sent to ${teacherState.email}.`, 'isSuccess');
+    setNotice(`A verification code was accepted for delivery to ${teacherState.email}. Check Inbox, Spam, and any organization quarantine.`, 'isSuccess');
   }
 
   async function verifyTeacherEmailCode(app) {
@@ -215,7 +215,7 @@
       teacherVerificationCode.value = '';
       teacherVerificationCode.focus();
       startTeacherResendCooldown();
-      setNotice(`A new verification code was sent to ${teacherState.email}.`, 'isSuccess');
+      setNotice(`A new verification code was accepted for delivery to ${teacherState.email}. Check Inbox, Spam, and any organization quarantine.`, 'isSuccess');
     } catch (error) {
       if (/wait 60 seconds/i.test(error.message || '')) startTeacherResendCooldown();
       setNotice(error.message || 'We could not resend the verification code.', 'isError');

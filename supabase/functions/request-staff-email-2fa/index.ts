@@ -28,12 +28,15 @@ Deno.serve(async (request) => {
   });
   const { data: userData, error: userError } = await caller.auth.getUser();
   if (userError || !userData.user) return fail("An authenticated staff session is required", 401);
+  const logContext = { userId: userData.user.id };
 
   const { data, error } = await caller.rpc("begin_staff_email_2fa");
   const challenge = Array.isArray(data) ? data[0] : data;
   if (error || !challenge?.email || !challenge?.ticket) {
+    console.error("Staff email verification request was rejected before delivery", { ...logContext, message: error?.message });
     return fail(error?.message || "We could not start email verification", 403);
   }
+  console.log("Staff verification email requested", logContext);
 
   const service = createClient(url, serviceRole, { auth: { autoRefreshToken: false, persistSession: false } });
   const { error: otpError } = await service.auth.signInWithOtp({
@@ -42,7 +45,7 @@ Deno.serve(async (request) => {
   });
   if (otpError) {
     const rateLimited = otpError.status === 429 || /rate.?limit|too many|over_email_send_rate_limit/i.test(otpError.message || "");
-    console.error("Staff email OTP delivery failed", { message: otpError.message, status: otpError.status, code: otpError.code });
+    console.error("Staff email OTP delivery failed", { ...logContext, message: otpError.message, status: otpError.status, code: otpError.code });
     if (rateLimited) {
       // Supabase applies a per-recipient cooldown to /auth/v1/otp. Do not tell
       // staff that correctly configured Gmail SMTP has failed in this case.
@@ -53,5 +56,8 @@ Deno.serve(async (request) => {
     return fail("Gmail SMTP could not send the verification code. Confirm the SMTP host, port, sender address, and a newly generated Google App Password in Supabase, then try again.", 502);
   }
 
-  return new Response(JSON.stringify({ email: challenge.email, ticket: challenge.ticket }), { headers });
+  // Auth accepted the request and SMTP did not reject it. Delivery to an inbox
+  // can still be delayed, quarantined, or filtered by the receiving provider.
+  console.log("Staff verification email accepted by Supabase Auth", logContext);
+  return new Response(JSON.stringify({ email: challenge.email, ticket: challenge.ticket, delivery: "accepted" }), { status: 202, headers });
 });

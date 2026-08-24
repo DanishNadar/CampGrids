@@ -97,7 +97,7 @@
     await requestEmailCode(app);
     showVerificationForm();
     startResendCooldown();
-    setNotice(`A verification code was sent to ${state.email}.`, 'isSuccess');
+    setNotice(`A verification code was accepted for delivery to ${state.email}. Check Inbox, Spam, and any organization quarantine.`, 'isSuccess');
   }
 
   async function finishAdminLogin(app) {
@@ -141,7 +141,7 @@
       verificationCode.value = '';
       verificationCode.focus();
       startResendCooldown();
-      setNotice(`A new verification code was sent to ${state.email}.`, 'isSuccess');
+      setNotice(`A new verification code was accepted for delivery to ${state.email}. Check Inbox, Spam, and any organization quarantine.`, 'isSuccess');
     } catch (error) {
       if (/wait 60 seconds/i.test(error.message || '')) startResendCooldown();
       setNotice(error.message || 'We could not resend the verification code.', 'isError');
