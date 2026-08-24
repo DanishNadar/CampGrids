@@ -8,6 +8,7 @@
   const credentialFields = [...form.querySelectorAll('[data-admin-credential]')];
   const verificationCode = form.elements.verificationCode;
   const state = { email: '', ticket: '' };
+  let resendTimer = null;
   const setNotice = (message, stateName = '') => { notice.textContent = message; notice.className = `formNotice ${stateName}`; };
   const functionErrorMessage = async (error, fallback) => {
     try {
@@ -18,7 +19,31 @@
     }
   };
 
+  function startResendCooldown(seconds = 60) {
+    window.clearTimeout(resendTimer);
+    const label = resendButton.dataset.defaultLabel || resendButton.textContent;
+    resendButton.dataset.defaultLabel = label;
+    let remaining = seconds;
+    const update = () => {
+      resendButton.disabled = remaining > 0;
+      resendButton.textContent = remaining > 0 ? `Resend in ${remaining}s` : label;
+      if (remaining > 0) {
+        remaining -= 1;
+        resendTimer = window.setTimeout(update, 1000);
+      }
+    };
+    update();
+  }
+
+  function resetResendCooldown() {
+    window.clearTimeout(resendTimer);
+    resendTimer = null;
+    resendButton.disabled = false;
+    resendButton.textContent = resendButton.dataset.defaultLabel || resendButton.textContent;
+  }
+
   function resetVerificationForm() {
+    resetResendCooldown();
     state.email = '';
     state.ticket = '';
     verificationCode.value = '';
@@ -71,6 +96,7 @@
     setNotice('Sending a verification code to your MSI email...');
     await requestEmailCode(app);
     showVerificationForm();
+    startResendCooldown();
     setNotice(`A verification code was sent to ${state.email}.`, 'isSuccess');
   }
 
@@ -114,8 +140,10 @@
       await requestEmailCode(app);
       verificationCode.value = '';
       verificationCode.focus();
+      startResendCooldown();
       setNotice(`A new verification code was sent to ${state.email}.`, 'isSuccess');
     } catch (error) {
+      if (/wait 60 seconds/i.test(error.message || '')) startResendCooldown();
       setNotice(error.message || 'We could not resend the verification code.', 'isError');
     }
   });

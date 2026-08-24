@@ -395,9 +395,10 @@ begin
     raise exception 'An active teacher or MSI administrator account with an email address is required';
   end if;
 
-  delete from public.staff_email_2fa_challenges
-  where expires_at <= now()
-     or (user_id = auth.uid() and password_session_id = session_value and consumed_at is null);
+  -- Do not invalidate the existing ticket before Supabase accepts a resend.
+  -- Auth applies a per-recipient cooldown, so the original code must remain
+  -- usable if a second request is rejected during that period.
+  delete from public.staff_email_2fa_challenges where expires_at <= now();
   ticket_value := encode(gen_random_bytes(32), 'hex');
   insert into public.staff_email_2fa_challenges (user_id, password_session_id, ticket_hash, expires_at)
   values (auth.uid(), session_value, encode(digest(ticket_value, 'sha256'), 'hex'), now() + interval '10 minutes');

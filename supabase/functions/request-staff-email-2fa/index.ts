@@ -7,7 +7,7 @@ const headers = {
   "Content-Type": "application/json",
 };
 
-const fail = (message: string, status = 400) => new Response(JSON.stringify({ error: message }), { status, headers });
+const fail = (message: string, status = 400, extra: Record<string, unknown> = {}) => new Response(JSON.stringify({ error: message, ...extra }), { status, headers });
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers });
@@ -41,9 +41,15 @@ Deno.serve(async (request) => {
     options: { shouldCreateUser: false },
   });
   if (otpError) {
-    // Keep SMTP diagnostic details in the protected function logs, while the
+    const rateLimited = otpError.status === 429 || /rate.?limit|too many|over_email_send_rate_limit/i.test(otpError.message || "");
+    console.error("Staff email OTP delivery failed", { message: otpError.message, status: otpError.status, code: otpError.code });
+    if (rateLimited) {
+      // Supabase applies a per-recipient cooldown to /auth/v1/otp. Do not tell
+      // staff that correctly configured Gmail SMTP has failed in this case.
+      return fail("A verification code was just sent. Wait 60 seconds before requesting another one, then use the newest code in your inbox.", 429, { retryAfterSeconds: 60 });
+    }
+    // Keep SMTP diagnostic details in protected function logs, while the
     // browser receives an actionable message without provider internals.
-    console.error("Staff email OTP delivery failed", { message: otpError.message, status: otpError.status });
     return fail("Gmail SMTP could not send the verification code. Confirm the SMTP host, port, sender address, and a newly generated Google App Password in Supabase, then try again.", 502);
   }
 

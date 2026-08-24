@@ -14,13 +14,14 @@ The database records the second step against the exact Supabase session for eigh
 ## Initial project setup
 
 1. Create a Supabase project and run [`schema.sql`](schema.sql) in the SQL editor.
-2. Deploy the server-side functions:
+2. Deploy the server-side functions. If PowerShell says `supabase` is not recognized, use `npx` exactly as shown below. It downloads and runs the official CLI without a global installation (Node 20+ is required):
 
    ```powershell
-   supabase functions deploy provision-students
-   supabase functions deploy provision-teachers
-   supabase functions deploy student-class-login
-   supabase functions deploy request-staff-email-2fa
+npx supabase@latest login
+npx supabase@latest functions deploy provision-students --project-ref hofninqlkcuzgboslodq
+npx supabase@latest functions deploy provision-teachers --project-ref hofninqlkcuzgboslodq
+npx supabase@latest functions deploy student-class-login --project-ref hofninqlkcuzgboslodq
+npx supabase@latest functions deploy request-staff-email-2fa --project-ref hofninqlkcuzgboslodq
    ```
 
 3. Copy `supabase-config.example.js` to `supabase-config.js` in the site root and provide the project URL and **anon** key. Never place the service-role key in a browser file.
@@ -64,9 +65,13 @@ Using `{{ .Token }}` sends the numeric one-time code consumed by the CampGrids f
 
 If CampGrids reports that Gmail SMTP could not send a code, first confirm that the sender email and SMTP username are the same full Gmail address, the port/security pair is `465` + TLS or `587` + STARTTLS, and the value in Supabase is a newly generated Google App Password rather than the ordinary Gmail password. The sanitized browser error is intentional; the provider response is available to project administrators in **Edge Functions -> request-staff-email-2fa -> Logs**.
 
+### Resending a verification code
+
+Supabase limits passwordless code requests for the same recipient to one per 60 seconds. If the first code arrives, Gmail SMTP is working; wait for the countdown before asking for another code and use the code that already arrived. The sign-in pages enforce this cooldown, and the latest migration preserves the original CampGrids verification ticket when an early resend is rejected.
+
 ## Existing project migration
 
-If this project previously used the phone-based implementation, run [`20260823_zz_staff_email_2fa.sql`](migrations/20260823_zz_staff_email_2fa.sql) once in the SQL editor after the earlier migrations. It deletes the retired phone allowlist and phone-session records, then installs the email-2FA tables, functions, and RLS rules. Then run [`20260824_admin_grid_and_teacher_csv.sql`](migrations/20260824_admin_grid_and_teacher_csv.sql) to add the Mother Grid, class sub-grids, and CSV-only teacher provisioning.
+If this project previously used the phone-based implementation, run [`20260823_zz_staff_email_2fa.sql`](migrations/20260823_zz_staff_email_2fa.sql) once in the SQL editor after the earlier migrations. It deletes the retired phone allowlist and phone-session records, then installs the email-2FA tables, functions, and RLS rules. Then run [`20260824_admin_grid_and_teacher_csv.sql`](migrations/20260824_admin_grid_and_teacher_csv.sql) to add the Mother Grid, class sub-grids, and CSV-only teacher provisioning, followed by [`20260824_zz_fix_staff_email_otp_resend.sql`](migrations/20260824_zz_fix_staff_email_otp_resend.sql) to make code resends safe.
 
 For a new project, `schema.sql` already contains the final email-2FA design; do not run an old phone migration. If the old Edge Function was deployed, it can be removed after the new function is live:
 
@@ -77,7 +82,7 @@ supabase functions delete admin-phone-login
 If the sign-in page says it could not send a code, open **Edge Functions** in the Supabase dashboard and confirm that `request-staff-email-2fa` exists and is active. A `404 Requested function was not found` response means it has not been deployed yet. Deploy it with:
 
 ```powershell
-supabase functions deploy request-staff-email-2fa --project-ref hofninqlkcuzgboslodq
+npx supabase@latest functions deploy request-staff-email-2fa --project-ref hofninqlkcuzgboslodq
 ```
 
 You can also use **Deploy a new function -> Via Editor** in the dashboard.

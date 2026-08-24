@@ -9,10 +9,34 @@
   const teacherCredentialFields = [...teacherLoginForm.querySelectorAll('[data-teacher-credential]')];
   const teacherVerificationCode = teacherLoginForm.elements.verificationCode;
   const teacherState = { email: '', ticket: '' };
+  let teacherResendTimer = null;
 
   function setNotice(message, state = '') {
     notice.textContent = message;
     notice.className = `formNotice ${state}`;
+  }
+
+  function startTeacherResendCooldown(seconds = 60) {
+    window.clearTimeout(teacherResendTimer);
+    const label = teacherResendCode.dataset.defaultLabel || teacherResendCode.textContent;
+    teacherResendCode.dataset.defaultLabel = label;
+    let remaining = seconds;
+    const update = () => {
+      teacherResendCode.disabled = remaining > 0;
+      teacherResendCode.textContent = remaining > 0 ? `Resend in ${remaining}s` : label;
+      if (remaining > 0) {
+        remaining -= 1;
+        teacherResendTimer = window.setTimeout(update, 1000);
+      }
+    };
+    update();
+  }
+
+  function resetTeacherResendCooldown() {
+    window.clearTimeout(teacherResendTimer);
+    teacherResendTimer = null;
+    teacherResendCode.disabled = false;
+    teacherResendCode.textContent = teacherResendCode.dataset.defaultLabel || teacherResendCode.textContent;
   }
 
   function normalizeUsername(value) {
@@ -29,6 +53,7 @@
   }
 
   function resetTeacherVerification() {
+    resetTeacherResendCooldown();
     teacherState.email = '';
     teacherState.ticket = '';
     teacherVerificationCode.value = '';
@@ -149,6 +174,7 @@
     setNotice('Sending a verification code to your work email...');
     await requestStaffEmailCode(app);
     showTeacherVerification();
+    startTeacherResendCooldown();
     setNotice(`A verification code was sent to ${teacherState.email}.`, 'isSuccess');
   }
 
@@ -188,8 +214,10 @@
       await requestStaffEmailCode(app);
       teacherVerificationCode.value = '';
       teacherVerificationCode.focus();
+      startTeacherResendCooldown();
       setNotice(`A new verification code was sent to ${teacherState.email}.`, 'isSuccess');
     } catch (error) {
+      if (/wait 60 seconds/i.test(error.message || '')) startTeacherResendCooldown();
       setNotice(error.message || 'We could not resend the verification code.', 'isError');
     }
   });
