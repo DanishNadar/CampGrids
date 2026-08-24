@@ -394,7 +394,7 @@ begin
     select 1 from jsonb_array_elements(coalesce(auth.jwt() -> 'amr', '[]'::jsonb)) as method
     where method ->> 'method' = 'otp'
   ) then
-    raise exception 'Enter the code sent to your email';
+    raise exception 'Open the verification link sent to your email';
   end if;
   if p_ticket !~ '^[a-f0-9]{64}$' then raise exception 'The verification request is invalid'; end if;
   session_value := (auth.jwt() ->> 'session_id')::uuid;

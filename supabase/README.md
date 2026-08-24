@@ -7,7 +7,7 @@ Campers use only a class code and CampGrids username. They cannot access another
 Teachers and MSI administrators must complete two steps before they can access any camper data:
 
 1. Their assigned teacher email/username or administrator email, plus password.
-2. A one-time code sent to the email address on their CampGrids account.
+2. A one-time, email-delivered sign-in link sent to the email address on their CampGrids account.
 
 The database records the second step against the exact Supabase session for eight hours. Row-level security requires that verified staff session for teacher class access, administrative controls, roster imports, and all other staff access to camper records. A password-only session is not enough.
 
@@ -29,26 +29,24 @@ The database records the second step against the exact Supabase session for eigh
 6. In **Database -> Replication**, add `navigation_items` and `dropdown_options` to `supabase_realtime` if administrators' live-site changes should appear in open browsers immediately.
 7. Serve the site over a local or hosted web server. Supabase Auth does not work reliably from `file://` URLs.
 
-### Configure the emailed verification code
+### Configure free email verification
 
-The staff flow calls Supabase's email OTP endpoint from `request-staff-email-2fa`. In **Authentication -> Email Templates**, edit the **Magic Link** template to contain `{{ .Token }}` and not `{{ .ConfirmationURL }}`. Using the token tells Supabase to send a numeric OTP that the CampGrids form can verify.
+The Supabase Free plan's default sender does not permit template edits, so CampGrids deliberately uses its secure Magic Link as the email second factor. No custom SMTP is required for the demo. The link returns to `verify.html`, which binds the verified email session to the password sign-in request and opens the correct teacher or administrator workspace.
 
-Example subject:
+In **Authentication -> URL Configuration** add this exact redirect URL:
 
 ```text
-Your CampGrids verification code
+https://camp-grids.vercel.app/verify.html**
 ```
 
-Example HTML body:
+If your production domain changes, set the Edge Function secret to that origin and redeploy it:
 
-```html
-<h2>CampGrids verification code</h2>
-<p>Use this one-time code to finish signing in:</p>
-<p style="font-size: 28px; font-weight: 700; letter-spacing: 0.16em;">{{ .Token }}</p>
-<p>This code expires shortly. Do not share it with anyone.</p>
+```powershell
+npx supabase secrets set CAMPGRIDS_APP_ORIGIN=https://your-production-domain.example --project-ref hofninqlkcuzgboslodq
+npx supabase functions deploy request-staff-email-2fa --project-ref hofninqlkcuzgboslodq --use-api
 ```
 
-For testing, Supabase's default email sender delivers only to pre-authorized project-team addresses and is limited to two messages per hour. For a real camp program, configure a custom SMTP provider in **Authentication -> Emails -> SMTP Settings**, verify its sending domain, disable click tracking for these messages, and set a sensible OTP rate limit in **Authentication -> Rate Limits**. Email avoids SMS charges, but an email delivery service may still have its own costs.
+The built-in sender is suitable for testing only: it has recipient and rate limits. For a live program, configure custom SMTP in **Authentication -> Emails -> SMTP Settings**, verify its sending domain, and disable click tracking for authentication links.
 
 ## Existing project migration
 
@@ -59,6 +57,14 @@ For a new project, `schema.sql` already contains the final email-2FA design; do 
 ```powershell
 supabase functions delete admin-phone-login
 ```
+
+If the sign-in page says it could not send the verification email, open **Edge Functions** in the Supabase dashboard and confirm that `request-staff-email-2fa` exists and is active. A `404 Requested function was not found` response means it has not been deployed yet. Deploy it with:
+
+```powershell
+supabase functions deploy request-staff-email-2fa --project-ref hofninqlkcuzgboslodq
+```
+
+You can also use **Deploy a new function -> Via Editor** in the dashboard.
 
 ## IT / Super-admin procedure
 
@@ -110,14 +116,14 @@ Administrator usernames are still generated as first initial + last name: `Danis
 
 - Reset an administrator password in **Authentication -> Users**. Do not place a plaintext password in SQL, frontend JavaScript, or source control.
 - Change `is_active` to `false` in `public.profiles` to revoke CampGrids access immediately; existing email-verified sessions will fail the database check.
-- Keep the staff user's email current. The verification code always goes to `profiles.email`, which is created from the Auth email identity.
+- Keep the staff user's email current. The verification link always goes to `profiles.email`, which is created from the Auth email identity.
 - Create teacher accounts only from the verified administrator dashboard. That workflow supplies a teacher's initial password and email; the teacher must then complete emailed 2FA at sign-in.
 
 ## Verification checklist
 
-1. Sign in at `/admin` with an administrator email address and password. A code should arrive at that email address.
-2. Enter the code. The administrator dashboard should load only after it is accepted.
-3. Sign in through the Teacher tab with a teacher username/email and password. The teacher dashboard should load only after an email code is accepted.
+1. Sign in at `/admin` with an administrator email address and password. A secure link should arrive at that email address.
+2. Open the link. The administrator dashboard should load only after it is accepted.
+3. Sign in through the Teacher tab with a teacher username/email and password. The teacher dashboard should load only after the emailed link is opened.
 4. Open a staff dashboard with a password-only session or after more than eight hours. It must redirect to sign-in and must not expose camper data.
 5. Sign in as a camper with a valid class code and username. No password or staff email code should be requested.
 
