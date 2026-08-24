@@ -113,8 +113,9 @@ window.CampGridsApp = (() => {
       const label = link.querySelector('.navLabel');
       if (!profile || !label) return;
       const name = `${profile.first_name} ${profile.last_name}`.trim();
-      link.href = 'profile.html';
-      link.title = `Open ${name}'s profile`;
+      const workspaceHref = dashboardHref(profile.role);
+      link.href = workspaceHref;
+      link.title = `Open ${name}'s workspace`;
       label.textContent = name || profile.username || 'My profile';
       let avatar = link.querySelector('.navProfileAvatar');
       if (!avatar) {
@@ -124,6 +125,27 @@ window.CampGridsApp = (() => {
         link.prepend(avatar);
       }
       avatar.textContent = `${profile.first_name?.[0] || ''}${profile.last_name?.[0] || ''}`.toUpperCase() || 'P';
+      const menu = document.getElementById('accountNavMenu');
+      const toggle = menu?.querySelector('.navAccountToggle');
+      const heading = menu?.querySelector('.navAccountPanelHeading strong');
+      const signIn = menu?.querySelector('[data-account-sign-in]');
+      const dashboard = menu?.querySelector('[data-account-dashboard]');
+      const profileLink = menu?.querySelector('[data-account-profile]');
+      const settings = menu?.querySelector('[data-account-settings]');
+      const signOut = menu?.querySelector('[data-account-sign-out]');
+      if (toggle) toggle.hidden = false;
+      if (heading) heading.textContent = name || profile.username || 'My CampGrids account';
+      if (signIn) signIn.hidden = true;
+      if (dashboard) { dashboard.href = workspaceHref; dashboard.hidden = false; }
+      if (profileLink) profileLink.hidden = false;
+      if (settings) settings.hidden = false;
+      if (signOut) {
+        signOut.hidden = false;
+        signOut.onclick = async () => {
+          await getClient().auth.signOut();
+          window.location.assign('auth.html');
+        };
+      }
     } catch (error) {
       console.warn('CampGrids account navigation could not be personalized:', error.message);
     }

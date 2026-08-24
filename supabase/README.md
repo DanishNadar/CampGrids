@@ -16,7 +16,7 @@
 
 Set the Supabase Auth **Site URL** to the CampGrids production URL (not another project), and add the exact CampGrids `auth.html` URL to **Redirect URLs**. Supabase only sends a passwordless student session back to that URL when it is in the allow list.
 
-If you installed an earlier copy of `schema.sql`, run new files in `supabase/migrations/` in the SQL editor as they are added. Run `20260822_create_class_rpc.sql` to enable the RLS-safe teacher class creation flow, followed by `20260822_fix_role_validation_triggers.sql` to correct class-owner role validation, and then `20260823_admin_account_provisioning.sql` to restrict teacher account and camper roster provisioning to MSI administrators.
+If you installed an earlier copy of `schema.sql`, run new files in `supabase/migrations/` in the SQL editor as they are added. Run `20260822_create_class_rpc.sql` to enable the RLS-safe teacher class creation flow, followed by `20260822_fix_role_validation_triggers.sql` to correct class-owner role validation, `20260823_admin_account_provisioning.sql` to restrict teacher account and camper roster provisioning to MSI administrators, and `20260823_simplify_assignment_status.sql` to migrate assignment states to In progress or Completed.
 
 Only MSI administrators can create teacher accounts and upload camper rosters. Camper uploads use a standardized `.csv` with headers `first_name`, `last_name`, `grade`, `guardian_name`, and `guardian_email`; the dashboard shows generated student usernames immediately after accounts are created.
 

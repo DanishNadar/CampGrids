@@ -247,6 +247,53 @@ function createNavMenu(label, panel, isCurrent) {
   return wrapper;
 }
 
+function createAccountControl(isCurrent) {
+  const wrapper = makeEl('div', 'navMenu navAccountMenu');
+  wrapper.id = 'accountNavMenu';
+
+  const link = createNavLink('Account', 'auth.html', isCurrent);
+  link.id = 'accountNavLink';
+  link.classList.add('navProfileLink', 'navAccountPrimary');
+
+  const toggle = makeEl('button', 'navAccountToggle navMenuButton');
+  toggle.type = 'button';
+  toggle.hidden = true;
+  toggle.setAttribute('aria-label', 'Open account menu');
+  toggle.setAttribute('aria-expanded', 'false');
+  const caret = makeEl('span', 'navCaret');
+  caret.setAttribute('aria-hidden', 'true');
+  toggle.appendChild(caret);
+  toggle.addEventListener('click', (event) => {
+    event.stopPropagation();
+    const willOpen = !wrapper.classList.contains('open');
+    closeAllNavMenus();
+    if (willOpen) openNavMenu(wrapper);
+  });
+
+  const panel = makeEl('div', 'navPanel navAccountPanel');
+  const inner = makeEl('div', 'navAccountPanelInner');
+  const heading = makeEl('div', 'navAccountPanelHeading');
+  heading.append(makeEl('p', 'eyebrow', 'Account'), makeEl('strong', '', 'Sign in to CampGrids'));
+  const signIn = makeEl('a', 'navAccountPanelLink', 'Sign in');
+  signIn.href = 'auth.html';
+  signIn.dataset.accountSignIn = 'true';
+  const dashboard = makeEl('a', 'navAccountPanelLink', 'Open workspace');
+  dashboard.dataset.accountDashboard = 'true';
+  const profile = makeEl('a', 'navAccountPanelLink', 'Profile');
+  profile.href = 'profile.html';
+  profile.dataset.accountProfile = 'true';
+  const settings = makeEl('a', 'navAccountPanelLink', 'Settings');
+  settings.href = 'settings.html';
+  settings.dataset.accountSettings = 'true';
+  const signOut = makeEl('button', 'navAccountPanelLink navAccountSignOut', 'Sign out');
+  signOut.type = 'button';
+  signOut.dataset.accountSignOut = 'true';
+  inner.append(heading, signIn, dashboard, profile, settings, signOut);
+  panel.appendChild(inner);
+  wrapper.append(link, toggle, panel);
+  return wrapper;
+}
+
 /* This opens one dropdown. The panel scrolls open from no height to the height of its own contents, and the browser can only animate towards a real number, so the contents are measured here and that measurement is written onto the panel. scrollHeight reports how tall the contents are even while the panel is squashed shut, which is exactly what is needed. */
 function openNavMenu(wrapper) {
   const panel = wrapper.querySelector('.navPanel');
@@ -359,16 +406,14 @@ function renderSiteNav() {
 
   /* Build the four tabs from the sketch: Home, the MSI Camps menu, the External Camps menu, and About. */
   const tabs = makeEl('div', 'siteNavTabs');
-  const accountLink = createNavLink('Account', 'auth.html', active === 'account' || active === 'dashboard' || active === 'profile' || active === 'settings');
-  accountLink.id = 'accountNavLink';
-  accountLink.classList.add('navProfileLink');
+  const accountControl = createAccountControl(active === 'account' || active === 'dashboard' || active === 'profile' || active === 'settings');
 
   tabs.append(
     createNavLink('Home', 'index.html', active === 'home'),
     createNavMenu('MSI Camps', createCampMenuPanel(campGroups[0], currentCampId), active === 'camps'),
     createNavMenu('External Camps', createCampMenuPanel(campGroups[1], currentCampId), active === 'externalCamps'),
     createNavLink('About', 'about.html', active === 'about'),
-    accountLink
+    accountControl
   );
 
   /* Assemble the bar and put it on the page. */

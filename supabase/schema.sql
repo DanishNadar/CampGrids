@@ -8,7 +8,7 @@ create extension if not exists citext;
 
 create type public.user_role as enum ('student', 'teacher', 'admin');
 create type public.class_status as enum ('draft', 'active', 'archived');
-create type public.assignment_status as enum ('not_started', 'in_progress', 'submitted', 'complete');
+create type public.assignment_status as enum ('in_progress', 'complete');
 create type public.event_type as enum ('signed_in', 'grid_opened', 'resource_opened', 'video_opened', 'assignment_started', 'assignment_submitted', 'assignment_completed', 'assignment_reviewed', 'belt_awarded', 'profile_updated');
 
 -- Every authenticated person has exactly one profile, plus a role-specific
@@ -129,7 +129,7 @@ create table public.student_assignment_progress (
   id uuid primary key default gen_random_uuid(),
   assignment_id uuid not null references public.class_assignments(id) on delete cascade,
   enrollment_id uuid not null references public.class_enrollments(id) on delete cascade,
-  status public.assignment_status not null default 'not_started',
+  status public.assignment_status not null default 'in_progress',
   score numeric(5,2) check (score is null or (score >= 0 and score <= 100)),
   submitted_at timestamptz,
   reviewed_at timestamptz,

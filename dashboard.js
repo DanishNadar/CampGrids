@@ -196,10 +196,6 @@
         ${credentialBlock}
         <div class="workspaceGrid managerGrid">
           <article class="toolCard">
-            <div class="cardHeading"><div><p class="eyebrow">Roster administration</p><h3>MSI-managed campers</h3></div></div>
-            <p class="helperText">MSI administrators add campers from the standardized CSV in the administration controls. Student usernames and class access are created there.</p>
-          </article>
-          <article class="toolCard">
             <div class="cardHeading"><div><p class="eyebrow">Assignments</p><h3>Build activities from the live Grid</h3></div></div>
             <form id="assignmentForm" class="stackForm">
               <label class="fieldLabel">Grid activity<select name="gridActivity">${gridOptions()}</select></label>
@@ -211,7 +207,7 @@
         </div>
         <article class="toolCard camperUpdateCard">
           <div class="cardHeading"><div><p class="eyebrow">Camper update</p><h3>Review work and recognize progress</h3></div></div>
-          <form id="camperUpdateForm" class="stackForm"><label class="fieldLabel">Camper<select name="enrollmentId" required>${rosterOptions(classData)}</select></label><div class="formThreeCols"><label class="fieldLabel">Assignment<select name="assignmentId">${progressOptions(classData, true)}</select></label><label class="fieldLabel">Status<select name="status"><option value="in_progress">In progress</option><option value="submitted">Submitted</option><option value="complete">Complete</option></select></label><label class="fieldLabel">Score %<input name="score" type="number" min="0" max="100" step="0.01"></label></div><div class="formThreeCols"><label class="fieldLabel">Belt category<input name="category" placeholder="Optional, e.g. Notebooking"></label><label class="fieldLabel">Belt<select name="belt">${beltOptions()}</select></label><label class="fieldLabel">Recognition note<input name="note" placeholder="Optional"></label></div><p class="helperText">Save an assignment update, a belt award, or both at once.</p><button class="primaryButton" type="submit">Save camper update</button></form>
+          <form id="camperUpdateForm" class="stackForm"><label class="fieldLabel">Camper<select name="enrollmentId" required>${rosterOptions(classData)}</select></label><div class="formThreeCols"><label class="fieldLabel">Assignment<select name="assignmentId">${progressOptions(classData, true)}</select></label><label class="fieldLabel">Status<select name="status"><option value="in_progress">In progress</option><option value="complete">Completed</option></select></label><label class="fieldLabel">Score %<input name="score" type="number" min="0" max="100" step="0.01"></label></div><div class="formThreeCols"><label class="fieldLabel">Belt category<input name="category" placeholder="Optional, e.g. Notebooking"></label><label class="fieldLabel">Belt<select name="belt">${beltOptions()}</select></label><label class="fieldLabel">Recognition note<input name="note" placeholder="Optional"></label></div><p class="helperText">Save an assignment update, a belt award, or both at once.</p><button class="primaryButton" type="submit">Save camper update</button></form>
         </article>
         <article class="toolCard rosterCard"><div class="cardHeading"><div><p class="eyebrow">Class roster</p><h3>${classData.roster.length} camper${classData.roster.length === 1 ? '' : 's'}</h3></div></div>
           ${completionSummary(classData)}
@@ -358,8 +354,7 @@
     if (!assignmentId && !category) throw new Error('Choose an assignment update, enter a belt category, or do both.');
 
     if (assignmentId) {
-      const payload = { assignment_id: assignmentId, enrollment_id: enrollmentId, status, score: scoreText ? Number(scoreText) : null, reviewed_at: new Date().toISOString(), reviewed_by: state.profile.id };
-      if (status === 'complete') payload.submitted_at = new Date().toISOString();
+      const payload = { assignment_id: assignmentId, enrollment_id: enrollmentId, status, score: scoreText ? Number(scoreText) : null, submitted_at: status === 'complete' ? new Date().toISOString() : null, reviewed_at: new Date().toISOString(), reviewed_by: state.profile.id };
       const { error } = await app.getClient().from('student_assignment_progress').upsert(payload, { onConflict: 'assignment_id,enrollment_id' });
       if (error) throw error;
       await app.audit('assignment_reviewed', 'class_assignment', assignmentId, { enrollment_id: enrollmentId, status, score: payload.score });
@@ -461,8 +456,10 @@
     const activityRows = (eventResult.data || []).filter((entry) => !entry.class_id || entry.class_id === activeClassId);
     const assignmentRows = assignments.length ? assignments.map((assignment) => {
       const record = progress.find((entry) => entry.assignment_id === assignment.id);
-      const stateLabel = record?.status?.replace('_', ' ') || 'not started';
-      return `<article class="studentAssignment"><div><p class="eyebrow">${escapeHtml(`${assignment.category || 'Grid'} · ${assignment.belt || 'Activity'} Belt`)}</p><h3>${escapeHtml(assignment.title)}</h3><p>${escapeHtml(assignment.instructions || 'Open the resource and complete the activity.')}</p><small>Due ${dateValue(assignment.due_at)}</small></div><div class="assignmentActions"><span class="statusPill ${escapeHtml(record?.status || 'not_started')}">${escapeHtml(stateLabel)}</span>${assignment.resource_url ? `<a class="secondaryButton" target="_blank" rel="noopener noreferrer" href="${escapeHtml(assignment.resource_url)}" data-student-resource="${assignment.id}">Open Grid</a>` : ''}<button class="primaryButton" type="button" data-student-progress="${assignment.id}" data-next-status="${record?.status === 'submitted' ? 'complete' : 'submitted'}">${record?.status === 'submitted' ? 'Mark complete' : 'Submit work'}</button></div></article>`;
+      const isComplete = record?.status === 'complete';
+      const status = isComplete ? 'complete' : 'in_progress';
+      const stateLabel = isComplete ? 'Completed' : 'In progress';
+      return `<article class="studentAssignment"><div><p class="eyebrow">${escapeHtml(`${assignment.category || 'Grid'} · ${assignment.belt || 'Activity'} Belt`)}</p><h3>${escapeHtml(assignment.title)}</h3><p>${escapeHtml(assignment.instructions || 'Open the resource and complete the activity.')}</p><small>Due ${dateValue(assignment.due_at)}</small></div><div class="assignmentActions"><span class="statusPill ${status}">${stateLabel}</span>${assignment.resource_url ? `<a class="secondaryButton" target="_blank" rel="noopener noreferrer" href="${escapeHtml(assignment.resource_url)}" data-student-resource="${assignment.id}">Open Grid</a>` : ''}${isComplete ? '<span class="completionAction">Completed</span>' : `<button class="primaryButton" type="button" data-student-progress="${assignment.id}" data-next-status="complete">Mark completed</button>`}</div></article>`;
     }).join('') : '<p class="emptyCopy">There are no published assignments in this class yet.</p>';
     workspace.innerHTML = `
       ${actionsHeader('Student dashboard', `Hi, ${state.profile.first_name}.`, 'Your CampGrids work, earned belts, and activity timeline are all in one place.')}
@@ -475,10 +472,10 @@
   }
 
   async function updateStudentProgress(assignmentId, status, enrollmentId, classId) {
-    const { error } = await app.getClient().from('student_assignment_progress').upsert({ assignment_id: assignmentId, enrollment_id: enrollmentId, status, submitted_at: status === 'submitted' || status === 'complete' ? new Date().toISOString() : null }, { onConflict: 'assignment_id,enrollment_id' });
+    const { error } = await app.getClient().from('student_assignment_progress').upsert({ assignment_id: assignmentId, enrollment_id: enrollmentId, status, submitted_at: status === 'complete' ? new Date().toISOString() : null }, { onConflict: 'assignment_id,enrollment_id' });
     if (error) throw error;
-    await app.logStudentEvent(status === 'submitted' ? 'assignment_submitted' : 'assignment_completed', { status }, classId, assignmentId);
-    await renderStudent(); notice(status === 'submitted' ? 'Work submitted for review.' : 'Marked complete.', 'isSuccess');
+    await app.logStudentEvent('assignment_completed', { status }, classId, assignmentId);
+    await renderStudent(); notice('Marked completed.', 'isSuccess');
   }
 
   async function signOut() {
