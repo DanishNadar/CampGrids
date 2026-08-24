@@ -131,6 +131,21 @@
       await app.getClient().auth.signOut();
       throw new Error('This is not an active teacher account.');
     }
+    const { data: teacherProfile, error: teacherProfileError } = await app.getClient()
+      .from('teacher_profiles')
+      .select('must_change_password')
+      .eq('user_id', profile.id)
+      .single();
+    if (teacherProfileError) throw teacherProfileError;
+    if (teacherProfile?.must_change_password) {
+      setNotice('Sending a password-change email to your work inbox...');
+      const redirectTo = new URL('settings.html?password-reset=teacher', window.location.href).href;
+      const { error: resetError } = await app.getClient().auth.resetPasswordForEmail(email, { redirectTo });
+      await app.getClient().auth.signOut();
+      if (resetError) throw new Error('We could not send the password-change email. Please contact MSI IT.');
+      setNotice('Your temporary password was accepted. Use the password-change email before signing in again.', 'isSuccess');
+      return;
+    }
     setNotice('Sending a verification code to your work email...');
     await requestStaffEmailCode(app);
     showTeacherVerification();

@@ -18,7 +18,7 @@ The database records the second step against the exact Supabase session for eigh
 
    ```powershell
    supabase functions deploy provision-students
-   supabase functions deploy provision-teacher
+   supabase functions deploy provision-teachers
    supabase functions deploy student-class-login
    supabase functions deploy request-staff-email-2fa
    ```
@@ -51,20 +51,22 @@ Supabase continues to issue and verify the one-time code; Gmail only delivers it
    Subject: Your CampGrids verification code
    ```
 
-   ```html
-   <h2>CampGrids verification code</h2>
-   <p>Enter this one-time code to finish signing in:</p>
-   <p style="font-size: 28px; font-weight: 700; letter-spacing: 0.16em;">{{ .Token }}</p>
-   <p>This code expires shortly. Do not share it.</p>
-   ```
+   For the body, paste the whole of [`email-templates/verification-code.html`](email-templates/verification-code.html). It is the MSI-branded version: Pantone Orange 021 header band, the code on a cream panel, request details, and a security note.
 
-Using `{{ .Token }}` sends the numeric one-time code consumed by the CampGrids form. Gmail/Google Workspace delivery quotas and organizational SMTP policies still apply; use a dedicated sending account, not a personal mailbox, for a real camp program.
+   Two things in it are placeholders and should be replaced before the first real send:
+
+   - Both `https://placehold.co/...` image URLs. Email clients cannot read this repository, so these must become absolute `https://` URLs on a host that is public and stable. Relative paths and `data:` URIs do not work.
+   - The mailing address in the footer, if a different one should appear.
+
+   The template is deliberately built the old-fashioned way: nested tables, inline styles, no flexbox or grid. Mail clients, Outlook above all, do not render a modern stylesheet, and the `<style>` block near the top only carries the small-screen rules that some clients honour and the rest ignore harmlessly.
+
+Using `{{ .Token }}` sends the numeric one-time code consumed by the CampGrids form. `{{ .Email }}` fills the account line in the details row. Gmail/Google Workspace delivery quotas and organizational SMTP policies still apply; use a dedicated sending account, not a personal mailbox, for a real camp program.
 
 If CampGrids reports that Gmail SMTP could not send a code, first confirm that the sender email and SMTP username are the same full Gmail address, the port/security pair is `465` + TLS or `587` + STARTTLS, and the value in Supabase is a newly generated Google App Password rather than the ordinary Gmail password. The sanitized browser error is intentional; the provider response is available to project administrators in **Edge Functions -> request-staff-email-2fa -> Logs**.
 
 ## Existing project migration
 
-If this project previously used the phone-based implementation, run [`20260823_zz_staff_email_2fa.sql`](migrations/20260823_zz_staff_email_2fa.sql) once in the SQL editor after the earlier migrations. It deletes the retired phone allowlist and phone-session records, then installs the email-2FA tables, functions, and RLS rules.
+If this project previously used the phone-based implementation, run [`20260823_zz_staff_email_2fa.sql`](migrations/20260823_zz_staff_email_2fa.sql) once in the SQL editor after the earlier migrations. It deletes the retired phone allowlist and phone-session records, then installs the email-2FA tables, functions, and RLS rules. Then run [`20260824_admin_grid_and_teacher_csv.sql`](migrations/20260824_admin_grid_and_teacher_csv.sql) to add the Mother Grid, class sub-grids, and CSV-only teacher provisioning.
 
 For a new project, `schema.sql` already contains the final email-2FA design; do not run an old phone migration. If the old Edge Function was deployed, it can be removed after the new function is live:
 
@@ -131,7 +133,49 @@ Administrator usernames are still generated as first initial + last name: `Danis
 - Reset an administrator password in **Authentication -> Users**. Do not place a plaintext password in SQL, frontend JavaScript, or source control.
 - Change `is_active` to `false` in `public.profiles` to revoke CampGrids access immediately; existing email-verified sessions will fail the database check.
 - Keep the staff user's email current. The verification code always goes to `profiles.email`, which is created from the Auth email identity.
-- Create teacher accounts only from the verified administrator dashboard. That workflow supplies a teacher's initial password and email; the teacher must then complete emailed 2FA at sign-in.
+- Create teacher accounts only from the verified administrator dashboard. That workflow accepts a CSV, generates the username and temporary password, and produces a downloadable one-time report. Do not store that report in a shared drive.
+
+## Admin CSV workflows and the Mother Grid
+
+The verified administrator dashboard is intentionally limited to these administrative controls:
+
+- Maintain the **Mother Grid**. Click any cell to update it, or an empty cell to add an activity. The cell may include a category, instructions, and a resource URL.
+- Add campers from a class-specific CSV.
+- Add teachers from a CSV and download the generated username / temporary-password report.
+- Publish generated pages, add live menu links, and update live option lists.
+
+Teacher CSV columns:
+
+```csv
+first_name,last_name,email,title
+Fannie,Yu,fannie.yu@example.org,Camp Instructor
+```
+
+`first_name`, `last_name`, and `email` are required. `title` is optional. CampGrids allocates each username as first initial plus last name (`fyu`, `fyu1`, and so on), generates a high-entropy temporary password, and returns it only in the downloaded report.
+
+Student CSV columns remain:
+
+```csv
+first_name,last_name,grade,guardian_name,guardian_email
+Fannie,Yu,5,,
+```
+
+The teacher selects a class, clicks the Mother Grid cells that should make up that class's sub-grid, and those selections save directly to `class_grid_cells`. Campers enrolled in that class see the same selected Grid in their dashboard. Mother Grid cells remain administrator-managed; teachers can only add or remove selections for classes they manage.
+
+### Teacher first sign-in
+
+1. The administrator privately shares the generated username and temporary password from the one-time CSV report.
+2. The teacher signs in on the Teacher tab with those credentials.
+3. CampGrids immediately sends a Supabase password-recovery email to the teacher's work address and signs out the temporary session.
+4. The teacher opens that email, chooses a personal password in `settings.html`, then signs in normally and completes emailed 2FA.
+
+Add this exact URL to **Authentication → URL Configuration → Redirect URLs** so the recovery email can return safely:
+
+```text
+https://camp-grids.vercel.app/settings.html?password-reset=teacher
+```
+
+Also add your local equivalent during development, for example `http://localhost:3000/settings.html?password-reset=teacher`. The recovery email uses Supabase's **Reset Password** template and the same custom Gmail SMTP configuration described above.
 
 ## Verification checklist
 
@@ -141,4 +185,4 @@ Administrator usernames are still generated as first initial + last name: `Danis
 4. Open a staff dashboard with a password-only session or after more than eight hours. It must redirect to sign-in and must not expose camper data.
 5. Sign in as a camper with a valid class code and username. No password or staff email code should be requested.
 
-Only MSI administrators can create teacher accounts and upload camper rosters. Camper uploads use a standardized `.csv` with headers `first_name`, `last_name`, `grade`, `guardian_name`, and `guardian_email`; the dashboard shows generated student usernames immediately after accounts are created.
+Only MSI administrators can modify the Mother Grid, create teacher accounts, upload camper rosters, publish pages, add live menu links, or update option lists. Camper uploads use a standardized `.csv` with headers `first_name`, `last_name`, `grade`, `guardian_name`, and `guardian_email`; the dashboard shows generated student usernames immediately after accounts are created.
