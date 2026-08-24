@@ -6,7 +6,6 @@ type StudentRow = {
   grade?: string;
   guardianName?: string;
   guardianEmail?: string;
-  temporaryPassword?: string;
 };
 
 const headers = { "Content-Type": "application/json" };
@@ -26,9 +25,17 @@ Deno.serve(async (request) => {
   const { data: userData, error: userError } = await caller.auth.getUser();
   if (userError || !userData.user) return fail("Sign in is required", 401);
 
+  const { data: callerProfile, error: callerProfileError } = await caller
+    .from("profiles")
+    .select("role")
+    .eq("id", userData.user.id)
+    .single();
+  if (callerProfileError || callerProfile?.role !== "admin") return fail("Only MSI administrators can upload camper rosters.", 403);
+
   const { classId, filename, students } = await request.json();
   if (!classId || !Array.isArray(students) || students.length === 0) return fail("A class and at least one student are required");
   if (students.length > 250) return fail("Upload no more than 250 students at one time");
+  if (!normalized(filename).toLowerCase().endsWith(".csv")) return fail("Use the standardized CSV roster file.");
 
   const { data: allowed, error: permissionError } = await caller.rpc("is_teacher_of", { p_class_id: classId });
   if (permissionError || !allowed) return fail("You do not manage this class", 403);
@@ -50,10 +57,8 @@ Deno.serve(async (request) => {
       errors.push({ row: String(index + 1), message: usernameError?.message ?? "Could not create a username" });
       continue;
     }
-    const temporaryPassword = normalized(row.temporaryPassword) || `Camp-${crypto.randomUUID().slice(0, 8)}`;
     const { data: created, error: createError } = await admin.auth.admin.createUser({
       email: `${username}@students.campgrids.local`,
-      password: temporaryPassword,
       email_confirm: true,
       user_metadata: {
         role: "student", username, first_name: firstName, last_name: lastName,
@@ -70,7 +75,7 @@ Deno.serve(async (request) => {
       errors.push({ row: String(index + 1), message: enrollmentError.message });
       continue;
     }
-    results.push({ firstName, lastName, username, temporaryPassword, grade: normalized(row.grade) });
+    results.push({ firstName, lastName, username, grade: normalized(row.grade) });
   }
 
   await admin.from("import_batches").insert({

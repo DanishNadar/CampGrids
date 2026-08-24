@@ -100,13 +100,47 @@
     return classData.roster.filter((entry) => !entry.exited_at).map((entry) => `<option value="${entry.id}">${escapeHtml(`${entry.profiles.first_name} ${entry.profiles.last_name} (${entry.profiles.username})`)}</option>`).join('');
   }
 
-  function progressOptions(classData) {
-    return classData.assignments.map((assignment) => `<option value="${assignment.id}">${escapeHtml(assignment.title)}</option>`).join('');
+  function progressOptions(classData, includeBlank = false) {
+    const blank = includeBlank ? '<option value="">No assignment update</option>' : '';
+    return `${blank}${classData.assignments.map((assignment) => `<option value="${assignment.id}">${escapeHtml(assignment.title)}</option>`).join('')}`;
   }
 
   function beltSummary(kpis) {
     const entries = Object.entries(kpis.belts);
     return entries.length ? entries.map(([belt, count]) => `<span class="beltPill belt${belt}">${escapeHtml(belt)} <b>${count}</b></span>`).join('') : '<span class="muted">No belts awarded yet</span>';
+  }
+
+  function completionBreakdown(classData) {
+    const activeEnrollmentIds = new Set(classData.roster.filter((entry) => !entry.exited_at).map((entry) => entry.id));
+    const completedByAssignment = classData.progress.reduce((counts, entry) => {
+      if (entry.status === 'complete' && activeEnrollmentIds.has(entry.enrollment_id)) counts.set(entry.assignment_id, (counts.get(entry.assignment_id) || 0) + 1);
+      return counts;
+    }, new Map());
+    const categories = new Map();
+    classData.assignments.forEach((assignment) => {
+      const categoryName = assignment.category || 'Other activities';
+      const beltName = assignment.belt || 'Unassigned';
+      if (!categories.has(categoryName)) categories.set(categoryName, new Map());
+      const belts = categories.get(categoryName);
+      if (!belts.has(beltName)) belts.set(beltName, []);
+      belts.get(beltName).push(assignment.id);
+    });
+    return [...categories.entries()].map(([category, belts]) => {
+      const beltRows = [...belts.entries()].map(([belt, assignmentIds]) => {
+        const completed = assignmentIds.reduce((sum, assignmentId) => sum + (completedByAssignment.get(assignmentId) || 0), 0);
+        const possible = assignmentIds.length * activeEnrollmentIds.size;
+        const percent = possible ? Math.round((completed / possible) * 100) : 0;
+        return { belt, completed, possible, percent };
+      });
+      const percent = beltRows.length ? Math.round(beltRows.reduce((sum, belt) => sum + belt.percent, 0) / beltRows.length) : 0;
+      return { category, percent, completeBelts: beltRows.filter((belt) => belt.percent === 100).length, belts: beltRows };
+    });
+  }
+
+  function completionSummary(classData) {
+    const categories = completionBreakdown(classData);
+    if (!categories.length) return '<p class="emptyCopy">Publish Grid assignments to show completion by belt and category.</p>';
+    return `<section class="completionSummary"><div class="completionSummaryHeading"><div><p class="eyebrow">Completion overview</p><h3>Belts build each category</h3></div><p>Each category is the average completion of its published belts.</p></div><div class="categoryCompletionGrid">${categories.map((category) => `<article class="categoryCompletion"><div class="completionLabel"><strong>${escapeHtml(category.category)}</strong><b>${category.percent}%</b></div><div class="completionTrack" aria-label="${escapeHtml(category.category)} ${category.percent}% complete"><span style="width:${category.percent}%"></span></div><small>${category.completeBelts}/${category.belts.length} belts complete</small><div class="beltCompletionList">${category.belts.map((belt) => `<div><span>${escapeHtml(belt.belt)} belt</span><b>${belt.percent}%</b><small>${belt.completed}/${belt.possible} completed</small></div>`).join('')}</div></article>`).join('')}</div></section>`;
   }
 
   function renderTeacher() {
@@ -147,7 +181,7 @@
 
   function renderClassManager(classData) {
     const credentialBlock = state.credentialRows.length ? `
-      <div class="credentialsPanel"><div><p class="eyebrow">Just imported</p><h3>Student sign-in cards</h3><p>Download these now; temporary passwords are not displayed again after a page refresh.</p></div>
+      <div class="credentialsPanel"><div><p class="eyebrow">Just added</p><h3>Student sign-in cards</h3><p>Share each student username with the class code. Students do not need a password.</p></div>
       <button class="secondaryButton" type="button" data-action="download-credentials">Download credentials CSV</button></div>` : '';
     const rosterRows = classData.roster.length ? classData.roster.map((entry) => {
       const info = entry.profiles || {};
@@ -162,9 +196,8 @@
         ${credentialBlock}
         <div class="workspaceGrid managerGrid">
           <article class="toolCard">
-            <div class="cardHeading"><div><p class="eyebrow">Roster import</p><h3>Upload campers</h3></div><a class="smallLink" href="data:text/csv;charset=utf-8,first_name,last_name,grade%0AFannie,Yu,5" download="campgrids-roster-template.csv">CSV template</a></div>
-            <p class="helperText">Use the CSV template to upload student/camper information.</p>
-            <form id="rosterImportForm" class="stackForm"><label class="fileField"><input name="roster" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" required><span>Choose roster spreadsheet</span></label><button class="primaryButton" type="submit">Create student accounts</button></form>
+            <div class="cardHeading"><div><p class="eyebrow">Roster administration</p><h3>MSI-managed campers</h3></div></div>
+            <p class="helperText">MSI administrators add campers from the standardized CSV in the administration controls. Student usernames and class access are created there.</p>
           </article>
           <article class="toolCard">
             <div class="cardHeading"><div><p class="eyebrow">Assignments</p><h3>Build activities from the live Grid</h3></div></div>
@@ -176,39 +209,26 @@
             </form>
           </article>
         </div>
-        <div class="workspaceGrid managerGrid">
-          <article class="toolCard">
-            <div class="cardHeading"><div><p class="eyebrow">Review work</p><h3>Update progress</h3></div></div>
-            <form id="progressForm" class="formThreeCols compactForm">
-              <label class="fieldLabel">Camper<select name="enrollmentId" required>${rosterOptions(classData)}</select></label>
-              <label class="fieldLabel">Assignment<select name="assignmentId" required>${progressOptions(classData)}</select></label>
-              <label class="fieldLabel">Status<select name="status"><option value="in_progress">In progress</option><option value="submitted">Submitted</option><option value="complete">Complete</option></select></label>
-              <label class="fieldLabel">Score %<input name="score" type="number" min="0" max="100" step="0.01"></label>
-              <button class="primaryButton" type="submit">Save review</button>
-            </form>
-          </article>
-          <article class="toolCard">
-            <div class="cardHeading"><div><p class="eyebrow">Recognition</p><h3>Award a belt</h3></div></div>
-            <form id="beltForm" class="formThreeCols compactForm">
-              <label class="fieldLabel">Camper<select name="enrollmentId" required>${rosterOptions(classData)}</select></label>
-              <label class="fieldLabel">Category<input name="category" required placeholder="e.g. Notebooking"></label>
-              <label class="fieldLabel">Belt<select name="belt">${beltOptions()}</select></label>
-              <label class="fieldLabel">Note<input name="note" placeholder="Optional"></label>
-              <button class="primaryButton" type="submit">Award belt</button>
-            </form>
-          </article>
-        </div>
-        <article class="toolCard rosterCard"><div class="cardHeading"><div><p class="eyebrow">Class roster</p><h3>${classData.roster.length} camper${classData.roster.length === 1 ? '' : 's'}</h3></div><div class="beltSummary">${beltSummary(classKpis(classData))}</div></div>
+        <article class="toolCard camperUpdateCard">
+          <div class="cardHeading"><div><p class="eyebrow">Camper update</p><h3>Review work and recognize progress</h3></div></div>
+          <form id="camperUpdateForm" class="stackForm"><label class="fieldLabel">Camper<select name="enrollmentId" required>${rosterOptions(classData)}</select></label><div class="formThreeCols"><label class="fieldLabel">Assignment<select name="assignmentId">${progressOptions(classData, true)}</select></label><label class="fieldLabel">Status<select name="status"><option value="in_progress">In progress</option><option value="submitted">Submitted</option><option value="complete">Complete</option></select></label><label class="fieldLabel">Score %<input name="score" type="number" min="0" max="100" step="0.01"></label></div><div class="formThreeCols"><label class="fieldLabel">Belt category<input name="category" placeholder="Optional, e.g. Notebooking"></label><label class="fieldLabel">Belt<select name="belt">${beltOptions()}</select></label><label class="fieldLabel">Recognition note<input name="note" placeholder="Optional"></label></div><p class="helperText">Save an assignment update, a belt award, or both at once.</p><button class="primaryButton" type="submit">Save camper update</button></form>
+        </article>
+        <article class="toolCard rosterCard"><div class="cardHeading"><div><p class="eyebrow">Class roster</p><h3>${classData.roster.length} camper${classData.roster.length === 1 ? '' : 's'}</h3></div></div>
+          ${completionSummary(classData)}
           <div class="tableScroll"><table class="dataTable"><thead><tr><th>Camper</th><th>Completion</th><th>Belts</th></tr></thead><tbody>${rosterRows}</tbody></table></div>
         </article>
       </section>`;
   }
 
   function renderAdminControls() {
+    const classOptions = state.classes.map((entry) => `<option value="${entry.id}" ${entry.id === state.selectedClassId ? 'selected' : ''}>${escapeHtml(`${entry.name} · ${entry.code}`)}</option>`).join('');
+    const rosterControl = state.classes.length ? `<article class="toolCard"><div class="cardHeading"><div><p class="eyebrow">Camper accounts</p><h3>Upload standardized roster</h3></div><a class="smallLink" href="data:text/csv;charset=utf-8,first_name,last_name,grade,guardian_name,guardian_email%0AFannie,Yu,5,," download="campgrids-standard-roster.csv">CSV template</a></div><p class="helperText">Use the required CSV headers: first_name, last_name, grade, guardian_name, guardian_email.</p><form id="adminRosterImportForm" class="stackForm"><label class="fieldLabel">Class<select name="classId" required>${classOptions}</select></label><label class="fileField"><input name="roster" type="file" accept=".csv,text/csv" required><span>Choose standardized CSV</span></label><button class="primaryButton" type="submit">Create camper accounts</button></form></article>` : `<article class="toolCard"><p class="eyebrow">Camper accounts</p><h3>Upload standardized roster</h3><p class="emptyCopy">Create a class before uploading its camper roster.</p></article>`;
     return `
       <section class="adminSection">
         <div class="sectionHeading"><div><p class="eyebrow">MSI administration</p><h2>Live site controls</h2><p>Changes save to Supabase and are available to the public interface without changing static files.</p></div></div>
         <div class="workspaceGrid adminGrid">
+          <article class="toolCard"><p class="eyebrow">Teacher accounts</p><h3>Create a teacher account</h3><form id="teacherProvisionForm" class="stackForm"><div class="formTwoCols"><label class="fieldLabel">First name<input name="firstName" autocomplete="given-name" required></label><label class="fieldLabel">Last name<input name="lastName" autocomplete="family-name" required></label></div><label class="fieldLabel">Work email<input name="email" type="email" autocomplete="email" required></label><label class="fieldLabel">Teacher username<input name="username" autocomplete="username" pattern="[A-Za-z0-9]+" required placeholder="e.g. fannieyu"></label><div class="formTwoCols"><label class="fieldLabel">Initial password<input name="password" type="password" autocomplete="new-password" minlength="10" required></label><label class="fieldLabel">Title<input name="title" placeholder="Optional"></label></div><button class="primaryButton" type="submit">Create teacher account</button></form></article>
+          ${rosterControl}
           <article class="toolCard"><p class="eyebrow">New page</p><h3>Publish a generated page</h3><form id="pageForm" class="stackForm"><label class="fieldLabel">Page title<input name="title" required></label><label class="fieldLabel">URL slug<input name="slug" required pattern="[a-z0-9-]+" placeholder="e.g. camp-safety"></label><label class="fieldLabel">Summary<textarea name="summary" rows="2"></textarea></label><label class="fieldLabel">Page text<textarea name="body" rows="4" required></textarea></label><button class="primaryButton" type="submit">Save page</button></form></article>
           <article class="toolCard"><p class="eyebrow">Navigation</p><h3>Add a live menu link</h3><form id="navForm" class="stackForm"><label class="fieldLabel">Link label<input name="label" required></label><label class="fieldLabel">Page slug<input name="slug" required placeholder="Must match a saved page"></label><div class="formTwoCols"><label class="fieldLabel">Position<input name="position" type="number" min="0" required></label><label class="fieldLabel">Location<select name="location"><option value="primary">Primary navigation</option><option value="footer">Footer</option><option value="teacher">Teacher workspace</option></select></label></div><button class="primaryButton" type="submit">Publish link</button></form></article>
           <article class="toolCard"><p class="eyebrow">Live dropdowns</p><h3>Update option lists</h3><form id="dropdownForm" class="stackForm"><label class="fieldLabel">Dropdown key<input name="groupKey" required pattern="[a-z0-9_-]+" placeholder="e.g. camp-selector"></label><div class="formTwoCols"><label class="fieldLabel">Stored value<input name="value" required></label><label class="fieldLabel">Visible label<input name="label" required></label></div><label class="fieldLabel">Position<input name="position" type="number" min="0" required></label><button class="primaryButton" type="submit">Save dropdown option</button></form><label class="fieldLabel previewField">Live preview (camp-selector)<select data-dropdown-group="camp-selector" data-live-dropdown="true"><option>Choose an option</option></select></label></article>
@@ -251,11 +271,12 @@
     rows = rows.map((row) => row.map((value) => String(value ?? '').trim()));
     if (rows.length < 2) throw new Error('The spreadsheet needs a header row and at least one camper.');
     const headers = rows.shift().map((header) => header.toLowerCase().replace(/[^a-z]/g, ''));
-    const find = (names) => headers.findIndex((header) => names.includes(header));
-    const first = find(['firstname', 'first']); const last = find(['lastname', 'last']);
-    if (first < 0 || last < 0) throw new Error('The spreadsheet needs first_name and last_name columns.');
-    const grade = find(['grade']); const guardianName = find(['guardianname', 'parentname']); const guardianEmail = find(['guardianemail', 'parentemail']); const temporaryPassword = find(['temporarypassword', 'password']);
-    return rows.map((values) => ({ firstName: values[first], lastName: values[last], grade: grade >= 0 ? values[grade] : '', guardianName: guardianName >= 0 ? values[guardianName] : '', guardianEmail: guardianEmail >= 0 ? values[guardianEmail] : '', temporaryPassword: temporaryPassword >= 0 ? values[temporaryPassword] : '' })).filter((entry) => entry.firstName || entry.lastName);
+    const required = ['firstname', 'lastname', 'grade', 'guardianname', 'guardianemail'];
+    const missing = required.filter((header) => !headers.includes(header));
+    if (missing.length) throw new Error('Use the standardized CSV template with first_name, last_name, grade, guardian_name, and guardian_email columns.');
+    const first = headers.indexOf('firstname'); const last = headers.indexOf('lastname');
+    const grade = headers.indexOf('grade'); const guardianName = headers.indexOf('guardianname'); const guardianEmail = headers.indexOf('guardianemail');
+    return rows.map((values) => ({ firstName: values[first], lastName: values[last], grade: values[grade], guardianName: values[guardianName], guardianEmail: values[guardianEmail] })).filter((entry) => entry.firstName || entry.lastName);
   }
 
   function parseCsv(text) {
@@ -272,14 +293,6 @@
     }
     row.push(value.trim()); if (row.some(Boolean)) rows.push(row);
     return rowsToStudents(rows);
-  }
-
-  async function parseRosterFile(file) {
-    if (file.name.toLowerCase().endsWith('.csv')) return parseCsv(await file.text());
-    if (!window.XLSX) throw new Error('The spreadsheet reader did not load. Use CSV or check your network connection.');
-    const workbook = window.XLSX.read(await file.arrayBuffer(), { type: 'array' });
-    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-    return rowsToStudents(window.XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' }));
   }
 
   async function createClass(event) {
@@ -299,18 +312,25 @@
     await loadTeacherClasses(); renderTeacher(); notice(`Class created. Its unique code is ${data.code}.`, 'isSuccess');
   }
 
-  async function importRoster(event) {
-    event.preventDefault();
-    const file = new FormData(event.currentTarget).get('roster');
-    if (!(file instanceof File)) throw new Error('Choose a CSV file first.');
-    const students = await parseRosterFile(file);
+  async function provisionRoster(students, filename, classId) {
     notice(`Creating ${students.length} student account${students.length === 1 ? '' : 's'}…`);
-    const { data, error } = await app.getClient().functions.invoke('provision-students', { body: { classId: state.selectedClassId, filename: file.name, students } });
+    const { data, error } = await app.getClient().functions.invoke('provision-students', { body: { classId, filename, students } });
     if (error) throw error;
     if (data.error) throw new Error(data.error);
     state.credentialRows = data.students || [];
+    state.selectedClassId = classId;
     await loadTeacherClasses(); renderTeacher();
     notice(`${data.students?.length || 0} student account(s) created${data.errors?.length ? `; ${data.errors.length} row(s) need attention` : ''}.`, data.errors?.length ? 'isWarning' : 'isSuccess');
+  }
+
+  async function importAdminRoster(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const file = form.get('roster');
+    const classId = String(form.get('classId') || '');
+    if (!(file instanceof File) || !file.name || !file.name.toLowerCase().endsWith('.csv')) throw new Error('Choose the standardized CSV roster file.');
+    if (!classId) throw new Error('Choose the class for this roster.');
+    await provisionRoster(parseCsv(await file.text()), file.name, classId);
   }
 
   async function createAssignment(event) {
@@ -327,24 +347,51 @@
     await loadTeacherClasses(); renderTeacher(); notice('Assignment published to your class.', 'isSuccess');
   }
 
-  async function saveProgress(event) {
+  async function saveCamperUpdate(event) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget); const status = String(form.get('status'));
+    const form = new FormData(event.currentTarget);
+    const enrollmentId = String(form.get('enrollmentId') || '');
+    const assignmentId = String(form.get('assignmentId') || '');
+    const category = String(form.get('category') || '').trim();
+    const status = String(form.get('status') || 'in_progress');
     const scoreText = String(form.get('score') || '').trim();
-    const payload = { assignment_id: form.get('assignmentId'), enrollment_id: form.get('enrollmentId'), status, score: scoreText ? Number(scoreText) : null, reviewed_at: new Date().toISOString(), reviewed_by: state.profile.id };
-    if (status === 'complete') payload.submitted_at = new Date().toISOString();
-    const { error } = await app.getClient().from('student_assignment_progress').upsert(payload, { onConflict: 'assignment_id,enrollment_id' });
-    if (error) throw error;
-    await app.audit('assignment_reviewed', 'class_assignment', payload.assignment_id, { enrollment_id: payload.enrollment_id, status, score: payload.score });
-    await loadTeacherClasses(); renderTeacher(); notice('Progress saved.', 'isSuccess');
+    if (!assignmentId && !category) throw new Error('Choose an assignment update, enter a belt category, or do both.');
+
+    if (assignmentId) {
+      const payload = { assignment_id: assignmentId, enrollment_id: enrollmentId, status, score: scoreText ? Number(scoreText) : null, reviewed_at: new Date().toISOString(), reviewed_by: state.profile.id };
+      if (status === 'complete') payload.submitted_at = new Date().toISOString();
+      const { error } = await app.getClient().from('student_assignment_progress').upsert(payload, { onConflict: 'assignment_id,enrollment_id' });
+      if (error) throw error;
+      await app.audit('assignment_reviewed', 'class_assignment', assignmentId, { enrollment_id: enrollmentId, status, score: payload.score });
+    }
+    if (category) {
+      const { data, error } = await app.getClient().from('belt_awards').insert({ enrollment_id: enrollmentId, category, belt: form.get('belt'), note: form.get('note') || null, awarded_by: state.profile.id }).select().single();
+      if (error) throw error;
+      await app.audit('belt_awarded', 'belt_award', data.id, { enrollment_id: data.enrollment_id, category: data.category, belt: data.belt });
+    }
+    await loadTeacherClasses(); renderTeacher();
+    notice(assignmentId && category ? 'Progress saved and belt awarded.' : assignmentId ? 'Progress saved.' : 'Belt awarded and added to the student timeline.', 'isSuccess');
   }
 
-  async function awardBelt(event) {
-    event.preventDefault(); const form = new FormData(event.currentTarget);
-    const { data, error } = await app.getClient().from('belt_awards').insert({ enrollment_id: form.get('enrollmentId'), category: String(form.get('category')).trim(), belt: form.get('belt'), note: form.get('note') || null, awarded_by: state.profile.id }).select().single();
+  async function provisionTeacher(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const username = String(form.get('username') || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (username.length < 3) throw new Error('Use at least three letters or numbers for the teacher username.');
+    const { data, error } = await app.getClient().functions.invoke('provision-teacher', {
+      body: {
+        firstName: String(form.get('firstName') || '').trim(),
+        lastName: String(form.get('lastName') || '').trim(),
+        email: String(form.get('email') || '').trim().toLowerCase(),
+        username,
+        password: String(form.get('password') || ''),
+        title: String(form.get('title') || '').trim(),
+      },
+    });
     if (error) throw error;
-    await app.audit('belt_awarded', 'belt_award', data.id, { enrollment_id: data.enrollment_id, category: data.category, belt: data.belt });
-    await loadTeacherClasses(); renderTeacher(); notice('Belt awarded and added to the student timeline.', 'isSuccess');
+    if (data?.error) throw new Error(data.error);
+    event.currentTarget.reset();
+    notice(`Teacher account created for ${data?.teacher?.name || username}.`, 'isSuccess');
   }
 
   async function createPage(event) {
@@ -375,10 +422,10 @@
   function bindTeacherEvents() {
     document.getElementById('classPicker')?.addEventListener('change', (event) => { state.selectedClassId = event.target.value; state.credentialRows = []; renderTeacher(); });
     document.getElementById('createClassForm')?.addEventListener('submit', (event) => run(createClass, event));
-    document.getElementById('rosterImportForm')?.addEventListener('submit', (event) => run(importRoster, event));
+    document.getElementById('adminRosterImportForm')?.addEventListener('submit', (event) => run(importAdminRoster, event));
+    document.getElementById('teacherProvisionForm')?.addEventListener('submit', (event) => run(provisionTeacher, event));
     document.getElementById('assignmentForm')?.addEventListener('submit', (event) => run(createAssignment, event));
-    document.getElementById('progressForm')?.addEventListener('submit', (event) => run(saveProgress, event));
-    document.getElementById('beltForm')?.addEventListener('submit', (event) => run(awardBelt, event));
+    document.getElementById('camperUpdateForm')?.addEventListener('submit', (event) => run(saveCamperUpdate, event));
     document.getElementById('pageForm')?.addEventListener('submit', (event) => run(createPage, event));
     document.getElementById('navForm')?.addEventListener('submit', (event) => run(createNavigation, event));
     document.getElementById('dropdownForm')?.addEventListener('submit', (event) => run(createDropdownOption, event));
@@ -389,7 +436,7 @@
       const index = Number(document.querySelector('#assignmentForm [name="gridActivity"]')?.value);
       printGridAssignment(selectedClass(), flattenGrid()[index]);
     });
-    document.querySelector('[data-action="download-credentials"]')?.addEventListener('click', () => downloadCsv(`${selectedClass().code}-student-credentials.csv`, ['First name', 'Last name', 'Username', 'Temporary password', 'Grade'], state.credentialRows.map((entry) => [entry.firstName, entry.lastName, entry.username, entry.temporaryPassword, entry.grade])));
+    document.querySelector('[data-action="download-credentials"]')?.addEventListener('click', () => downloadCsv(`${selectedClass().code}-student-access.csv`, ['First name', 'Last name', 'Username', 'Grade'], state.credentialRows.map((entry) => [entry.firstName, entry.lastName, entry.username, entry.grade])));
     document.querySelector('[data-copy-code]')?.addEventListener('click', async (event) => { await navigator.clipboard.writeText(event.currentTarget.dataset.copyCode); notice('Class code copied.', 'isSuccess'); });
   }
 

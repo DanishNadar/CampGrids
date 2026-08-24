@@ -235,7 +235,7 @@ returns trigger language plpgsql security definer set search_path = public as $$
 begin
   -- A person can edit their display details, but their role, login identity, and
   -- active status remain MSI-managed. Administrators retain full control.
-  if not public.is_admin() and (new.role is distinct from old.role or new.username is distinct from old.username or new.email is distinct from old.email or new.is_active is distinct from old.is_active) then
+  if auth.role() <> 'service_role' and not public.is_admin() and (new.role is distinct from old.role or new.username is distinct from old.username or new.email is distinct from old.email or new.is_active is distinct from old.is_active) then
     raise exception 'Only an MSI administrator can change roles, login identities, or account status';
   end if;
   return new;
@@ -244,32 +244,25 @@ $$;
 
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public, auth as $$
-declare
-  safe_role public.user_role;
 begin
-  -- Never let a user grant themselves admin via auth metadata.
-  safe_role := case when new.raw_user_meta_data ->> 'role' = 'teacher'
-                    then 'teacher'::public.user_role else 'student'::public.user_role end;
+  -- Browser signup metadata cannot create staff roles. The admin-only Edge
+  -- function promotes a newly created default student profile to teacher.
   insert into public.profiles (id, role, email, username, first_name, last_name)
   values (
     new.id,
-    safe_role,
+    'student',
     lower(new.email),
     nullif(lower(regexp_replace(coalesce(new.raw_user_meta_data ->> 'username', ''), '[^a-zA-Z0-9]', '', 'g')), ''),
     coalesce(nullif(trim(new.raw_user_meta_data ->> 'first_name'), ''), 'CampGrids'),
     coalesce(nullif(trim(new.raw_user_meta_data ->> 'last_name'), ''), 'User')
   );
-  if safe_role = 'teacher' then
-    insert into public.teacher_profiles (user_id) values (new.id);
-  else
-    insert into public.student_profiles (user_id, grade, guardian_name, guardian_email)
-    values (
-      new.id,
-      nullif(new.raw_user_meta_data ->> 'grade', ''),
-      nullif(new.raw_user_meta_data ->> 'guardian_name', ''),
-      nullif(new.raw_user_meta_data ->> 'guardian_email', '')
-    );
-  end if;
+  insert into public.student_profiles (user_id, grade, guardian_name, guardian_email)
+  values (
+    new.id,
+    nullif(new.raw_user_meta_data ->> 'grade', ''),
+    nullif(new.raw_user_meta_data ->> 'guardian_name', ''),
+    nullif(new.raw_user_meta_data ->> 'guardian_email', '')
+  );
   return new;
 end;
 $$;
@@ -370,15 +363,15 @@ create trigger class_teachers_validate_role before insert or update on public.cl
 create trigger class_enrollments_validate_role before insert or update on public.class_enrollments
   for each row execute procedure public.validate_class_enrollment_role();
 
--- Atomic sequence means dnadar, dnadar1, dnadar2 ... are allocated consistently even
--- when a spreadsheet import sends multiple records at once.
+-- Atomic sequence means dnadar, dnadar1, dnadar2 ... are allocated consistently
+-- when an MSI administrator imports a standardized roster.
 create or replace function public.allocate_student_username(p_class_id uuid, p_first_name text, p_last_name text)
 returns text language plpgsql security definer set search_path = public as $$
 declare
   base_name text;
   suffix integer;
 begin
-  if not public.is_teacher_of(p_class_id) then raise exception 'Not permitted to add students to this class'; end if;
+  if not public.is_admin() then raise exception 'Only MSI administrators can add students to a class'; end if;
   base_name := lower(substr(regexp_replace(coalesce(p_first_name, ''), '[^a-zA-Z0-9]', '', 'g'), 1, 1)
                 || regexp_replace(coalesce(p_last_name, ''), '[^a-zA-Z0-9]', '', 'g'));
   if char_length(base_name) < 2 then raise exception 'A first name and last name are required'; end if;
@@ -402,9 +395,8 @@ returns text language sql stable security definer set search_path = public as $$
   limit 1
 $$;
 
--- A class code is checked after student authentication, rather than being used
--- as a password substitute. Returning the class id lets the browser retain the
--- student's selected class safely for their session.
+-- Returns the selected active class for an authenticated student. The browser
+-- retains this class id so the student's session opens the correct class.
 create or replace function public.verify_student_class_code(p_class_code text)
 returns uuid language plpgsql stable security definer set search_path = public as $$
 declare matching_class_id uuid;
@@ -615,7 +607,7 @@ create policy "classes: admins delete" on public.classes for delete using (publi
 create policy "class teachers: scoped read" on public.class_teachers for select using (public.is_teacher_of(class_id) or public.is_enrolled_in(class_id));
 create policy "class teachers: lead manage" on public.class_teachers for all using (public.is_teacher_of(class_id)) with check (public.is_teacher_of(class_id));
 create policy "enrollments: scoped read" on public.class_enrollments for select using (student_id = auth.uid() or public.is_teacher_of(class_id));
-create policy "enrollments: teacher manage" on public.class_enrollments for all using (public.is_teacher_of(class_id)) with check (public.is_teacher_of(class_id));
+create policy "enrollments: admins manage" on public.class_enrollments for all using (public.is_admin()) with check (public.is_admin());
 create policy "imports: teacher read" on public.import_batches for select using (public.is_teacher_of(class_id));
 create policy "assignments: class scope read" on public.class_assignments for select using (public.is_teacher_of(class_id) or (published_at is not null and public.is_enrolled_in(class_id)));
 create policy "assignments: teachers manage" on public.class_assignments for all using (public.is_teacher_of(class_id)) with check (public.is_teacher_of(class_id));

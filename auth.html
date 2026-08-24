@@ -23,24 +23,20 @@
     </section>
 
     <section class="authCard" aria-labelledby="signInTitle">
-      <div class="authTabs authTabsThree" role="tablist" aria-label="Account actions">
+      <div class="authTabs" role="tablist" aria-label="Account actions">
         <button class="authTab isActive" type="button" role="tab" aria-selected="true" data-auth-tab="class">Class login</button>
         <button class="authTab" type="button" role="tab" aria-selected="false" data-auth-tab="teacher">Teacher sign in</button>
-        <button class="authTab" type="button" role="tab" aria-selected="false" data-auth-tab="register">Create teacher account</button>
       </div>
 
       <form id="classLoginForm" class="authPanel" novalidate>
         <div class="formHeading">
           <h2 id="signInTitle">Join your class</h2>
-          <p>Use the CampGrids username and password given to you by your teacher, plus your class code.</p>
+          <p>Enter the class code and CampGrids username given to you by your teacher.</p>
         </div>
         <label class="fieldLabel">Class code
           <input name="classCode" autocomplete="off" autocapitalize="characters" required pattern="[A-Za-z0-9]{7,12}" placeholder="e.g. F89IO73">
         </label>
         <label class="fieldLabel">Student username<input name="username" autocomplete="username" required placeholder="e.g. dnadar"></label>
-        <label class="fieldLabel">Password
-          <input name="password" type="password" autocomplete="current-password" required>
-        </label>
         <button class="primaryButton" type="submit">Enter class</button>
       </form>
 
@@ -54,20 +50,6 @@
         <button class="primaryButton" type="submit">Sign in as teacher</button>
       </form>
 
-      <form id="registerForm" class="authPanel" hidden novalidate>
-        <div class="formHeading">
-          <h2>Create a teacher account</h2>
-          <p>MSI administrators approve and promote staff accounts separately. This form can never create an administrator.</p>
-        </div>
-        <div class="formTwoCols">
-          <label class="fieldLabel">First name<input name="firstName" autocomplete="given-name" required></label>
-          <label class="fieldLabel">Last name<input name="lastName" autocomplete="family-name" required></label>
-        </div>
-        <label class="fieldLabel">Work email<input name="email" type="email" autocomplete="email" required></label>
-        <label class="fieldLabel">Teacher username<input name="username" autocomplete="username" pattern="[A-Za-z0-9]+" required placeholder="e.g. fannieyu"></label>
-        <label class="fieldLabel">Password<input name="password" type="password" autocomplete="new-password" minlength="10" required></label>
-        <button class="primaryButton" type="submit">Create teacher account</button>
-      </form>
       <p id="authNotice" class="formNotice" role="status" aria-live="polite"></p>
     </section>
   </main>

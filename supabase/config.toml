@@ -1,0 +1,2 @@
+[functions.student-class-login]
+verify_jwt = false

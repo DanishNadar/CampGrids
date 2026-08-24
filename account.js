@@ -2,7 +2,6 @@
   const notice = document.getElementById('authNotice');
   const classLoginForm = document.getElementById('classLoginForm');
   const teacherLoginForm = document.getElementById('teacherLoginForm');
-  const registerForm = document.getElementById('registerForm');
 
   function setNotice(message, state = '') {
     notice.textContent = message;
@@ -16,7 +15,6 @@
   function setActiveTab(tab) {
     classLoginForm.hidden = tab !== 'class';
     teacherLoginForm.hidden = tab !== 'teacher';
-    registerForm.hidden = tab !== 'register';
     document.querySelectorAll('[data-auth-tab]').forEach((button) => {
       const active = button.dataset.authTab === tab;
       button.classList.toggle('isActive', active);
@@ -38,25 +36,19 @@
     if (!window.CampGridsApp.configured()) return setNotice(window.CampGridsApp.configurationMessage, 'isError');
     const form = new FormData(classLoginForm);
     const username = normalizeUsername(form.get('username'));
-    const password = String(form.get('password') || '');
     const classCode = String(form.get('classCode') || '').trim().toUpperCase();
-    if (!username || !password || !classCode) return setNotice('Enter your class code, username, and password.', 'isError');
+    if (!username || !classCode) return setNotice('Enter your class code and student username.', 'isError');
 
     setNotice('Entering your class…');
     try {
-      const { error } = await window.CampGridsApp.getClient().auth.signInWithPassword({ email: `${username}@students.campgrids.local`, password });
+      const { data, error } = await window.CampGridsApp.getClient().functions.invoke('student-class-login', {
+        body: { username, classCode, redirectTo: new URL('auth.html', window.location.href).href },
+      });
       if (error) throw error;
-      const profile = await window.CampGridsApp.getProfile(true);
-      if (!profile?.is_active) throw new Error('This account is inactive. Please contact an MSI administrator.');
-      if (profile.role !== 'student') throw new Error('This is not a student account.');
-      const { data: classId, error: classError } = await window.CampGridsApp.getClient().rpc('verify_student_class_code', { p_class_code: classCode });
-      if (classError || !classId) {
-        await window.CampGridsApp.getClient().auth.signOut();
-        throw new Error('That class code is not connected to this student account.');
-      }
-      window.localStorage.setItem('campgrids-active-class', classId);
-      await window.CampGridsApp.logStudentEvent('signed_in', { source: 'class_login', class_code: classCode }, classId);
-      window.location.assign(window.CampGridsApp.dashboardHref('student'));
+      if (data?.error) throw new Error(data.error);
+      if (!data?.actionLink || !data?.classId) throw new Error('We could not start your class sign-in. Please try again.');
+      window.localStorage.setItem('campgrids-active-class', data.classId);
+      window.location.assign(data.actionLink);
     } catch (error) {
       setNotice(error.message || 'We could not sign you in.', 'isError');
     }
@@ -83,40 +75,6 @@
       }
       window.location.assign(window.CampGridsApp.dashboardHref('teacher'));
     } catch (error) { setNotice(error.message || 'We could not sign you in.', 'isError'); }
-  });
-
-  registerForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    if (!window.CampGridsApp.configured()) return setNotice(window.CampGridsApp.configurationMessage, 'isError');
-    const form = new FormData(registerForm);
-    const username = normalizeUsername(form.get('username'));
-    if (username.length < 3) return setNotice('Use at least three letters or numbers for the teacher username.', 'isError');
-    setNotice('Creating your teacher account…');
-    try {
-      const { data, error } = await window.CampGridsApp.getClient().auth.signUp({
-        email: String(form.get('email')).trim().toLowerCase(),
-        password: String(form.get('password')),
-        options: {
-          /* Send confirmation back to this CampGrids account page instead of
-             falling back to an unrelated project configured as Site URL. */
-          emailRedirectTo: new URL('auth.html', window.location.href).href,
-          data: {
-            role: 'teacher', username,
-            first_name: String(form.get('firstName')).trim(),
-            last_name: String(form.get('lastName')).trim(),
-          }
-        },
-      });
-      if (error) throw error;
-      if (data.session) {
-        setNotice('Your teacher account is ready. Opening your dashboard…', 'isSuccess');
-        window.setTimeout(() => window.location.assign('dashboard.html'), 650);
-      } else {
-        setNotice('Check your email to confirm the account, then sign in.', 'isSuccess');
-      }
-    } catch (error) {
-      setNotice(error.message || 'We could not create the account.', 'isError');
-    }
   });
 
   redirectForSession().catch((error) => setNotice(error.message, 'isError'));
