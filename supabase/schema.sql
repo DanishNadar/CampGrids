@@ -230,9 +230,46 @@ begin
 end;
 $$;
 
+-- Admin login names are assigned by the database when a profile is promoted.
+-- Locking by base name makes the first available suffix deterministic even
+-- when two MSI staff accounts are provisioned at the same time.
+create or replace function public.generate_available_username(
+  p_first_name text,
+  p_last_name text,
+  p_exclude_user_id uuid default null
+)
+returns text language plpgsql security definer set search_path = public, pg_catalog as $$
+declare
+  base_name text;
+  candidate text;
+  suffix integer := 0;
+begin
+  base_name := lower(substr(regexp_replace(coalesce(p_first_name, ''), '[^a-zA-Z0-9]', '', 'g'), 1, 1)
+                || regexp_replace(coalesce(p_last_name, ''), '[^a-zA-Z0-9]', '', 'g'));
+  if char_length(base_name) < 2 then raise exception 'A first name and last name are required'; end if;
+
+  perform pg_advisory_xact_lock(hashtext(base_name));
+  loop
+    candidate := base_name || case when suffix = 0 then '' else suffix::text end;
+    exit when not exists (
+      select 1 from public.profiles
+      where username = candidate
+        and (p_exclude_user_id is null or id <> p_exclude_user_id)
+    );
+    suffix := suffix + 1;
+  end loop;
+  return candidate;
+end;
+$$;
+
+revoke all on function public.generate_available_username(text, text, uuid) from public, anon, authenticated;
+
 create or replace function public.protect_profile_identity()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
+  if new.role = 'admin' and (old.role is distinct from 'admin' or new.username is null) then
+    new.username := public.generate_available_username(new.first_name, new.last_name, new.id);
+  end if;
   -- A person can edit their display details, but their role, login identity, and
   -- active status remain MSI-managed. Administrators retain full control.
   if auth.role() <> 'service_role' and not public.is_admin() and (new.role is distinct from old.role or new.username is distinct from old.username or new.email is distinct from old.email or new.is_active is distinct from old.is_active) then
@@ -369,18 +406,23 @@ create or replace function public.allocate_student_username(p_class_id uuid, p_f
 returns text language plpgsql security definer set search_path = public as $$
 declare
   base_name text;
+  candidate text;
   suffix integer;
 begin
   if not public.is_admin() then raise exception 'Only MSI administrators can add students to a class'; end if;
   base_name := lower(substr(regexp_replace(coalesce(p_first_name, ''), '[^a-zA-Z0-9]', '', 'g'), 1, 1)
                 || regexp_replace(coalesce(p_last_name, ''), '[^a-zA-Z0-9]', '', 'g'));
   if char_length(base_name) < 2 then raise exception 'A first name and last name are required'; end if;
-  insert into public.username_sequences (base_username, next_suffix)
-  values (base_name, 1)
-  on conflict (base_username) do update
-    set next_suffix = public.username_sequences.next_suffix + 1
-  returning next_suffix - 1 into suffix;
-  return base_name || case when suffix = 0 then '' else suffix::text end;
+  loop
+    insert into public.username_sequences (base_username, next_suffix)
+    values (base_name, 1)
+    on conflict (base_username) do update
+      set next_suffix = public.username_sequences.next_suffix + 1
+    returning next_suffix - 1 into suffix;
+    candidate := base_name || case when suffix = 0 then '' else suffix::text end;
+    exit when not exists (select 1 from public.profiles where username = candidate);
+  end loop;
+  return candidate;
 end;
 $$;
 
@@ -650,7 +692,10 @@ grant select, insert, update, delete on all tables in schema public to authentic
 grant usage, select on all sequences in schema public to authenticated;
 grant execute on function public.resolve_login_email(text), public.verify_student_class_code(text), public.create_class(text, date, date, text), public.is_teacher_of(uuid), public.allocate_student_username(uuid, text, text), public.log_student_event(public.event_type, uuid, uuid, jsonb), public.record_audit_event(text, text, uuid, jsonb) to anon, authenticated;
 
--- Bootstrap the first MSI admin manually after the user has authenticated once:
+-- Bootstrap the first MSI admin manually after the user has authenticated once.
+-- Admin usernames use first initial + last name (for example, dnadar); append
+-- the next number when that username already exists (dnadar1, dnadar2, ...).
+-- The profile trigger assigns the name automatically on promotion.
 -- update public.profiles set role = 'admin' where email = 'msi-admin@example.org';
 -- insert into public.admin_profiles (user_id, department)
 -- select id, 'MSI Camps' from public.profiles where email = 'msi-admin@example.org'
