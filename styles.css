@@ -90,6 +90,7 @@
 .managedArticle p { margin-top: 7px; color: var(--muted); line-height: 1.55; }
 .formTwoCols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .formThreeCols { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; align-items: end; }
+.formActions { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; }
 .fieldLabel { display: grid; gap: 7px; color: var(--ink); font-size: 0.82rem; font-weight: 700; }
 .fieldLabel input,
 .fieldLabel select,

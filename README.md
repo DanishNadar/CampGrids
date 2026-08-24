@@ -12,6 +12,7 @@ CampGrids now includes a Supabase-backed application layer alongside the public 
 - `dashboard.html` gives teachers unique class codes, CSV roster imports that provision student accounts, per-class completion and belt KPIs, progress reviews, belt awards, credential exports, class CSV exports, and printable Grid assignment sheets.
 - Student activity—sign-in, Grid resource/video opens, assignment completion, and belt awards—is recorded in the student profile timeline.
 - MSI admins can create published pages, add them to the live navigation, and maintain dropdown options from their dashboard. Those controls update connected browsers live when Supabase Realtime is enabled.
+- Teachers and administrators reach camper records only after completing password sign-in plus an emailed verification code; campers continue to use class code and username only.
 
 The complete Supabase schema, RLS access rules, and secure roster-provisioning Edge Function are in [`supabase/`](supabase/README.md). Copy `supabase-config.example.js` to `supabase-config.js`, add your project URL and anon key, run the SQL migration, and deploy the function before using the account tools.
 

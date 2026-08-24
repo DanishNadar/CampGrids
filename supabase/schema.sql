@@ -49,6 +49,27 @@ create table public.admin_profiles (
   created_at timestamptz not null default now()
 );
 
+-- Staff members prove possession of their work email after their password has
+-- been accepted. Tickets are random, one-time, short-lived values; only their
+-- SHA-256 hashes are stored. The tables have RLS with no browser policies.
+create table public.staff_email_2fa_challenges (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  password_session_id uuid not null,
+  ticket_hash text not null unique check (ticket_hash ~ '^[a-f0-9]{64}$'),
+  expires_at timestamptz not null,
+  consumed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create table public.staff_email_2fa_sessions (
+  session_id uuid primary key,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  email citext not null,
+  verified_at timestamptz not null default now(),
+  expires_at timestamptz not null
+);
+
 create table public.username_sequences (
   base_username citext primary key,
   next_suffix integer not null default 0 check (next_suffix >= 0),
@@ -221,6 +242,8 @@ create index belt_awards_enrollment_idx on public.belt_awards(enrollment_id);
 create index student_events_student_idx on public.student_activity_events(student_id, occurred_at desc);
 create index student_events_class_idx on public.student_activity_events(class_id, occurred_at desc);
 create index navigation_visible_idx on public.navigation_items(location, position) where is_visible;
+create index staff_email_2fa_challenges_user_idx on public.staff_email_2fa_challenges(user_id, expires_at desc);
+create index staff_email_2fa_sessions_user_idx on public.staff_email_2fa_sessions(user_id, expires_at desc);
 
 create or replace function public.set_updated_at()
 returns trigger language plpgsql security invoker set search_path = public as $$
@@ -313,18 +336,134 @@ returns public.user_role language sql stable security definer set search_path = 
   select role from public.profiles where id = auth.uid()
 $$;
 
+-- This is the first half of staff email 2FA. It can only be called from an
+-- authenticated password session. The Edge Function sends the email OTP, so
+-- the browser never receives a Supabase service-role key.
+create or replace function public.begin_staff_email_2fa()
+returns table (email text, ticket text)
+language plpgsql security definer set search_path = public, extensions as $$
+declare
+  session_value uuid;
+  email_value text;
+  ticket_value text;
+begin
+  if auth.uid() is null then raise exception 'Sign in with your password first'; end if;
+  if coalesce(auth.jwt() ->> 'session_id', '') !~ '^[0-9a-fA-F-]{36}$' then
+    raise exception 'The authentication session is invalid';
+  end if;
+  if not exists (
+    select 1 from jsonb_array_elements(coalesce(auth.jwt() -> 'amr', '[]'::jsonb)) as method
+    where method ->> 'method' = 'password'
+  ) then
+    raise exception 'Sign in with your password before requesting an email code';
+  end if;
+  session_value := (auth.jwt() ->> 'session_id')::uuid;
+  select p.email::text into email_value
+  from public.profiles p
+  where p.id = auth.uid() and p.role in ('teacher', 'admin') and p.is_active;
+  if email_value is null then
+    raise exception 'An active teacher or MSI administrator account with an email address is required';
+  end if;
+
+  delete from public.staff_email_2fa_challenges
+  where expires_at <= now()
+     or (user_id = auth.uid() and password_session_id = session_value and consumed_at is null);
+  ticket_value := encode(gen_random_bytes(32), 'hex');
+  insert into public.staff_email_2fa_challenges (user_id, password_session_id, ticket_hash, expires_at)
+  values (auth.uid(), session_value, encode(digest(ticket_value, 'sha256'), 'hex'), now() + interval '10 minutes');
+  return query select email_value, ticket_value;
+end;
+$$;
+
+-- This is the second half of staff email 2FA. The email OTP creates a new
+-- Supabase session whose AMR contains `otp`; the ticket binds it to the prior
+-- password session for the same staff account.
+create or replace function public.complete_staff_email_2fa(p_ticket text)
+returns boolean
+language plpgsql security definer set search_path = public, extensions as $$
+declare
+  session_value uuid;
+  email_value text;
+begin
+  if auth.uid() is null then raise exception 'A verified email session is required'; end if;
+  if coalesce(auth.jwt() ->> 'session_id', '') !~ '^[0-9a-fA-F-]{36}$' then
+    raise exception 'The authentication session is invalid';
+  end if;
+  if coalesce(auth.jwt() ->> 'email', '') = '' then raise exception 'The verified email is missing'; end if;
+  if not exists (
+    select 1 from jsonb_array_elements(coalesce(auth.jwt() -> 'amr', '[]'::jsonb)) as method
+    where method ->> 'method' = 'otp'
+  ) then
+    raise exception 'Enter the code sent to your email';
+  end if;
+  if p_ticket !~ '^[a-f0-9]{64}$' then raise exception 'The verification request is invalid'; end if;
+  session_value := (auth.jwt() ->> 'session_id')::uuid;
+  email_value := lower(auth.jwt() ->> 'email');
+
+  if not exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid()
+      and p.role in ('teacher', 'admin')
+      and p.is_active
+      and lower(p.email::text) = email_value
+  ) then
+    raise exception 'This email is not attached to an active staff account';
+  end if;
+
+  update public.staff_email_2fa_challenges
+  set consumed_at = now()
+  where user_id = auth.uid()
+    and ticket_hash = encode(digest(p_ticket, 'sha256'), 'hex')
+    and expires_at > now()
+    and consumed_at is null;
+  if not found then raise exception 'This verification request has expired or was already used'; end if;
+
+  delete from public.staff_email_2fa_sessions where expires_at <= now();
+  insert into public.staff_email_2fa_sessions (session_id, user_id, email, expires_at)
+  values (session_value, auth.uid(), email_value, now() + interval '8 hours')
+  on conflict (session_id) do update
+  set user_id = excluded.user_id,
+      email = excluded.email,
+      verified_at = now(),
+      expires_at = excluded.expires_at;
+  return true;
+end;
+$$;
+
+-- Every non-student route that can reach camper data uses this session check.
+-- The check expires after eight hours and is tied to the exact JWT session.
+create or replace function public.is_staff_2fa_verified()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce(exists (
+    select 1
+    from public.profiles p
+    join public.staff_email_2fa_sessions s on s.user_id = p.id
+    where p.id = auth.uid()
+      and p.role in ('teacher', 'admin')
+      and p.is_active
+      and s.session_id::text = coalesce(auth.jwt() ->> 'session_id', '')
+      and lower(s.email::text) = lower(coalesce(auth.jwt() ->> 'email', ''))
+      and s.expires_at > now()
+  ), false)
+$$;
+
 create or replace function public.is_admin()
 returns boolean language sql stable security definer set search_path = public as $$
-  select coalesce(public.current_role() = 'admin', false)
+  select coalesce(exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid() and p.role = 'admin' and p.is_active
+  ) and public.is_staff_2fa_verified(), false)
 $$;
 
 create or replace function public.is_teacher_of(p_class_id uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select coalesce(
-    public.is_admin() or exists (
-      select 1 from public.classes c
-      left join public.class_teachers ct on ct.class_id = c.id
-      where c.id = p_class_id and (c.owner_id = auth.uid() or ct.teacher_id = auth.uid())
+    public.is_admin() or (
+      public.is_staff_2fa_verified() and exists (
+        select 1 from public.classes c
+        left join public.class_teachers ct on ct.class_id = c.id
+        where c.id = p_class_id and (c.owner_id = auth.uid() or ct.teacher_id = auth.uid())
+      )
     ), false
   )
 $$;
@@ -478,8 +617,11 @@ returns table (
 )
 language plpgsql security definer set search_path = public as $$
 begin
-  if auth.uid() is null or public.current_role() not in ('teacher', 'admin') then
-    raise exception 'An active teacher or MSI administrator account is required to create a class';
+  if auth.uid() is null or not (
+    (public.current_role() = 'teacher' and public.is_staff_2fa_verified())
+    or public.is_admin()
+  ) then
+    raise exception 'An active teacher or MSI administrator account with email verification is required to create a class';
   end if;
   if nullif(trim(p_name), '') is null then raise exception 'A class name is required'; end if;
   if p_ends_on is not null and p_starts_on is not null and p_ends_on < p_starts_on then
@@ -520,8 +662,8 @@ create or replace function public.record_audit_event(
 returns bigint language plpgsql security definer set search_path = public as $$
 declare audit_id bigint;
 begin
-  if public.current_role() not in ('teacher', 'admin') then
-    raise exception 'Only teachers and MSI administrators can record an audit event';
+  if not public.is_staff_2fa_verified() then
+    raise exception 'Only email-verified teachers and MSI administrators can record an audit event';
   end if;
   insert into public.audit_log (actor_id, action, entity_type, entity_id, metadata)
   values (auth.uid(), p_action, p_entity_type, p_entity_id, coalesce(p_metadata, '{}'::jsonb))
@@ -600,6 +742,8 @@ alter table public.profiles enable row level security;
 alter table public.student_profiles enable row level security;
 alter table public.teacher_profiles enable row level security;
 alter table public.admin_profiles enable row level security;
+alter table public.staff_email_2fa_challenges enable row level security;
+alter table public.staff_email_2fa_sessions enable row level security;
 alter table public.username_sequences enable row level security;
 alter table public.camps enable row level security;
 alter table public.classes enable row level security;
@@ -640,9 +784,8 @@ create policy "camps: public read" on public.camps for select using (true);
 create policy "camps: admins manage" on public.camps for all using (public.is_admin()) with check (public.is_admin());
 create policy "classes: teacher/student scope" on public.classes for select using (public.is_teacher_of(id) or public.is_enrolled_in(id));
 create policy "classes: teachers create" on public.classes for insert with check (
-  owner_id = auth.uid() and exists (
-    select 1 from public.profiles where id = auth.uid() and role in ('teacher', 'admin') and is_active
-  )
+  owner_id = auth.uid()
+  and ((public.current_role() = 'teacher' and public.is_staff_2fa_verified()) or public.is_admin())
 );
 create policy "classes: teachers update" on public.classes for update using (public.is_teacher_of(id)) with check (public.is_teacher_of(id));
 create policy "classes: admins delete" on public.classes for delete using (public.is_admin());
@@ -691,12 +834,10 @@ grant select on public.camps, public.content_pages, public.navigation_items, pub
 grant select, insert, update, delete on all tables in schema public to authenticated;
 grant usage, select on all sequences in schema public to authenticated;
 grant execute on function public.resolve_login_email(text), public.verify_student_class_code(text), public.create_class(text, date, date, text), public.is_teacher_of(uuid), public.allocate_student_username(uuid, text, text), public.log_student_event(public.event_type, uuid, uuid, jsonb), public.record_audit_event(text, text, uuid, jsonb) to anon, authenticated;
+revoke all on function public.begin_staff_email_2fa(), public.complete_staff_email_2fa(text), public.is_staff_2fa_verified() from public, anon;
+grant execute on function public.begin_staff_email_2fa(), public.complete_staff_email_2fa(text), public.is_staff_2fa_verified() to authenticated;
 
--- Bootstrap the first MSI admin manually after the user has authenticated once.
--- Admin usernames use first initial + last name (for example, dnadar); append
--- the next number when that username already exists (dnadar1, dnadar2, ...).
--- The profile trigger assigns the name automatically on promotion.
--- update public.profiles set role = 'admin' where email = 'msi-admin@example.org';
--- insert into public.admin_profiles (user_id, department)
--- select id, 'MSI Camps' from public.profiles where email = 'msi-admin@example.org'
--- on conflict (user_id) do nothing;
+-- IT creates the first administrator in Supabase Auth with a strong temporary
+-- password, then promotes the resulting profile. The profile trigger assigns
+-- first-initial + last-name usernames automatically. See supabase/README.md
+-- for the complete super-admin provisioning and email-2FA procedure.

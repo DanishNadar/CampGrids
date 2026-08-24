@@ -25,12 +25,8 @@ Deno.serve(async (request) => {
   const { data: userData, error: userError } = await caller.auth.getUser();
   if (userError || !userData.user) return fail("Sign in is required", 401);
 
-  const { data: callerProfile, error: callerProfileError } = await caller
-    .from("profiles")
-    .select("role")
-    .eq("id", userData.user.id)
-    .single();
-  if (callerProfileError || callerProfile?.role !== "admin") return fail("Only MSI administrators can upload camper rosters.", 403);
+  const { data: isAdmin, error: callerProfileError } = await caller.rpc("is_admin");
+  if (callerProfileError || !isAdmin) return fail("Complete email two-factor verification before uploading camper rosters.", 403);
 
   const { classId, filename, students } = await request.json();
   if (!classId || !Array.isArray(students) || students.length === 0) return fail("A class and at least one student are required");

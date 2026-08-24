@@ -499,6 +499,14 @@
     if (!session) { window.location.replace('auth.html'); return; }
     state.profile = await app.getProfile();
     if (!state.profile?.is_active) throw new Error('This account is inactive. Please contact MSI camps.');
+    if (state.profile.role === 'teacher' || state.profile.role === 'admin') {
+      const { data: verifiedStaff, error } = await app.getClient().rpc('is_staff_2fa_verified');
+      if (error || !verifiedStaff) {
+        await app.getClient().auth.signOut();
+        window.location.replace(state.profile.role === 'admin' ? 'admin/' : 'auth.html');
+        return;
+      }
+    }
     if (state.profile.role === 'student') await renderStudent();
     else { await loadTeacherClasses(); renderTeacher(); }
   }

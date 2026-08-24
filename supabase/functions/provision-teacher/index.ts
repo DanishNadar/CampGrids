@@ -17,12 +17,8 @@ Deno.serve(async (request) => {
   const admin = createClient(url, serviceRole, { auth: { autoRefreshToken: false, persistSession: false } });
   const { data: callerData, error: callerError } = await caller.auth.getUser();
   if (callerError || !callerData.user) return fail("Sign in is required", 401);
-  const { data: callerProfile, error: roleError } = await caller
-    .from("profiles")
-    .select("role")
-    .eq("id", callerData.user.id)
-    .single();
-  if (roleError || callerProfile?.role !== "admin") return fail("Only MSI administrators can create teacher accounts.", 403);
+  const { data: isAdmin, error: roleError } = await caller.rpc("is_admin");
+  if (roleError || !isAdmin) return fail("Complete email two-factor verification before creating teacher accounts.", 403);
 
   const { firstName: firstNameValue, lastName: lastNameValue, email: emailValue, username: usernameInput, password: passwordValue, title: titleValue } = await request.json();
   const firstName = text(firstNameValue);

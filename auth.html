@@ -43,11 +43,15 @@
       <form id="teacherLoginForm" class="authPanel" hidden novalidate>
         <div class="formHeading">
           <h2>Teacher sign in</h2>
-          <p>Use your work email address or your assigned teacher username.</p>
+          <p>Sign in with your work account, then enter the verification code sent to your email.</p>
         </div>
-        <label class="fieldLabel">Email address or teacher username<input name="identity" autocomplete="username" required placeholder="name@griffonmsi.org or mjuarez"></label>
-        <label class="fieldLabel">Password<input name="password" type="password" autocomplete="current-password" required></label>
-        <button class="primaryButton" type="submit">Sign in as teacher</button>
+        <label class="fieldLabel" data-teacher-credential>Email address or teacher username<input name="identity" autocomplete="username" required placeholder="name@griffonmsi.org or mjuarez"></label>
+        <label class="fieldLabel" data-teacher-credential>Password<input name="password" type="password" autocomplete="current-password" required></label>
+        <div id="teacherVerificationStep" class="stackForm" hidden>
+          <label class="fieldLabel">Email verification code<input name="verificationCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,8}" minlength="6" maxlength="8" placeholder="Verification code"></label>
+          <div class="formActions"><button class="primaryButton" type="submit">Verify and enter workspace</button><button id="teacherResendCode" class="secondaryButton" type="button">Resend code</button><button id="teacherStartOver" class="quietButton" type="button">Use a different account</button></div>
+        </div>
+        <button id="teacherSendCode" class="primaryButton" type="submit">Continue</button>
       </form>
 
       <p id="authNotice" class="formNotice" role="status" aria-live="polite"></p>
