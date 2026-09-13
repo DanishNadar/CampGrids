@@ -16,6 +16,10 @@ CampGrids now includes a Supabase-backed application layer alongside the public 
 
 The complete Supabase schema, RLS access rules, and secure roster-provisioning Edge Function are in [`supabase/`](supabase/README.md). Copy `supabase-config.example.js` to `supabase-config.js`, add your project URL and anon key, run the SQL migration, and deploy the function before using the account tools.
 
+## AWS account-data migration target
+
+The current deployed account flow is Supabase-backed. The production-ready AWS target is documented in [`aws/`](aws/README.md): Cognito holds credentials and MFA, RDS PostgreSQL is the transactional account source of truth behind an EC2 API, S3 carries encrypted minimised exports, and Redshift serves reporting only. Redshift must not make sign-in or authorization decisions because it does not enforce unique or foreign-key constraints.
+
 ## How It Works
 
 The workbook is still the place where project information should be edited. After the workbook is updated, `updateInterface.bat` sends it into `scripts/generateCampgrids.py`, which rebuilds the generated data inside `script.js`.
