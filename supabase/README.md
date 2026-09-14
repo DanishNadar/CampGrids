@@ -18,10 +18,11 @@ The database records the second step against the exact Supabase session for eigh
 
    ```powershell
 npx supabase@latest login
-npx supabase@latest functions deploy provision-students --project-ref hofninqlkcuzgboslodq
-npx supabase@latest functions deploy provision-teachers --project-ref hofninqlkcuzgboslodq
-npx supabase@latest functions deploy student-class-login --project-ref hofninqlkcuzgboslodq
-npx supabase@latest functions deploy request-staff-email-2fa --project-ref hofninqlkcuzgboslodq
+$PROJECT_REF = 'your-project-ref'
+npx supabase@latest functions deploy provision-students --project-ref $PROJECT_REF
+npx supabase@latest functions deploy provision-teachers --project-ref $PROJECT_REF
+npx supabase@latest functions deploy student-class-login --project-ref $PROJECT_REF
+npx supabase@latest functions deploy request-staff-email-2fa --project-ref $PROJECT_REF
    ```
 
 3. Copy `supabase-config.example.js` to `supabase-config.js` in the site root and provide the project URL and **anon** key. Never place the service-role key in a browser file.
@@ -84,7 +85,8 @@ supabase functions delete admin-phone-login
 If the sign-in page says it could not send a code, open **Edge Functions** in the Supabase dashboard and confirm that `request-staff-email-2fa` exists and is active. A `404 Requested function was not found` response means it has not been deployed yet. Deploy it with:
 
 ```powershell
-npx supabase@latest functions deploy request-staff-email-2fa --project-ref hofninqlkcuzgboslodq
+$PROJECT_REF = 'your-project-ref'
+npx supabase@latest functions deploy request-staff-email-2fa --project-ref $PROJECT_REF
 ```
 
 You can also use **Deploy a new function -> Via Editor** in the dashboard.
@@ -140,7 +142,7 @@ Administrator usernames are still generated as first initial + last name: `Danis
 - Reset an administrator password in **Authentication -> Users**. Do not place a plaintext password in SQL, frontend JavaScript, or source control.
 - Change `is_active` to `false` in `public.profiles` to revoke CampGrids access immediately; existing email-verified sessions will fail the database check.
 - Keep the staff user's email current. The verification code always goes to `profiles.email`, which is created from the Auth email identity.
-- Create teacher accounts only from the verified administrator dashboard. That workflow accepts a CSV, generates the username and temporary password, and produces a downloadable one-time report. Do not store that report in a shared drive.
+- Create teacher accounts only from the verified administrator dashboard. The dashboard supports a single-teacher form and a CSV batch import; both generate a username and temporary password, then produce a downloadable one-time report. Do not store that report in a shared drive.
 
 ## Admin CSV workflows and the Mother Grid
 
