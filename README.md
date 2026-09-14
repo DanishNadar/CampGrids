@@ -16,6 +16,45 @@ CampGrids now includes a Supabase-backed application layer alongside the public 
 
 The complete Supabase schema, RLS access rules, and secure roster-provisioning Edge Function are in [`supabase/`](supabase/README.md). Copy `supabase-config.example.js` to `supabase-config.js`, add your project URL and anon key, run the SQL migration, and deploy the function before using the account tools.
 
+## The Mother Grid
+
+The Mother Grid is the belt-by-category matrix behind every class. Its columns are the
+workbook's categories and its rows are the eight belts, so one cell is a single
+belt/category intersection holding however many projects the workbook stacks there.
+Each project keeps its own instructions and video links in the cell's `projects` column.
+
+Administrators replace the whole Grid by uploading one standardized sheet with **Import a
+Mother Grid**, rather than adding activities one at a time.
+[`assets/mother-grid-template.csv`](assets/mother-grid-template.csv) is that sheet,
+exported from `Fab Lab Camp Grids.xlsx`:
+
+- Row 1 blank in the first cell, then one category per column.
+- Column A names the belt at the first row of each belt band and is blank to continue it.
+- Each cell reads `Project name: Instructions | https://...`. `Video` works in place of
+  `Instructions`, and a cell may be a bare project name with no suffix and no URL.
+
+The resource links live as Excel hyperlinks rather than cell text, so exporting a sheet
+by hand with only the visible values loses every URL. The generator in
+`scripts/` reads the hyperlink targets and writes them into the `| https://...` half.
+
+Importing upserts on (belt, column), so a cell keeps its identity and every teacher's
+class selection survives a re-import. Intersections missing from the new sheet are
+deactivated rather than deleted, which withdraws them from teachers while keeping
+history. A delete-and-reload would cascade through `class_grid_cells` and silently wipe
+every class selection.
+
+Teachers see the same Grid and choose a subset for their class: clicking a category
+heading takes or releases that whole column, and single cells can be toggled. A
+selection has to be one unbroken run of belts, so a class cannot be given Blue without
+the belts beneath it; the rule is enforced both as the teacher clicks and again in
+`set_class_grid_cells` when the finished set is saved. Nothing reaches campers until the
+selection is saved.
+
+Only MSI administrators create teacher and camper accounts, which the
+`provision-teachers` and `provision-students` functions enforce with `is_admin()`.
+Teachers pick from the accounts an administrator has already created; removing a camper
+exits them from the class and keeps their work.
+
 ## AWS account-data migration target
 
 The current deployed account flow is Supabase-backed. The production-ready AWS target is documented in [`aws/`](aws/README.md): Cognito holds credentials and MFA, RDS PostgreSQL is the transactional account source of truth behind an EC2 API, S3 carries encrypted minimised exports, and Redshift serves reporting only. Redshift must not make sign-in or authorization decisions because it does not enforce unique or foreign-key constraints.
@@ -56,7 +95,7 @@ These diagrams show the intended flow of the project. They are the general workf
 
 `site.js` holds the navigation bar, the external link list, the camp lists, and the rendering for the homepage camp rows, the camp pages, and the gallery pages. Each camp has a `kind`: `themed` camps show Themed Activity Weeks, `grid` camps show The Camp Grids section, and `info` camps show neither. Each camp menu in the navigation bar opens a full-width dropdown with the camp links on the left and a featured block on the right; the featured photo, wording, and button link come from `navFeaturePlaceholder` near the top of the file and are placeholders until real content is supplied.
 
-`styles.css` controls the layout, card styling, belt colors, quick links, process page, and placeholder image slots. The shared typography tokens are `--font-heading` (Space Grotesk) and `--font-body` (DM Sans). The official MSI color token is `--msi-orange-021` (Pantone Orange 021 / `#FE5000`); its derived swatches preserve readable text and interactive states. Belt colors are deliberately separate, because a belt's color is its name rather than a design choice.
+`styles.css` controls the layout, card styling, belt colors, quick links, process page, and placeholder image slots. The shared typography tokens are `--font-heading` (Space Grotesk) and `--font-body` (DM Sans). The official MSI color token is `--msi-orange-021` (Pantone Orange 021 / `#FE5000`); its derived swatches preserve readable text and interactive states. Belt colors are deliberately separate, because a belt's color is its name rather than a design choice. They are copied exactly from `Fab Lab Camp Grids.xlsx`: each belt has a vivid chip token (`--beltWTChip` and so on) used for the belt label the way column A is filled in the workbook, and a pale band token (`--beltWTBand`) used behind that belt's activity cells. `--gridHeader` is the workbook's cyan category header row.
 
 `script.js` contains the generated `campData` and the rendering logic for cards, belts, sections, and rows on `campgrids.html`.
 
