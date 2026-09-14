@@ -128,8 +128,36 @@
   }
   async function updateStudentProgress(assignmentId, enrollmentId, classId) { const { error } = await app.getClient().from('student_assignment_progress').upsert({ assignment_id: assignmentId, enrollment_id: enrollmentId, status: 'complete', submitted_at: new Date().toISOString() }, { onConflict: 'assignment_id,enrollment_id' }); if (error) throw error; await app.logStudentEvent('assignment_completed', { status: 'complete' }, classId, assignmentId); await renderStudent(); notice('Marked completed.', 'isSuccess'); }
   async function signOut() { await app.getClient().auth.signOut(); window.location.assign('auth.html'); }
+  /* PostgREST answers a query against a table that is not in the database with a 404
+     rather than a SQL error, and its raw message ("Could not find the table ... in the
+     schema cache") reads like a bug in this page. These are the two codes it uses, the
+     older SQL one and the newer schema-cache one. Returning the table name lets the
+     caller explain the real cause: a migration that has not been run yet. */
+  function missingTableName(error) {
+    if (!error) return '';
+    const code = String(error.code || '');
+    const text = `${error.message || ''} ${error.details || ''}`;
+    if (code !== '42P01' && code !== 'PGRST205' && !/could not find the table|relation .* does not exist/i.test(text)) return '';
+    return (text.match(/['"](?:[a-z_]+\.)?([a-z_][a-z0-9_]*)['"]/i) || [])[1] || '';
+  }
+
+  function describeError(error) {
+    const table = missingTableName(error);
+    if (table) return `This workspace reads the "${table}" table, which does not exist in the connected Supabase project. Run the pending migrations in supabase/migrations against this project, then reload.`;
+    return error?.message || 'Something went wrong. Please try again.';
+  }
+
+  /* A failure before the workspace has rendered has nowhere to put a notice, because
+     the notice element is created by actionsHeader as part of rendering. Falling back
+     to notice() in that window silently discarded the message and left the page on
+     "Loading your workspace..." indefinitely, with the reason only in the console. */
+  function fatal(error) {
+    workspace.innerHTML = `<section class="loadingState"><p class="eyebrow">Workspace unavailable</p><h1>This workspace could not be opened.</h1><p>${escapeHtml(describeError(error))}</p><p class="workspaceNotice isError">${escapeHtml(error?.code ? `Reference: ${error.code}` : '')}</p><button class="primaryButton" type="button" data-action="retry">Try again</button></section>`;
+    document.querySelector('[data-action="retry"]')?.addEventListener('click', () => window.location.reload());
+  }
+
   async function run(task, event) { try { await task(event); } catch (error) { handleError(error); } }
-  function handleError(error) { console.error(error); notice(error?.message || 'Something went wrong. Please try again.', 'isError'); }
+  function handleError(error) { console.error(error); if (document.getElementById('workspaceNotice')) notice(describeError(error), 'isError'); else fatal(error); }
   async function init() { if (!app.configured()) { workspace.innerHTML = `<section class="loadingState"><p class="eyebrow">Setup required</p><h1>Connect Supabase to open the workspace.</h1><p>${escapeHtml(app.configurationMessage)}</p></section>`; return; } if (!await app.getSession()) { window.location.replace('auth.html'); return; } state.profile = await app.getProfile(); if (!state.profile?.is_active) throw new Error('This account is inactive. Please contact MSI camps.'); if (state.profile.role === 'teacher' || state.profile.role === 'admin') { const { data: verified, error } = await app.getClient().rpc('is_staff_2fa_verified'); if (error || !verified) { await app.getClient().auth.signOut(); window.location.replace(state.profile.role === 'admin' ? 'admin/' : 'auth.html'); return; } } if (state.profile.role === 'student') await renderStudent(); else if (state.profile.role === 'admin') { await loadAdminDashboard(); renderAdminDashboard(); } else { await loadTeacherClasses(); renderTeacher(); } }
   init().catch(handleError);
 })();
