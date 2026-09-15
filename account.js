@@ -156,19 +156,16 @@
       await app.getClient().auth.signOut();
       throw new Error('This is not an active teacher account.');
     }
-    const { data: teacherProfile, error: teacherProfileError } = await app.getClient()
-      .from('teacher_profiles')
-      .select('must_change_password')
-      .eq('user_id', profile.id)
-      .single();
-    if (teacherProfileError) throw teacherProfileError;
-    if (teacherProfile?.must_change_password) {
-      setNotice('Sending a password-change email to your work inbox...');
-      const redirectTo = new URL('settings.html?password-reset=teacher', window.location.href).href;
-      const { error: resetError } = await app.getClient().auth.resetPasswordForEmail(email, { redirectTo });
-      await app.getClient().auth.signOut();
-      if (resetError) throw new Error('We could not send the password-change email. Please contact MSI IT.');
-      setNotice('Your temporary password was accepted. Use the password-change email before signing in again.', 'isSuccess');
+    /* A pending password change is now recorded on the profile, so it covers every
+       role rather than only teachers. The temporary password was just accepted, so
+       the session is already valid and the new password can be chosen directly
+       instead of going out and back through a reset email. */
+    const { data: passwordState, error: passwordStateError } = await app.getClient().rpc('my_password_state');
+    if (passwordStateError) throw passwordStateError;
+    const pending = Array.isArray(passwordState) ? passwordState[0] : passwordState;
+    if (pending?.change_required) {
+      setNotice('Your temporary password was accepted. Choose a personal password to continue.');
+      window.location.replace('settings.html?password-reset=staff');
       return;
     }
     setNotice('Sending a verification code to your work email...');

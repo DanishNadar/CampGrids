@@ -17,9 +17,12 @@
     }
     if (!await app.getSession()) { window.location.replace('auth.html'); return; }
     const profile = await app.getProfile(true);
-    const passwordReset = new URLSearchParams(window.location.search).get('password-reset') === 'teacher';
+    /* Reached from a first sign-in with a provisioned temporary password. 'staff'
+       covers administrators and teachers; 'teacher' is kept so older links still work. */
+    const resetKind = new URLSearchParams(window.location.search).get('password-reset');
+    const passwordReset = resetKind === 'teacher' || resetKind === 'staff';
     const passwordPanel = passwordReset ? `
-      <article class="toolCard"><p class="eyebrow">Teacher first sign-in</p><h2>Choose your personal password</h2><p class="helperText">Your temporary password will stop working after you save a new one. Then sign in again and complete email verification.</p><form id="teacherPasswordSetupForm" class="stackForm"><label class="fieldLabel">New password<input name="password" type="password" autocomplete="new-password" minlength="12" required></label><label class="fieldLabel">Confirm new password<input name="confirmation" type="password" autocomplete="new-password" minlength="12" required></label><button class="primaryButton" type="submit">Save password and continue</button></form></article>` : '';
+      <article class="toolCard"><p class="eyebrow">First sign-in</p><h2>Choose your personal password</h2><p class="helperText">Your temporary password will stop working after you save a new one. Then sign in again and complete email verification.</p><form id="teacherPasswordSetupForm" class="stackForm"><label class="fieldLabel">New password<input name="password" type="password" autocomplete="new-password" minlength="12" required></label><label class="fieldLabel">Confirm new password<input name="confirmation" type="password" autocomplete="new-password" minlength="12" required></label><button class="primaryButton" type="submit">Save password and continue</button></form></article>` : '';
     host.innerHTML = `
       <header class="workspaceHeader"><div><p class="eyebrow">My settings</p><h1>Personalize your account.</h1><p>Make changes to your personal CampGrids information here.</p></div><a class="secondaryButton" href="profile.html">Back to profile</a></header>
       <p id="settingsNotice" class="workspaceNotice" role="status" aria-live="polite"></p>
@@ -42,11 +45,12 @@
       if (password !== confirmation) return notice('The passwords do not match.', 'isError');
       const { error: passwordError } = await app.getClient().auth.updateUser({ password });
       if (passwordError) return notice(passwordError.message, 'isError');
-      const { error: completeError } = await app.getClient().rpc('complete_teacher_password_setup');
+      const { error: completeError } = await app.getClient().rpc('complete_password_setup');
       if (completeError) return notice(completeError.message, 'isError');
+      const wasAdmin = profile.role === 'admin';
       await app.getClient().auth.signOut();
-      notice('Password saved. Sign in with your teacher username and new password.', 'isSuccess');
-      window.setTimeout(() => window.location.replace('auth.html'), 1200);
+      notice('Password saved. Sign in again with your new password to finish email verification.', 'isSuccess');
+      window.setTimeout(() => window.location.replace(wasAdmin ? 'admin/' : 'auth.html'), 1200);
     });
   }
   render().catch((error) => { host.innerHTML = `<section class="loadingState"><p class="eyebrow">Settings unavailable</p><h1>${escapeHtml(error.message)}</h1></section>`; });

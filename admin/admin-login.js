@@ -93,6 +93,19 @@
       await app.getClient().auth.signOut();
       throw new Error(`The signed-in email (${email}) is not an MSI administrator account. Promote this exact email in Supabase before trying again.`);
     }
+    /* An administrator holding a provisioned temporary password has to replace it
+       before anything else. Until they do, profiles.must_change_password makes
+       is_staff_2fa_verified false, so every administrative control would refuse
+       them anyway; sending a verification code first would just be a dead end. */
+    const { data: passwordState, error: passwordStateError } = await app.getClient().rpc('my_password_state');
+    if (passwordStateError) throw passwordStateError;
+    const pending = Array.isArray(passwordState) ? passwordState[0] : passwordState;
+    if (pending?.change_required) {
+      setNotice('Your temporary password was accepted. Choose a personal password to continue.');
+      window.location.replace('../settings.html?password-reset=staff');
+      return;
+    }
+
     setNotice('Sending a verification code to your MSI email...');
     await requestEmailCode(app);
     showVerificationForm();
