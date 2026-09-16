@@ -31,6 +31,50 @@ npx supabase@latest functions deploy request-staff-email-2fa --project-ref $PROJ
 6. In **Database -> Replication**, add `navigation_items` and `dropdown_options` to `supabase_realtime` if administrators' live-site changes should appear in open browsers immediately.
 7. Serve the site over a local or hosted web server. Supabase Auth does not work reliably from `file://` URLs.
 
+### How staff get their first password
+
+No password is ever generated for a teacher or an administrator. An account is created
+with a null `encrypted_password`, which makes Supabase Auth refuse every password
+sign-in for it, and the person chooses their own password by following a link emailed
+to them. Nothing secret travels through a CSV, a chat message, or a spreadsheet.
+
+1. An administrator creates the account: **Add one teacher** in the dashboard, the
+   teacher CSV import, or [`scripts/create_admin.sql`](scripts/create_admin.sql) for
+   an administrator.
+2. CampGrids emails a set-password link. The single-teacher form and the sign-in pages
+   send it with `resetPasswordForEmail`; the CSV import sends it through
+   `inviteUserByEmail` inside the `provision-teachers` function.
+3. The link opens `settings.html?password-setup=1`, which is the first and only thing
+   the person sees. They choose a password of at least 12 characters, and
+   `complete_password_setup()` clears `profiles.must_change_password`.
+4. They sign in once with that password and complete email verification as normal.
+
+`is_staff_2fa_verified()` returns false while `must_change_password` is set, so no
+camper record is reachable until step 3 is finished. Because the account has no
+password before then, the emailed link is the only possible way in.
+
+If a link expires or never arrives, both sign-in pages carry **email me a
+set-password link**, and the single-teacher form has **Resend set-password link**.
+Supabase rate-limits outgoing mail to roughly one message per recipient per minute, so
+a large CSV import may deliver its invitations over several minutes.
+
+Two settings have to be right or the link in the email will not work:
+
+- **Authentication -> URL Configuration -> Redirect URLs** must include the exact
+  `settings.html` URL for every origin you serve from, production included. A
+  redirect that is not on this list is refused.
+- **Authentication -> Emails -> Reset Password** must still contain
+  `{{ .ConfirmationURL }}`. This is a different template from **Magic Link**, which
+  was rewritten to carry only `{{ .Token }}` for staff verification codes, so the two
+  do not interfere. The **Invite user** template needs `{{ .ConfirmationURL }}` too,
+  because the CSV import uses it.
+
+Campers are deliberately outside all of this. `provision-students` creates them
+against a synthetic address, `username@students.campgrids.local`, which cannot receive
+mail, and it never sets a password. Campers sign in with a class code and username
+through `student-class-login`. There is no camper password to reset and no camper
+inbox to reset it through.
+
 ### Configure Gmail-delivered verification codes
 
 Supabase continues to issue and verify the one-time code; Gmail only delivers it through a private SMTP connection. Do not place a Gmail password or app password in this repository, an Edge Function secret, or chat.

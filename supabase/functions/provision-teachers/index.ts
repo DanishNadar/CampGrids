@@ -10,14 +10,10 @@ type TeacherRow = {
 const headers = { "Content-Type": "application/json" };
 const fail = (message: string, status = 400) => new Response(JSON.stringify({ error: message }), { status, headers });
 const clean = (value: unknown) => String(value ?? "").trim();
-const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-
-function createTemporaryPassword() {
-  const bytes = crypto.getRandomValues(new Uint8Array(14));
-  let token = "";
-  for (const byte of bytes) token += alphabet[byte % alphabet.length];
-  return `Camp-${token.slice(0, 7)}-${token.slice(7)}!`;
-}
+// The site sends the set-password link back to this page, which must be in the
+// project's Redirect URLs allowlist. The caller supplies it so the same function
+// works from a local server and from production.
+const setPasswordPath = "settings.html?password-setup=1";
 
 Deno.serve(async (request) => {
   if (request.method !== "POST") return fail("POST only", 405);
@@ -41,6 +37,18 @@ Deno.serve(async (request) => {
   if (!Array.isArray(teachers) || teachers.length === 0) return fail("Upload at least one teacher.");
   if (teachers.length > 250) return fail("Upload no more than 250 teachers at one time.");
 
+  /* Where the emailed set-password link should land. The caller passes its own origin
+     so the same deployed function serves a local server and production; SITE_URL is
+     the fallback, and an unparseable value is rejected rather than silently emailing
+     a link that goes nowhere. This URL must be in the project's Redirect URLs. */
+  let inviteRedirectTo: string;
+  try {
+    const origin = clean(payload.siteOrigin) || Deno.env.get("SITE_URL") || "";
+    inviteRedirectTo = new URL(setPasswordPath, origin).href;
+  } catch {
+    return fail("The site origin for the set-password link is missing or invalid. Pass siteOrigin, or set SITE_URL on the function.");
+  }
+
   const results: Array<Record<string, string>> = [];
   const errors: Array<Record<string, string>> = [];
   for (let index = 0; index < teachers.length; index += 1) {
@@ -63,12 +71,12 @@ Deno.serve(async (request) => {
       continue;
     }
 
-    const temporaryPassword = createTemporaryPassword();
-    const { data: created, error: createError } = await admin.auth.admin.createUser({
-      email,
-      password: temporaryPassword,
-      email_confirm: true,
-      user_metadata: { first_name: firstName, last_name: lastName },
+    // No password is ever generated. inviteUserByEmail creates the account with no
+    // password and emails the link the teacher uses to choose one, so a credential
+    // never has to travel through a CSV, a chat message, or a spreadsheet.
+    const { data: created, error: createError } = await admin.auth.admin.inviteUserByEmail(email, {
+      data: { first_name: firstName, last_name: lastName, username },
+      redirectTo: inviteRedirectTo,
     });
     if (createError || !created.user) {
       errors.push({ row: String(index + 1), message: createError?.message ?? "Could not create the teacher account" });
@@ -81,6 +89,9 @@ Deno.serve(async (request) => {
       username,
       role: "teacher",
       is_active: true,
+      must_change_password: true,
+      temporary_password_issued_at: null,
+      password_invite_sent_at: new Date().toISOString(),
     }).eq("id", created.user.id);
     const { error: studentDeleteError } = await admin.from("student_profiles").delete().eq("user_id", created.user.id);
     const { error: teacherProfileError } = await admin.from("teacher_profiles").insert({
@@ -89,14 +100,14 @@ Deno.serve(async (request) => {
       approved_at: new Date().toISOString(),
       approved_by: callerData.user.id,
       must_change_password: true,
-      temporary_password_issued_at: new Date().toISOString(),
+      temporary_password_issued_at: null,
     });
     if (profileError || studentDeleteError || teacherProfileError) {
       await admin.auth.admin.deleteUser(created.user.id);
       errors.push({ row: String(index + 1), message: "The teacher profile could not be completed" });
       continue;
     }
-    results.push({ firstName, lastName, email, username, temporaryPassword, title });
+    results.push({ firstName, lastName, email, username, title, invited: true });
   }
 
   await caller.rpc("record_audit_event", {

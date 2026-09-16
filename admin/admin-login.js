@@ -76,6 +76,17 @@
     state.ticket = request.ticket;
   }
 
+  /* Same as the teacher entrance: a provisioned administrator has no password, so
+     the emailed link is the only first way in. settings.html sits one level up. */
+  async function sendPasswordSetupLink(app, email) {
+    const redirectTo = new URL('../settings.html?password-setup=1', window.location.href).href;
+    const { error } = await app.getClient().auth.resetPasswordForEmail(email, { redirectTo });
+    if (error && /rate limit|too many requests|for security purposes/i.test(error.message || '')) {
+      throw new Error('A link was requested very recently. Wait a minute and try again.');
+    }
+    if (error) throw error;
+  }
+
   async function beginAdminLogin(app, data) {
     const email = String(data.get('email') || '').trim().toLowerCase();
     const password = String(data.get('password') || '');
@@ -158,6 +169,26 @@
     } catch (error) {
       if (/wait 60 seconds/i.test(error.message || '')) startResendCooldown();
       setNotice(error.message || 'We could not resend the verification code.', 'isError');
+    }
+  });
+
+  document.getElementById('adminSetPassword')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    const app = window.CampGridsApp;
+    const email = String(new FormData(form).get('email') || '').trim().toLowerCase();
+    if (!email.includes('@')) {
+      setNotice('Enter your administrator email address above first.', 'isError');
+      return;
+    }
+    button.disabled = true;
+    try {
+      setNotice('Sending a set-password link...');
+      await sendPasswordSetupLink(app, email);
+      setNotice(`If ${email} has an administrator account, a set-password link is on its way. Open it to choose your password.`, 'isSuccess');
+    } catch (error) {
+      setNotice(error.message || 'The set-password link could not be sent.', 'isError');
+    } finally {
+      button.disabled = false;
     }
   });
 

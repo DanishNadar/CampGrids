@@ -1894,3 +1894,30 @@ footer {
   .gridDraftBar { align-items: stretch; flex-direction: column; }
   .rosterPicker { grid-template-columns: 1fr; }
 }
+
+/* Inline action inside a sentence, used for the first-sign-in set-password link on
+   the sign-in forms. It is a real button because it performs an action rather than
+   navigating, but it should read as part of the sentence around it. */
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accentStrong);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.linkButton:hover { color: var(--accent); }
+.linkButton:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 3px; }
+.linkButton[disabled] { opacity: .55; cursor: not-allowed; text-decoration: none; }
+
+/* The sentence that holds it. */
+.formHint {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: .88rem;
+  font-weight: 600;
+  line-height: 1.5;
+}

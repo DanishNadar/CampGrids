@@ -105,6 +105,18 @@
     window.location.assign(app.dashboardHref(profile.role));
   }
 
+  /* A provisioned account has no password at all, so this is the only way in the
+     first time. The confirmation is deliberately the same whether or not an account
+     exists, so the form cannot be used to discover who has one. */
+  async function sendPasswordSetupLink(app, email) {
+    const redirectTo = new URL('settings.html?password-setup=1', window.location.href).href;
+    const { error } = await app.getClient().auth.resetPasswordForEmail(email, { redirectTo });
+    if (error && /rate limit|too many requests|for security purposes/i.test(error.message || '')) {
+      throw new Error('A link was requested very recently. Wait a minute and try again.');
+    }
+    if (error) throw error;
+  }
+
   async function requestStaffEmailCode(app) {
     const { data: request, error } = await app.getClient().functions.invoke('request-staff-email-2fa', { body: {} });
     if (error) throw new Error(await functionErrorMessage(error, 'We could not send the verification code. Please try again.'));
@@ -216,6 +228,27 @@
     } catch (error) {
       if (/wait 60 seconds/i.test(error.message || '')) startTeacherResendCooldown();
       setNotice(error.message || 'We could not resend the verification code.', 'isError');
+    }
+  });
+
+  document.getElementById('teacherSetPassword')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    const app = window.CampGridsApp;
+    const identity = String(new FormData(teacherLoginForm).get('identity') || '').trim().toLowerCase();
+    // The identity field also accepts a username, which cannot be emailed.
+    if (!identity.includes('@')) {
+      setNotice('Enter your work email address above first. A username cannot be emailed a link.', 'isError');
+      return;
+    }
+    button.disabled = true;
+    try {
+      setNotice('Sending a set-password link...');
+      await sendPasswordSetupLink(app, identity);
+      setNotice(`If ${identity} has a CampGrids account, a set-password link is on its way. Open it to choose your password.`, 'isSuccess');
+    } catch (error) {
+      setNotice(error.message || 'The set-password link could not be sent.', 'isError');
+    } finally {
+      button.disabled = false;
     }
   });
 
