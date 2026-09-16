@@ -113,6 +113,7 @@ declare
   password_value text;
   target_id uuid;
   existing_id uuid;
+  resolved_username text;
 begin
   if not (public.is_admin() or auth.role() = 'service_role' or current_setting('request.jwt.claim.role', true) = 'service_role') then
     raise exception 'Only MSI administrators can provision accounts';
@@ -165,6 +166,18 @@ begin
     where id = target_id;
   end if;
 
+  -- protect_profile_identity() generates a login name for administrators only, so
+  -- every other role needs one resolved here. generate_available_username takes an
+  -- advisory lock and appends a numeral on collision (dnadar, dnadar1, dnadar2...),
+  -- which is what keeps two same-named teachers apart.
+  resolved_username := nullif(lower(regexp_replace(coalesce(p_username, ''), '[^a-zA-Z0-9]', '', 'g')), '');
+  if resolved_username is null then
+    select pr.username::text into resolved_username from public.profiles pr where pr.id = target_id;
+  end if;
+  if resolved_username is null then
+    resolved_username := public.generate_available_username(trim(p_first_name), trim(p_last_name), target_id);
+  end if;
+
   -- The trigger inserts a student profile. Correct it to the requested role.
   update public.profiles
   set first_name = trim(p_first_name),
@@ -174,10 +187,7 @@ begin
       is_active = true,
       must_change_password = true,
       temporary_password_issued_at = issued,
-      username = coalesce(
-        nullif(lower(regexp_replace(coalesce(p_username, ''), '[^a-zA-Z0-9]', '', 'g')), ''),
-        profiles.username
-      )
+      username = resolved_username
   where id = target_id;
 
   if p_role <> 'student' then
@@ -201,7 +211,7 @@ begin
 
   return query
     select normalized_email,
-           (select pr.username::text from public.profiles pr where pr.id = target_id),
+           resolved_username,
            p_role,
            password_value,
            true;

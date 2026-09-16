@@ -18,13 +18,22 @@
     notice.className = `workspaceNotice ${kind}`;
   }
 
-  async function functionErrorMessage(error, fallback) {
-    try {
-      const payload = await error?.context?.json?.();
-      return payload?.error || payload?.message || error?.message || fallback;
-    } catch (_) {
-      return error?.message || fallback;
+  /* Turns the two likely failures into something actionable. PGRST202 means the
+     function is not in the database yet, which is a pending migration rather than a
+     problem with what was typed. */
+  function provisionErrorMessage(error) {
+    const code = String(error?.code || '');
+    const text = `${error?.message || ''} ${error?.details || ''}`;
+    if (code === 'PGRST202' || /could not find the function|does not exist/i.test(text)) {
+      return 'This project does not have provision_user_with_temp_password yet. Run supabase/migrations/20260914_zz_deterministic_temp_passwords.sql in the SQL editor, then try again.';
     }
+    if (/only msi administrators/i.test(text)) {
+      return 'Only a verified MSI administrator can create accounts. Complete email verification and try again.';
+    }
+    if (/duplicate key|already exists/i.test(text)) {
+      return 'An account already uses that email address. Re-running this form resets its temporary password instead.';
+    }
+    return error?.message || 'The teacher account could not be created.';
   }
 
   function downloadCredentials(teacher) {
@@ -58,14 +67,31 @@
     submit.disabled = true;
     setNotice('Creating the teacher account…');
     try {
-      const { data, error } = await app.getClient().functions.invoke('provision-teachers', {
-        body: { filename: 'single-teacher-entry.csv', teachers: [teacher] },
+      /* Creating one account goes through the database function rather than the
+         provision-teachers Edge Function. The Edge Function still handles bulk CSV
+         imports, but it has to be deployed separately, and when it is not the
+         browser cannot even reach it: the gateway answers an unknown function
+         without CORS headers, so the request is blocked before it is sent and
+         supabase-js can only report "Failed to send a request to the Edge
+         Function". The RPC travels the same REST path as every other query here,
+         so it works as soon as the migration is applied. */
+      const { data, error } = await app.getClient().rpc('provision_user_with_temp_password', {
+        p_email: teacher.email,
+        p_first_name: teacher.firstName,
+        p_last_name: teacher.lastName,
+        p_role: 'teacher',
       });
-      if (error) throw new Error(await functionErrorMessage(error, 'The teacher account could not be created.'));
-      if (data?.error) throw new Error(data.error);
-      if (data?.errors?.length) throw new Error(data.errors[0].message || 'The teacher account could not be created.');
-      const created = data?.teachers?.[0];
-      if (!created?.username || !created?.temporaryPassword) throw new Error('The teacher account was created, but its one-time credentials were unavailable. Contact MSI IT before creating another account.');
+      if (error) throw new Error(provisionErrorMessage(error));
+      const row = Array.isArray(data) ? data[0] : data;
+      if (!row?.account_username || !row?.temporary_password) throw new Error('The teacher account was created, but its one-time credentials were unavailable. Contact MSI IT before creating another account.');
+      const created = {
+        firstName: teacher.firstName,
+        lastName: teacher.lastName,
+        title: teacher.title,
+        email: row.account_email || teacher.email,
+        username: row.account_username,
+        temporaryPassword: row.temporary_password,
+      };
 
       const report = document.getElementById('singleTeacherReport');
       document.getElementById('singleTeacherUsername').textContent = created.username;
