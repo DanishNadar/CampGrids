@@ -4,7 +4,7 @@
   const app = window.CampGridsApp;
   const beltNames = ['White', 'Yellow', 'Orange', 'Green', 'Blue', 'Purple', 'Brown', 'Black'];
   const gridRows = [['WT', 'White'], ['YW', 'Yellow'], ['OR', 'Orange'], ['GN', 'Green'], ['BU', 'Blue'], ['PL', 'Purple'], ['BN', 'Brown'], ['BK', 'Black']];
-  const state = { profile: null, classes: [], adminClasses: [], selectedClassId: '', motherGrid: [], studentCredentialRows: [], teacherCredentialRows: [], editingMotherGridCellId: '', gridZoom: 1, classGridDraft: null, classGridDraftFor: '', availableStudents: [], rosterDraft: null };
+  const state = { profile: null, classes: [], adminClasses: [], selectedClassId: '', motherGrid: [], studentCredentialRows: [], teacherCredentialRows: [], editingMotherGridCellId: '', gridZoom: 1, classGridDraft: null, classGridDraftFor: '', availableStudents: [], rosterDraft: null, partners: [], selectedPartnerId: '', partnerGridDraft: null, partnerGridDraftFor: '' };
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
   const dateValue = (value) => value ? new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
   const initials = (profile) => `${profile.first_name?.[0] || ''}${profile.last_name?.[0] || ''}`.toUpperCase();
@@ -45,17 +45,17 @@
        activity count instead of repeating it. */
     const title = cell?.title ? `<strong>${escapeHtml(cell.title)}</strong><small>${count ? `${count} activit${count === 1 ? 'y' : 'ies'}` : escapeHtml(cell.category || 'Grid activity')}</small>` : '<span class="gridEmpty">—</span>';
     if (mode === 'admin') return `<button type="button" class="motherGridCell ${color} ${cell ? 'hasCell' : 'isEmpty'} ${state.editingMotherGridCellId === cell?.id ? 'isEditing' : ''}" data-mother-grid-cell="${cell?.id || ''}" data-grid-belt="${beltCode}" data-grid-column="${columnNumber}" aria-label="${escapeHtml(label)}">${title}</button>`;
-    if (mode === 'teacher') return cell ? `<button type="button" class="motherGridCell ${color} hasCell ${isSelected ? 'isSelected' : ''}" data-class-grid-cell="${cell.id}" aria-pressed="${String(isSelected)}" aria-label="${escapeHtml(`${label}; ${isSelected ? 'selected' : 'not selected'}`)}">${title}<em>${isSelected ? 'Selected' : 'Select'}</em></button>` : `<div class="motherGridCell ${color} isEmpty">${title}</div>`;
+    if (mode === 'teacher' || mode === 'partner') return cell ? `<button type="button" class="motherGridCell ${color} hasCell ${isSelected ? 'isSelected' : ''}" data-class-grid-cell="${cell.id}" aria-pressed="${String(isSelected)}" aria-label="${escapeHtml(`${label}; ${isSelected ? 'selected' : 'not selected'}`)}">${title}<em>${isSelected ? 'Selected' : 'Select'}</em></button>` : `<div class="motherGridCell ${color} isEmpty">${title}</div>`;
     return `<div class="motherGridCell ${color} ${cell ? 'hasCell' : 'isEmpty'} ${isSelected ? 'isSelected' : ''}">${cell && isSelected ? `${title}<em>In your class Grid</em>` : '<span class="gridEmpty">—</span>'}</div>`;
   }
 
   function renderMotherGrid({ mode, cells = state.motherGrid, selectedIds = new Set(), heading = 'Mother Grid', description = '' }) {
     const columns = gridColumnCount(cells); const map = new Map(cells.map((cell) => [`${cell.belt_code}-${cell.column_number}`, cell])); const selected = selectedIds instanceof Set ? selectedIds : new Set(selectedIds);
     const categoryNames = columnCategories(cells);
-    const headers = Array.from({ length: columns }, (_, index) => { const column = index + 1; const name = categoryNames.get(column) || `C${column}`; const populated = cells.some((cell) => Number(cell.column_number) === column); return mode === 'teacher' && populated ? `<button type="button" class="motherGridColumn isPickable" data-grid-column-select="${column}" title="${escapeHtml(`Take or release every belt in ${name}`)}">${escapeHtml(name)}</button>` : `<span class="motherGridColumn" title="${escapeHtml(name)}">${escapeHtml(name)}</span>`; }).join('');
+    const headers = Array.from({ length: columns }, (_, index) => { const column = index + 1; const name = categoryNames.get(column) || `C${column}`; const populated = cells.some((cell) => Number(cell.column_number) === column); return (mode === 'teacher' || mode === 'partner') && populated ? `<button type="button" class="motherGridColumn isPickable" data-grid-column-select="${column}" title="${escapeHtml(`Take or release every belt in ${name}`)}">${escapeHtml(name)}</button>` : `<span class="motherGridColumn" title="${escapeHtml(name)}">${escapeHtml(name)}</span>`; }).join('');
     const rows = gridRows.map(([code, name]) => `<div class="motherGridRow"><span class="motherGridRowLabel belt${code}" title="${name} belt">${code}</span>${Array.from({ length: columns }, (_, index) => { const cell = map.get(`${code}-${index + 1}`); return gridCellMarkup(cell, Boolean(cell && selected.has(cell.id)), mode, code, index + 1); }).join('')}</div>`).join('');
-    const defaultText = mode === 'teacher' ? 'Click a category heading to take or release that whole column, or click single cells. Belt rows cannot be skipped, so a selection has to be one unbroken run of belts. Nothing reaches campers until you save.' : mode === 'admin' ? 'The whole Grid comes from an imported sheet. Click a cell to see what it holds; use Import a Mother Grid to change it.' : 'These are the Mother Grid activities your teacher selected for this class.';
-    return `<br><article class="toolCard motherGridCard"><div class="cardHeading"><div><p class="eyebrow">${escapeHtml(heading)}</p><h3>${mode === 'teacher' ? 'Select your class sub-grid' : mode === 'admin' ? 'Edit the overall Grid' : 'My class Grid'}</h3><p class="helperText">${escapeHtml(description || defaultText)}</p></div><label class="gridZoomControl">Zoom<input type="range" min="0.8" max="1.35" step="0.05" value="${state.gridZoom}" data-grid-zoom-control></label></div><div class="motherGridViewport"><div class="motherGridCanvas" data-mother-grid-canvas style="--grid-scale:${state.gridZoom}; --grid-columns:${columns}"><div class="motherGridHeader"><span class="motherGridCorner">Belt</span>${headers}</div>${rows}</div></div></article>`;
+    const defaultText = (mode === 'teacher' || mode === 'partner') ? 'Click a category heading to take or release that whole column, or click single cells. Belt rows cannot be skipped, so a selection has to be one unbroken run of belts. Nothing reaches campers until you save.' : mode === 'admin' ? 'The whole Grid comes from an imported sheet. Click a cell to see what it holds; use Import a Mother Grid to change it.' : 'These are the Mother Grid activities your teacher selected for this class.';
+    return `<br><article class="toolCard motherGridCard"><div class="cardHeading"><div><p class="eyebrow">${escapeHtml(heading)}</p><h3>${mode === 'teacher' ? 'Select your class sub-grid' : mode === 'partner' ? 'Select this partner curriculum' : mode === 'admin' ? 'Edit the overall Grid' : 'My class Grid'}</h3><p class="helperText">${escapeHtml(description || defaultText)}</p></div><label class="gridZoomControl">Zoom<input type="range" min="0.8" max="1.35" step="0.05" value="${state.gridZoom}" data-grid-zoom-control></label></div><div class="motherGridViewport"><div class="motherGridCanvas" data-mother-grid-canvas style="--grid-scale:${state.gridZoom}; --grid-columns:${columns}"><div class="motherGridHeader"><span class="motherGridCorner">Belt</span>${headers}</div>${rows}</div></div></article>`;
   }
 
   async function loadTeacherClasses() {
@@ -81,6 +81,26 @@
     const client = app.getClient(); const [classesResult, motherResult] = await Promise.all([client.from('classes').select('id, name, code, status, created_at').order('created_at', { ascending: false }), client.from('mother_grid_cells').select('id, belt_code, column_number, title, category, instructions, resource_url, projects, is_active').order('belt_code').order('column_number')]);
     if (classesResult.error || motherResult.error) throw classesResult.error || motherResult.error;
     state.adminClasses = classesResult.data || []; state.motherGrid = motherResult.data || [];
+
+    /* Partner organisations and their curriculum selections. A missing function
+       means this project has not had the partner migration applied yet, which must
+       not take the whole dashboard down with it. */
+    try {
+      const [partnersResult, selectionResult] = await Promise.all([
+        client.rpc('partner_organizations_admin'),
+        client.from('partner_grid_cells').select('partner_id, mother_grid_cell_id')
+      ]);
+      if (partnersResult.error) throw partnersResult.error;
+      const selections = new Map();
+      (selectionResult.data || []).forEach((row) => {
+        if (!selections.has(row.partner_id)) selections.set(row.partner_id, []);
+        selections.get(row.partner_id).push(row.mother_grid_cell_id);
+      });
+      state.partners = (partnersResult.data || []).map((entry) => ({ ...entry, cellIds: selections.get(entry.id) || [] }));
+    } catch (partnerError) {
+      console.warn('Partner organisations unavailable', partnerError?.message || partnerError);
+      state.partners = [];
+    }
   }
 
   function renderTeacher() {
@@ -97,11 +117,130 @@
   }
 
   function adminClassOptions() { return state.adminClasses.map((entry) => `<option value="${entry.id}">${escapeHtml(`${entry.name} · ${entry.code}`)}</option>`).join(''); }
+  function selectedPartner() { return state.partners.find((entry) => entry.id === state.selectedPartnerId) || null; }
+
+  /* A partner's curriculum is staged the same way a class Grid is, for the same
+     reason: choosing a whole column would otherwise be one request per belt, and the
+     no-skipped-belts rule can only be judged on the finished selection. */
+  function partnerGridDraft() {
+    const partner = selectedPartner();
+    if (!partner) return null;
+    if (state.partnerGridDraft && state.partnerGridDraftFor === partner.id) return state.partnerGridDraft;
+    state.partnerGridDraft = new Set(partner.cellIds || []);
+    state.partnerGridDraftFor = partner.id;
+    return state.partnerGridDraft;
+  }
+  function partnerDraftIsDirty() {
+    const partner = selectedPartner(); const draft = partnerGridDraft();
+    if (!partner || !draft) return false;
+    const saved = new Set(partner.cellIds || []);
+    return saved.size !== draft.size || [...draft].some((id) => !saved.has(id));
+  }
+  function applyPartnerDraftChange(mutate) {
+    const draft = partnerGridDraft();
+    if (!draft) throw new Error('Choose a partner first.');
+    const previous = new Set(draft);
+    mutate(draft);
+    const gaps = skippedBelts(state.motherGrid.filter((cell) => draft.has(cell.id)));
+    if (gaps.length) {
+      state.partnerGridDraft = previous;
+      throw new Error(`That would skip the ${gaps.join(' and ')} belt${gaps.length === 1 ? '' : 's'}. A curriculum has to be one unbroken run of belts.`);
+    }
+    renderAdminDashboard();
+  }
+
+  function partnerCard() {
+    const partner = selectedPartner();
+    const draft = partnerGridDraft();
+    const picker = state.partners.length
+      ? `<label class="fieldLabel compactField">Partner<select id="partnerPicker"><option value="">Choose a partner…</option>${state.partners.map((entry) => `<option value="${entry.id}" ${entry.id === state.selectedPartnerId ? 'selected' : ''}>${escapeHtml(entry.name)}${entry.is_published ? '' : ' (draft)'}</option>`).join('')}</select></label>`
+      : '<p class="emptyCopy">No partner organisations yet. Add the first one below.</p>';
+
+    const detail = partner ? `<div class="partnerAdminDetail">
+        <p class="helperText">Public page: <a href="partner.html?org=${encodeURIComponent(partner.slug)}" target="_blank" rel="noopener noreferrer">partner.html?org=${escapeHtml(partner.slug)}</a>${partner.is_published ? '' : ' — not published yet, so the link shows nothing to the public.'}</p>
+        <div class="formActions">
+          <button class="secondaryButton" type="button" data-action="toggle-partner-published">${partner.is_published ? 'Unpublish' : 'Publish this page'}</button>
+        </div>
+        <div class="gridDraftBar ${partnerDraftIsDirty() ? 'isDirty' : ''}">
+          <p>${partnerDraftIsDirty() ? `${draft.size} activit${draft.size === 1 ? 'y' : 'ies'} chosen · unsaved` : `${draft.size} activit${draft.size === 1 ? 'y' : 'ies'} in this curriculum`}</p>
+          <div class="formActions">
+            <button class="primaryButton" type="button" data-action="save-partner-grid" ${partnerDraftIsDirty() ? '' : 'disabled'}>Save curriculum</button>
+            <button class="secondaryButton" type="button" data-action="reset-partner-grid" ${partnerDraftIsDirty() ? '' : 'disabled'}>Discard changes</button>
+          </div>
+        </div>
+      </div>` : '';
+
+    return `<article class="toolCard"><div class="cardHeading"><div><p class="eyebrow">Partner organisations</p><h3>Build a partner Grid curriculum</h3>
+        <p class="helperText">A company that works with MSI gets its own public page built from real Mother Grid cells, so it stays in step with the Grid instead of being a copy that goes stale. Pick the partner, choose their activities, then publish.</p></div></div>
+      ${picker}
+      ${detail}
+      ${partner ? renderMotherGrid({ mode: 'partner', selectedIds: draft, heading: `${partner.name} curriculum`, description: 'Click a category heading to take or release that whole column, or click single cells. Belts cannot be skipped.' }) : ''}
+      <details class="partnerNewDetails" ${state.partners.length ? '' : 'open'}><summary>Add a partner organisation</summary>
+        <form id="partnerForm" class="stackForm">
+          <div class="formTwoCols"><label class="fieldLabel">Company name<input name="name" required maxlength="140" placeholder="e.g. Northside Makerspace"></label><label class="fieldLabel">URL slug<input name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" maxlength="60" placeholder="northside-makerspace"></label></div>
+          <label class="fieldLabel">Focus <span class="muted">(one line)</span><input name="focus" maxlength="140" placeholder="e.g. Digital fabrication for middle schools"></label>
+          <label class="fieldLabel">Summary<textarea name="summary" rows="3" maxlength="400" placeholder="A short paragraph for the top of their page."></textarea></label>
+          <div class="formTwoCols"><label class="fieldLabel">Contact name<input name="contactName" maxlength="140"></label><label class="fieldLabel">Contact email<input name="contactEmail" type="email" maxlength="320"></label></div>
+          <label class="fieldLabel">Website<input name="website" type="url" placeholder="https://…"></label>
+          <button class="primaryButton" type="submit">Add partner</button>
+        </form>
+      </details></article>`;
+  }
+
+  async function createPartner(event) {
+    event.preventDefault();
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const slug = String(form.get('slug') || '').trim().toLowerCase();
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) throw new Error('Use a slug of lowercase letters, numbers, and single hyphens.');
+    const { data, error } = await app.getClient().from('partner_organizations').insert({
+      slug,
+      name: String(form.get('name') || '').trim(),
+      focus: String(form.get('focus') || '').trim() || null,
+      summary: String(form.get('summary') || '').trim() || null,
+      contact_name: String(form.get('contactName') || '').trim() || null,
+      contact_email: String(form.get('contactEmail') || '').trim() || null,
+      website: String(form.get('website') || '').trim() || null,
+      created_by: state.profile.id,
+      updated_by: state.profile.id
+    }).select('id').single();
+    if (error) throw new Error(/duplicate key/i.test(error.message) ? `The slug "${slug}" is already taken.` : error.message);
+    await app.audit('partner_created', 'partner_organization', data.id, { slug });
+    state.selectedPartnerId = data.id;
+    state.partnerGridDraft = null; state.partnerGridDraftFor = '';
+    formElement.reset();
+    await loadAdminDashboard(); renderAdminDashboard();
+    notice('Partner added. Choose their activities, then publish the page.', 'isSuccess');
+  }
+
+  async function savePartnerGrid() {
+    const partner = selectedPartner(); const draft = partnerGridDraft();
+    if (!partner || !draft) throw new Error('Choose a partner first.');
+    const { data, error } = await app.getClient().rpc('set_partner_grid_cells', { p_partner_id: partner.id, p_cell_ids: [...draft] });
+    if (error) throw error;
+    await app.audit('partner_curriculum_saved', 'partner_organization', partner.id, { cells: Number(data) || 0 });
+    state.partnerGridDraft = null; state.partnerGridDraftFor = '';
+    await loadAdminDashboard(); renderAdminDashboard();
+    notice(`Curriculum saved with ${Number(data) || 0} activit${Number(data) === 1 ? 'y' : 'ies'}.`, 'isSuccess');
+  }
+
+  async function togglePartnerPublished() {
+    const partner = selectedPartner();
+    if (!partner) throw new Error('Choose a partner first.');
+    const next = !partner.is_published;
+    if (next && !(partner.cellIds || []).length) throw new Error('Choose at least one activity before publishing this page.');
+    const { error } = await app.getClient().from('partner_organizations').update({ is_published: next, updated_by: state.profile.id }).eq('id', partner.id);
+    if (error) throw error;
+    await app.audit(next ? 'partner_published' : 'partner_unpublished', 'partner_organization', partner.id, { slug: partner.slug });
+    await loadAdminDashboard(); renderAdminDashboard();
+    notice(next ? `Published. Share partner.html?org=${partner.slug}` : 'Unpublished. The public link now shows nothing.', 'isSuccess');
+  }
+
   function reportPanels() { const teacher = state.teacherCredentialRows.length ? `<article class="credentialsPanel"><div><p class="eyebrow">Provisioning report ready</p><h3>${state.teacherCredentialRows.length} teacher account${state.teacherCredentialRows.length === 1 ? '' : 's'} created</h3><p>Download it now. Temporary passwords are intentionally not stored in CampGrids.</p></div><button class="secondaryButton" type="button" data-action="download-teacher-report">Download teacher access report</button></article>` : ''; const student = state.studentCredentialRows.length ? `<article class="credentialsPanel"><div><p class="eyebrow">Camper report ready</p><h3>${state.studentCredentialRows.length} student account${state.studentCredentialRows.length === 1 ? '' : 's'} created</h3><p>Share each username with its class code. Campers do not use passwords.</p></div><button class="secondaryButton" type="button" data-action="download-student-report">Download student access report</button></article>` : ''; return teacher + student; }
 
   function renderAdminDashboard() {
     const cell = state.motherGrid.find((entry) => entry.id === state.editingMotherGridCellId); const roster = state.adminClasses.length ? `<article class="toolCard"><div class="cardHeading"><div><p class="eyebrow">Camper accounts</p><h3>Import a standardized roster</h3></div><a class="smallLink" href="data:text/csv;charset=utf-8,first_name,last_name,grade,guardian_name,guardian_email%0AFannie,Yu,5,," download="campgrids-student-roster-template.csv">CSV template</a></div><p class="helperText">Required columns: first_name, last_name, grade, guardian_name, guardian_email.</p><form id="adminRosterImportForm" class="stackForm"><label class="fieldLabel">Class<select name="classId" required>${adminClassOptions()}</select></label><label class="fileField"><input name="roster" type="file" accept=".csv,text/csv" required><span>Choose student CSV</span></label><button class="primaryButton" type="submit">Create student accounts</button></form></article>` : '<article class="toolCard"><p class="eyebrow">Camper accounts</p><h3>Import a standardized roster</h3><p class="emptyCopy">A teacher must create a class before campers can be imported.</p></article>';
-    workspace.innerHTML = `${actionsHeader('MSI administration', 'Administration workspace', 'Manage the Mother Grid, provision staff and campers from CSV, and maintain the live site.')}${reportPanels()}<section class="adminSection"><div class="sectionHeading"><div><p class="eyebrow">Mother Grid</p><h2>The overall Grid</h2><p>Only MSI administrators can change the source Grid. Teacher class selections always use these published cells.</p></div></div>${renderMotherGrid({ mode: 'admin', heading: 'Mother Grid editor' })}<div class="workspaceGrid adminGrid adminGridTwo"><article class="toolCard"><p class="eyebrow">Mother Grid</p><h3>Import a Mother Grid</h3><p class="helperText">Upload the whole Grid as one standardized sheet. Row 1 names a category per column, column A names the belt at the start of each belt band, and each cell reads <code>Project name: Instructions | https://...</code> (<code>Video</code> works too, and the URL half is optional). <a href="assets/mother-grid-template.csv" download>Download the template</a> exported from Fab Lab Camp Grids.xlsx.</p><form id="motherGridImportForm" class="stackForm"><label class="fieldLabel">Mother Grid sheet (.csv)<input name="grid" type="file" accept=".csv,text/csv" required></label><p class="helperText">A cell keeps its identity across imports, so re-importing an edited sheet updates activities in place and leaves every teacher's class selection intact. Intersections missing from the sheet are withdrawn from teachers rather than deleted.</p><div class="formActions"><button class="primaryButton" type="submit">Import Mother Grid</button></div></form>${cell ? `<p class="helperText"><strong>${escapeHtml(`${cell.belt_code} C${cell.column_number}`)}</strong> &middot; ${escapeHtml(cell.category || 'Grid activity')}${cell.projects?.length ? ` &middot; ${cell.projects.length} activit${cell.projects.length === 1 ? 'y' : 'ies'}` : ''}<br><button class="quietButton" type="button" data-action="clear-grid-cell">Clear selection</button></p>` : ''}</article><article class="toolCard"><div class="cardHeading"><div><p class="eyebrow">Teacher accounts</p><h3>Import teachers from CSV</h3></div><a class="smallLink" href="data:text/csv;charset=utf-8,first_name,last_name,email,title%0AFannie,Yu,fannie.yu@example.org,Camp%20Instructor" download="campgrids-teacher-template.csv">CSV template</a></div><p class="helperText">Required columns: first_name, last_name, email. Optional: title. CampGrids generates usernames and temporary passwords in the report.</p><form id="teacherCsvImportForm" class="stackForm"><label class="fileField"><input name="teacherCsv" type="file" accept=".csv,text/csv" required><span>Choose teacher CSV</span></label><button class="primaryButton" type="submit">Create teacher accounts and report</button></form></article>${roster}</div></section><section class="adminSection"><div class="sectionHeading"><div><p class="eyebrow">Live site controls</p><h2>Published content</h2><p>These controls are administrator-only and save directly to Supabase.</p></div></div><div class="workspaceGrid adminGrid"><article class="toolCard"><p class="eyebrow">New page</p><h3>Publish a generated page</h3><form id="pageForm" class="stackForm"><label class="fieldLabel">Page title<input name="title" required></label><label class="fieldLabel">URL slug<input name="slug" required pattern="[a-z0-9-]+" placeholder="e.g. camp-safety"></label><label class="fieldLabel">Summary<textarea name="summary" rows="2"></textarea></label><label class="fieldLabel">Page text<textarea name="body" rows="4" required></textarea></label><button class="primaryButton" type="submit">Publish page</button></form></article><article class="toolCard"><p class="eyebrow">Navigation</p><h3>Add a live menu link</h3><form id="navForm" class="stackForm"><label class="fieldLabel">Link label<input name="label" required></label><label class="fieldLabel">Page slug<input name="slug" required placeholder="Must match a saved page"></label><div class="formTwoCols"><label class="fieldLabel">Position<input name="position" type="number" min="0" required></label><label class="fieldLabel">Location<select name="location"><option value="primary">Primary navigation</option><option value="footer">Footer</option><option value="teacher">Teacher workspace</option></select></label></div><button class="primaryButton" type="submit">Publish link</button></form></article><article class="toolCard"><p class="eyebrow">Live dropdowns</p><h3>Update option lists</h3><form id="dropdownForm" class="stackForm"><label class="fieldLabel">Dropdown key<input name="groupKey" required pattern="[a-z0-9_-]+" placeholder="e.g. camp-selector"></label><div class="formTwoCols"><label class="fieldLabel">Stored value<input name="value" required></label><label class="fieldLabel">Visible label<input name="label" required></label></div><label class="fieldLabel">Position<input name="position" type="number" min="0" required></label><button class="primaryButton" type="submit">Save dropdown option</button></form></article></div></section>`;
+    workspace.innerHTML = `${actionsHeader('MSI administration', 'Administration workspace', 'Manage the Mother Grid, provision staff and campers from CSV, and maintain the live site.')}${reportPanels()}<section class="adminSection"><div class="sectionHeading"><div><p class="eyebrow">Mother Grid</p><h2>The overall Grid</h2><p>Only MSI administrators can change the source Grid. Teacher class selections always use these published cells.</p></div></div>${renderMotherGrid({ mode: 'admin', heading: 'Mother Grid editor' })}<div class="workspaceGrid adminGrid adminGridTwo"><article class="toolCard"><p class="eyebrow">Mother Grid</p><h3>Import a Mother Grid</h3><p class="helperText">Upload the whole Grid as one standardized sheet. Row 1 names a category per column, column A names the belt at the start of each belt band, and each cell reads <code>Project name: Instructions | https://...</code> (<code>Video</code> works too, and the URL half is optional). <a href="assets/mother-grid-template.csv" download>Download the template</a> exported from Fab Lab Camp Grids.xlsx.</p><form id="motherGridImportForm" class="stackForm"><label class="fieldLabel">Mother Grid sheet (.csv)<input name="grid" type="file" accept=".csv,text/csv" required></label><p class="helperText">A cell keeps its identity across imports, so re-importing an edited sheet updates activities in place and leaves every teacher's class selection intact. Intersections missing from the sheet are withdrawn from teachers rather than deleted.</p><div class="formActions"><button class="primaryButton" type="submit">Import Mother Grid</button></div></form>${cell ? `<p class="helperText"><strong>${escapeHtml(`${cell.belt_code} C${cell.column_number}`)}</strong> &middot; ${escapeHtml(cell.category || 'Grid activity')}${cell.projects?.length ? ` &middot; ${cell.projects.length} activit${cell.projects.length === 1 ? 'y' : 'ies'}` : ''}<br><button class="quietButton" type="button" data-action="clear-grid-cell">Clear selection</button></p>` : ''}</article><article class="toolCard"><div class="cardHeading"><div><p class="eyebrow">Teacher accounts</p><h3>Import teachers from CSV</h3></div><a class="smallLink" href="data:text/csv;charset=utf-8,first_name,last_name,email,title%0AFannie,Yu,fannie.yu@example.org,Camp%20Instructor" download="campgrids-teacher-template.csv">CSV template</a></div><p class="helperText">Required columns: first_name, last_name, email. Optional: title. CampGrids generates usernames and temporary passwords in the report.</p><form id="teacherCsvImportForm" class="stackForm"><label class="fileField"><input name="teacherCsv" type="file" accept=".csv,text/csv" required><span>Choose teacher CSV</span></label><button class="primaryButton" type="submit">Create teacher accounts and report</button></form></article>${roster}</div></section><section class="adminSection"><div class="sectionHeading"><div><p class="eyebrow">Live site controls</p><h2>Published content</h2><p>These controls are administrator-only and save directly to Supabase.</p></div></div><div class="workspaceGrid adminGrid">${partnerCard()}<article class="toolCard"><p class="eyebrow">Navigation</p><h3>Add a live menu link</h3><p class="helperText">Adds a published partner page to the site navigation.</p><form id="navForm" class="stackForm"><label class="fieldLabel">Link label<input name="label" required></label><label class="fieldLabel">Partner page<select name="slug" required><option value="">Choose a partner page…</option>${state.partners.map((entry) => `<option value="${escapeHtml(entry.slug)}">${escapeHtml(entry.name)}${entry.is_published ? '' : ' (draft)'}</option>`).join('')}</select></label><div class="formTwoCols"><label class="fieldLabel">Position<input name="position" type="number" min="0" required></label><label class="fieldLabel">Location<select name="location"><option value="primary">Primary navigation</option><option value="footer">Footer</option><option value="teacher">Teacher workspace</option></select></label></div><button class="primaryButton" type="submit">Publish link</button></form></article><article class="toolCard"><p class="eyebrow">Live dropdowns</p><h3>Update option lists</h3><form id="dropdownForm" class="stackForm"><label class="fieldLabel">Dropdown key<input name="groupKey" required pattern="[a-z0-9_-]+" placeholder="e.g. camp-selector"></label><div class="formTwoCols"><label class="fieldLabel">Stored value<input name="value" required></label><label class="fieldLabel">Visible label<input name="label" required></label></div><label class="fieldLabel">Position<input name="position" type="number" min="0" required></label><button class="primaryButton" type="submit">Save dropdown option</button></form></article></div></section>`;
     bindAdminEvents(); window.CampGridsLiveContent?.refresh();
   }
 
@@ -295,13 +434,40 @@
     await loadAdminDashboard(); renderAdminDashboard();
     notice(`Mother Grid imported: ${summary?.inserted || 0} added, ${summary?.updated || 0} updated, ${summary?.deactivated || 0} withdrawn.`, 'isSuccess');
   }
-  async function createPage(event) { event.preventDefault(); const form = new FormData(event.currentTarget); const slug = String(form.get('slug')).trim(); const { error } = await app.getClient().from('content_pages').insert({ slug, title: String(form.get('title')).trim(), summary: form.get('summary') || null, body: { blocks: [{ type: 'paragraph', text: String(form.get('body')).trim() }] }, is_published: true, created_by: state.profile.id, updated_by: state.profile.id }); if (error) throw error; await app.audit('content_page_created', 'content_page', null, { slug }); notice(`Page published at page.html?slug=${slug}.`, 'isSuccess'); }
-  async function createNavigation(event) { event.preventDefault(); const form = new FormData(event.currentTarget); const slug = String(form.get('slug')).trim(); const { data: page, error: pageError } = await app.getClient().from('content_pages').select('id').eq('slug', slug).single(); if (pageError || !page) throw new Error('Publish the page before linking it in navigation.'); const { error } = await app.getClient().from('navigation_items').insert({ label: String(form.get('label')).trim(), href: slug, page_id: page.id, location: form.get('location'), position: Number(form.get('position')), is_visible: true, created_by: state.profile.id }); if (error) throw error; await app.audit('navigation_item_created', 'navigation_item', null, { label: form.get('label'), slug }); notice('Live menu link published.', 'isSuccess'); }
+  /* Links a published partner page into the live navigation. page_id stays null:
+   the target is a partner page rather than a content_pages row, and href carries
+   the full address so site.js needs no special case. */
+  async function createNavigation(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const slug = String(form.get('slug') || '').trim();
+    const partner = state.partners.find((entry) => entry.slug === slug);
+    if (!partner) throw new Error('Choose a partner page to link.');
+    if (!partner.is_published) throw new Error(`Publish the ${partner.name} page before linking it in navigation.`);
+    const { error } = await app.getClient().from('navigation_items').insert({
+      label: String(form.get('label') || '').trim(),
+      href: `partner.html?org=${encodeURIComponent(slug)}`,
+      location: form.get('location'),
+      position: Number(form.get('position')),
+      is_visible: true,
+      created_by: state.profile.id
+    });
+    if (error) throw error;
+    await app.audit('navigation_item_created', 'navigation_item', null, { label: form.get('label'), slug });
+    await window.CampGridsLiveContent?.refresh();
+    notice('Live menu link published.', 'isSuccess');
+  }
   async function createDropdownOption(event) { event.preventDefault(); const form = new FormData(event.currentTarget); const groupKey = String(form.get('groupKey')).trim(); const value = String(form.get('value')).trim(); const { error } = await app.getClient().from('dropdown_options').upsert({ group_key: groupKey, value, label: String(form.get('label')).trim(), position: Number(form.get('position')), is_active: true, updated_by: state.profile.id }, { onConflict: 'group_key,value' }); if (error) throw error; await app.audit('dropdown_option_saved', 'dropdown_option', null, { groupKey, value }); await window.CampGridsLiveContent?.refresh(); notice('Dropdown option saved live.', 'isSuccess'); }
 
   function bindZoomControls() { document.querySelectorAll('[data-grid-zoom-control]').forEach((control) => control.addEventListener('input', (event) => { state.gridZoom = Number(event.currentTarget.value); document.querySelectorAll('[data-mother-grid-canvas]').forEach((canvas) => canvas.style.setProperty('--grid-scale', String(state.gridZoom))); })); }
   function bindTeacherEvents() { document.getElementById('classPicker')?.addEventListener('change', (event) => { state.selectedClassId = event.target.value; state.classGridDraft = null; state.classGridDraftFor = ''; state.rosterDraft = null; renderTeacher(); }); document.getElementById('createClassForm')?.addEventListener('submit', (event) => run(createClass, event)); document.getElementById('assignmentForm')?.addEventListener('submit', (event) => run(createAssignment, event)); document.getElementById('camperUpdateForm')?.addEventListener('submit', (event) => run(saveCamperUpdate, event)); document.querySelectorAll('[data-class-grid-cell]').forEach((button) => button.addEventListener('click', () => run(() => toggleGridCellDraft(button.dataset.classGridCell), null))); document.querySelectorAll('[data-grid-column-select]').forEach((button) => button.addEventListener('click', () => run(() => toggleGridColumnDraft(button.dataset.gridColumnSelect), null))); document.querySelector('[data-action="save-class-grid"]')?.addEventListener('click', () => run(saveClassGrid, null)); document.querySelector('[data-action="reset-class-grid"]')?.addEventListener('click', () => run(resetGridDraft, null)); document.querySelectorAll('[data-roster-student]').forEach((button) => button.addEventListener('click', () => run(() => toggleRosterDraft(button.dataset.rosterStudent), null))); document.querySelector('[data-action="save-roster"]')?.addEventListener('click', () => run(saveClassRoster, null)); document.querySelector('[data-action="sign-out"]')?.addEventListener('click', signOut); document.querySelector('[data-action="export-class"]')?.addEventListener('click', () => exportClass(selectedClass())); document.querySelector('[data-action="print-grid"]')?.addEventListener('click', () => printGridAssignment(selectedClass())); document.querySelector('[data-action="print-selected-grid"]')?.addEventListener('click', () => { const cellId = document.querySelector('#assignmentForm [name="gridCellId"]')?.value; printGridAssignment(selectedClass(), selectedClass()?.gridCells.find((entry) => entry.mother_grid_cell_id === cellId)?.mother_grid_cells); }); document.querySelector('[data-copy-code]')?.addEventListener('click', async (event) => { await navigator.clipboard.writeText(event.currentTarget.dataset.copyCode); notice('Class code copied.', 'isSuccess'); }); bindZoomControls(); }
-  function bindAdminEvents() { document.getElementById('adminRosterImportForm')?.addEventListener('submit', (event) => run(importStudentRoster, event)); document.getElementById('teacherCsvImportForm')?.addEventListener('submit', (event) => run(importTeacherCsv, event)); document.getElementById('motherGridImportForm')?.addEventListener('submit', (event) => run(importMotherGrid, event)); document.getElementById('pageForm')?.addEventListener('submit', (event) => run(createPage, event)); document.getElementById('navForm')?.addEventListener('submit', (event) => run(createNavigation, event)); document.getElementById('dropdownForm')?.addEventListener('submit', (event) => run(createDropdownOption, event)); document.querySelectorAll('[data-mother-grid-cell]').forEach((button) => button.addEventListener('click', () => { state.editingMotherGridCellId = button.dataset.motherGridCell || ''; renderAdminDashboard(); })); document.querySelector('[data-action="clear-grid-cell"]')?.addEventListener('click', () => { state.editingMotherGridCellId = ''; renderAdminDashboard(); }); document.querySelector('[data-action="download-teacher-report"]')?.addEventListener('click', () => downloadCsv(`campgrids-teacher-access-${new Date().toISOString().slice(0, 10)}.csv`, ['First name', 'Last name', 'Work email', 'Username', 'Title', 'Set-password link emailed'], state.teacherCredentialRows.map((row) => [row.firstName, row.lastName, row.email, row.username, row.title, row.invited ? 'yes' : 'no']))); document.querySelector('[data-action="download-student-report"]')?.addEventListener('click', () => downloadCsv(`campgrids-student-access-${new Date().toISOString().slice(0, 10)}.csv`, ['First name', 'Last name', 'Username', 'Grade'], state.studentCredentialRows.map((row) => [row.firstName, row.lastName, row.username, row.grade]))); document.querySelector('[data-action="sign-out"]')?.addEventListener('click', signOut); bindZoomControls(); }
+  function bindAdminEvents() { document.getElementById('adminRosterImportForm')?.addEventListener('submit', (event) => run(importStudentRoster, event)); document.getElementById('teacherCsvImportForm')?.addEventListener('submit', (event) => run(importTeacherCsv, event)); document.getElementById('motherGridImportForm')?.addEventListener('submit', (event) => run(importMotherGrid, event)); document.getElementById('partnerForm')?.addEventListener('submit', (event) => run(createPartner, event));
+    document.getElementById('partnerPicker')?.addEventListener('change', (event) => { state.selectedPartnerId = event.target.value; state.partnerGridDraft = null; state.partnerGridDraftFor = ''; renderAdminDashboard(); });
+    document.querySelector('[data-action="save-partner-grid"]')?.addEventListener('click', () => run(savePartnerGrid, null));
+    document.querySelector('[data-action="reset-partner-grid"]')?.addEventListener('click', () => run(() => { state.partnerGridDraft = null; state.partnerGridDraftFor = ''; renderAdminDashboard(); }, null));
+    document.querySelector('[data-action="toggle-partner-published"]')?.addEventListener('click', () => run(togglePartnerPublished, null));
+    document.querySelectorAll('[data-class-grid-cell]').forEach((button) => button.addEventListener('click', () => run(() => applyPartnerDraftChange((draft) => { const id = button.dataset.classGridCell; if (draft.has(id)) draft.delete(id); else draft.add(id); }), null)));
+    document.querySelectorAll('[data-grid-column-select]').forEach((button) => button.addEventListener('click', () => run(() => { const column = state.motherGrid.filter((cell) => Number(cell.column_number) === Number(button.dataset.gridColumnSelect)); if (!column.length) return; applyPartnerDraftChange((draft) => { const holdsAll = column.every((cell) => draft.has(cell.id)); column.forEach((cell) => { if (holdsAll) draft.delete(cell.id); else draft.add(cell.id); }); }); }, null))); document.getElementById('navForm')?.addEventListener('submit', (event) => run(createNavigation, event)); document.getElementById('dropdownForm')?.addEventListener('submit', (event) => run(createDropdownOption, event)); document.querySelectorAll('[data-mother-grid-cell]').forEach((button) => button.addEventListener('click', () => { state.editingMotherGridCellId = button.dataset.motherGridCell || ''; renderAdminDashboard(); })); document.querySelector('[data-action="clear-grid-cell"]')?.addEventListener('click', () => { state.editingMotherGridCellId = ''; renderAdminDashboard(); }); document.querySelector('[data-action="download-teacher-report"]')?.addEventListener('click', () => downloadCsv(`campgrids-teacher-access-${new Date().toISOString().slice(0, 10)}.csv`, ['First name', 'Last name', 'Work email', 'Username', 'Title', 'Set-password link emailed'], state.teacherCredentialRows.map((row) => [row.firstName, row.lastName, row.email, row.username, row.title, row.invited ? 'yes' : 'no']))); document.querySelector('[data-action="download-student-report"]')?.addEventListener('click', () => downloadCsv(`campgrids-student-access-${new Date().toISOString().slice(0, 10)}.csv`, ['First name', 'Last name', 'Username', 'Grade'], state.studentCredentialRows.map((row) => [row.firstName, row.lastName, row.username, row.grade]))); document.querySelector('[data-action="sign-out"]')?.addEventListener('click', signOut); bindZoomControls(); }
 
   async function renderStudent() {
     const client = app.getClient(); const [enrollmentsResult, assignmentsResult, progressResult, awardsResult, eventsResult] = await Promise.all([client.from('class_enrollments').select('id, class_id, classes(name, code, status)').eq('student_id', state.profile.id).is('exited_at', null), client.from('class_assignments').select('id, class_id, title, instructions, category, belt, resource_url, due_at, published_at').not('published_at', 'is', null).order('created_at', { ascending: false }), client.from('student_assignment_progress').select('id, assignment_id, enrollment_id, status, score, submitted_at, feedback, class_assignments(class_id, title)').order('updated_at', { ascending: false }), client.from('belt_awards').select('id, belt, category, awarded_at, note, class_enrollments(class_id)').order('awarded_at', { ascending: false }), client.from('student_activity_events').select('id, event_type, metadata, occurred_at, class_id').order('occurred_at', { ascending: false }).limit(12)]);
