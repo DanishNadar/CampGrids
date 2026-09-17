@@ -43,7 +43,7 @@
       <form id="teacherLoginForm" class="authPanel" hidden novalidate>
         <div class="formHeading">
           <h2>Teacher sign in</h2>
-          <p>Sign in with your work account, then enter the verification code sent to your email.</p>
+          <p>Sign in with your work account, then enter the verification code sent to your email. <strong>New account?</strong> You do not have a password yet &mdash; use the set-password link below first.</p>
         </div>
         <label class="fieldLabel" data-teacher-credential>Email address or teacher username<input name="identity" autocomplete="username" required placeholder="name@griffonmsi.org or mjuarez"></label>
         <label class="fieldLabel" data-teacher-credential>Password<input name="password" type="password" autocomplete="current-password" required></label>
@@ -52,7 +52,7 @@
           <div class="formActions"><button class="primaryButton" type="submit">Verify and enter workspace</button><button id="teacherResendCode" class="secondaryButton" type="button">Resend code</button><button id="teacherStartOver" class="quietButton" type="button">Use a different account</button></div>
         </div>
         <button id="teacherSendCode" class="primaryButton" type="submit">Send verification code</button>
-        <p class="formHint" data-teacher-credential>First time signing in, or forgotten your password? Enter your work email above, then <button id="teacherSetPassword" class="linkButton" type="button">email me a set-password link</button>.</p>
+        <p class="formHint" data-credential-hint>First time signing in, or forgotten your password? Enter your work email above, then <button id="teacherSetPassword" class="linkButton" type="button">email me a set-password link</button>.</p>
       </form>
 
       <p id="authNotice" class="formNotice" role="status" aria-live="polite"></p>

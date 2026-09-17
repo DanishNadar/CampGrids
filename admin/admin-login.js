@@ -6,6 +6,9 @@
   const resendButton = document.getElementById('adminResendCode');
   const startOverButton = document.getElementById('adminStartOver');
   const credentialFields = [...form.querySelectorAll('[data-admin-credential]')];
+  // Presentation only: shown and hidden with the credential fields, but it is not
+  // one of them and holds no input.
+  const credentialHint = form.querySelector('[data-credential-hint]');
   const verificationCode = form.elements.verificationCode;
   const state = { email: '', ticket: '' };
   let resendTimer = null;
@@ -52,15 +55,19 @@
     sendCodeButton.hidden = false;
     credentialFields.forEach((field) => {
       field.hidden = false;
-      field.querySelector('input').disabled = false;
+      const input = field.querySelector('input');
+      if (input) input.disabled = false;
     });
+    if (credentialHint) credentialHint.hidden = false;
   }
 
   function showVerificationForm() {
     credentialFields.forEach((field) => {
       field.hidden = true;
-      field.querySelector('input').disabled = true;
+      const input = field.querySelector('input');
+      if (input) input.disabled = true;
     });
+    if (credentialHint) credentialHint.hidden = true;
     sendCodeButton.hidden = true;
     verificationStep.hidden = false;
     verificationCode.disabled = false;

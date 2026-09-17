@@ -60,7 +60,11 @@
   async function createTeacher(event) {
     event.preventDefault();
     if (!app?.configured()) return setNotice(app?.configurationMessage || 'CampGrids is not connected.', 'isError');
-    const form = new FormData(event.currentTarget);
+    /* Held in a variable because event.currentTarget is only set while the event
+       is being dispatched. Every line after the first await sees null, which is
+       what made the reset at the end of this handler throw. */
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const teacher = {
       firstName: String(form.get('firstName') || '').trim(),
       lastName: String(form.get('lastName') || '').trim(),
@@ -71,7 +75,7 @@
       return setNotice('Enter the teacher’s first name, last name, and work email.', 'isError');
     }
 
-    const submit = event.currentTarget.querySelector('button[type="submit"]');
+    const submit = formElement.querySelector('button[type="submit"]');
     submit.disabled = true;
     setNotice('Creating the teacher account…');
     try {
@@ -111,12 +115,12 @@
       created.inviteSentAt = sent.at || '';
       if (!sent.ok) {
         showReport(created, `Account created for ${created.email}, but the set-password email did not go out: ${sent.message} Use Resend set-password link.`, 'isWarning');
-        event.currentTarget.reset();
+        formElement.reset();
         return;
       }
 
       showReport(created, `Account created. A set-password link was emailed to ${created.email}. They choose their own password the first time they sign in.`, 'isSuccess');
-      event.currentTarget.reset();
+      formElement.reset();
     } catch (error) {
       setNotice(error.message || 'The teacher account could not be created.', 'isError');
     } finally {

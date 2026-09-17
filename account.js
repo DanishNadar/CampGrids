@@ -7,6 +7,8 @@
   const teacherResendCode = document.getElementById('teacherResendCode');
   const teacherStartOver = document.getElementById('teacherStartOver');
   const teacherCredentialFields = [...teacherLoginForm.querySelectorAll('[data-teacher-credential]')];
+  // Presentation only: travels with the credential fields but contains no input.
+  const teacherCredentialHint = teacherLoginForm.querySelector('[data-credential-hint]');
   const teacherVerificationCode = teacherLoginForm.elements.verificationCode;
   const teacherState = { email: '', ticket: '' };
   let teacherResendTimer = null;
@@ -62,14 +64,16 @@
     teacherSendCode.hidden = false;
     teacherCredentialFields.forEach((field) => {
       field.hidden = false;
-      field.querySelector('input').disabled = false;
+      const input = field.querySelector('input');
+      if (input) input.disabled = false;
     });
   }
 
   function showTeacherVerification() {
     teacherCredentialFields.forEach((field) => {
       field.hidden = true;
-      field.querySelector('input').disabled = true;
+      const input = field.querySelector('input');
+      if (input) input.disabled = true;
     });
     teacherSendCode.hidden = true;
     teacherVerificationStep.hidden = false;
