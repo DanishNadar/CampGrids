@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 type TeacherRow = {
   firstName: string;
@@ -7,7 +8,11 @@ type TeacherRow = {
   title?: string;
 };
 
-const headers = { "Content-Type": "application/json" };
+// This function is called from the administrator's browser. Without a successful
+// preflight response, the browser blocks the POST before inviteUserByEmail ever
+// runs, which looks exactly like "no invitation email was sent." Keep these in
+// sync with the Supabase client rather than maintaining a brittle header list.
+const headers = { ...corsHeaders, "Content-Type": "application/json" };
 const fail = (message: string, status = 400) => new Response(JSON.stringify({ error: message }), { status, headers });
 const clean = (value: unknown) => String(value ?? "").trim();
 // The site sends the set-password link back to this page, which must be in the
@@ -16,6 +21,7 @@ const clean = (value: unknown) => String(value ?? "").trim();
 const setPasswordPath = "account-setup.html";
 
 Deno.serve(async (request) => {
+  if (request.method === "OPTIONS") return new Response("ok", { headers });
   if (request.method !== "POST") return fail("POST only", 405);
   const url = Deno.env.get("SUPABASE_URL");
   const anon = Deno.env.get("SUPABASE_ANON_KEY");

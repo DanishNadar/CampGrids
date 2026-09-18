@@ -7,9 +7,8 @@
  *
  * Why this exists: `supabase functions deploy` needs the CLI logged in, and on some
  * machines Docker as well. The Management API needs neither - it takes the same
- * personal access token the template push already uses. Every function here is a
- * single file whose one import is resolved by Deno at runtime, which is exactly the
- * shape this endpoint accepts.
+ * personal access token the template push already uses. Its current deployment
+ * endpoint accepts a multipart form containing the source file and metadata.
  *
  * Nothing about a function's behaviour changes here. The source in
  * supabase/functions/<slug>/index.ts is uploaded verbatim.
@@ -62,24 +61,6 @@ if (!only && orphans.length) {
   console.log(`  note     not deployed (nothing calls them): ${orphans.join(', ')}\n`);
 }
 
-const api = (path, init = {}) => fetch(`https://api.supabase.com/v1/projects/${project}${path}`, {
-  ...init,
-  headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...(init.headers || {}) }
-});
-
-/* What is already on the project, so each function is created or updated rather than
-   blindly created - a second create would be rejected as a duplicate slug. */
-let existing = new Set();
-if (!dryRun) {
-  const list = await api('/functions');
-  if (!list.ok) {
-    console.error(`Could not list functions: ${list.status} ${list.statusText}\n${(await list.text()).slice(0, 400)}`);
-    if (list.status === 401 || list.status === 403) console.error('\nThe token is wrong, or it has no access to this project.');
-    process.exit(1);
-  }
-  existing = new Set((await list.json()).map((f) => f.slug));
-}
-
 let failed = 0;
 for (const slug of slugs) {
   let body;
@@ -97,10 +78,18 @@ for (const slug of slugs) {
     continue;
   }
 
-  const isUpdate = existing.has(slug);
-  const response = isUpdate
-    ? await api(`/functions/${slug}`, { method: 'PATCH', body: JSON.stringify({ name: slug, body, verify_jwt: jwt }) })
-    : await api('/functions', { method: 'POST', body: JSON.stringify({ slug, name: slug, body, verify_jwt: jwt }) });
+  /* POST /functions/deploy is an upsert. The older JSON endpoints used by this
+     script no longer upload source code, so they left production on the old
+     CORS-broken function even when setup appeared to have run. Do not set a
+     Content-Type header here: fetch supplies the multipart boundary for FormData. */
+  const form = new FormData();
+  form.append('metadata', JSON.stringify({ name: slug, entrypoint_path: 'index.ts', verify_jwt: jwt }));
+  form.append('file', new Blob([body], { type: 'application/typescript' }), 'index.ts');
+  const response = await fetch(`https://api.supabase.com/v1/projects/${project}/functions/deploy?slug=${encodeURIComponent(slug)}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
 
   if (!response.ok) {
     console.error(`  FAILED   ${slug.padEnd(26)} ${response.status} ${response.statusText}`);
@@ -108,7 +97,7 @@ for (const slug of slugs) {
     failed += 1;
     continue;
   }
-  console.log(`  ${isUpdate ? 'updated' : 'created'}  ${slug.padEnd(26)} ${body.length} bytes, verify_jwt=${jwt}`);
+  console.log(`  deployed ${slug.padEnd(26)} ${body.length} bytes, verify_jwt=${jwt}`);
 }
 
 if (dryRun) {

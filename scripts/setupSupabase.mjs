@@ -8,8 +8,9 @@
  * missing any one of them produces a different confusing symptom:
  *
  *   1. provision-teachers is deployed   - otherwise the browser cannot invite at all
- *   2. the Invite user template is set  - otherwise Supabase sends its plain default
- *   3. account-setup.html is allowlisted - otherwise the link in the email is refused
+ *   2. custom SMTP is configured         - otherwise mail cannot reach teachers
+ *   3. the Invite user template is set  - otherwise Supabase sends its plain default
+ *   4. account-setup.html is allowlisted - otherwise the link is refused
  *
  * Doing them together, idempotently, is the point. Every step is safe to re-run.
  */
@@ -58,6 +59,7 @@ async function forward(script, extra = []) {
 }
 
 await step('Edge Functions', () => forward('deployFunctions.mjs'));
+await step('Custom SMTP', () => forward('configureSmtp.mjs'));
 await step('Email templates', () => forward('pushEmailTemplates.mjs'));
 
 await step('Redirect allowlist', async () => {

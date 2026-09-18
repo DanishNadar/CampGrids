@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 type StudentRow = {
   firstName: string;
@@ -8,11 +9,14 @@ type StudentRow = {
   guardianEmail?: string;
 };
 
-const headers = { "Content-Type": "application/json" };
+// The roster importer is also invoked directly by the browser, so it must answer
+// CORS preflights before its authenticated POST can reach Supabase.
+const headers = { ...corsHeaders, "Content-Type": "application/json" };
 const fail = (message: string, status = 400) => new Response(JSON.stringify({ error: message }), { status, headers });
 const normalized = (value: unknown) => String(value ?? "").trim();
 
 Deno.serve(async (request) => {
+  if (request.method === "OPTIONS") return new Response("ok", { headers });
   if (request.method !== "POST") return fail("POST only", 405);
   const url = Deno.env.get("SUPABASE_URL");
   const anon = Deno.env.get("SUPABASE_ANON_KEY");

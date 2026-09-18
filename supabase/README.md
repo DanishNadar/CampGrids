@@ -149,14 +149,16 @@ npm run check:emails      # fail if the built files are stale
 
 #### Putting everything on the project at once
 
-Three things must all be true before a staff invitation can arrive, and missing any
+Four things must all be true before a staff invitation can arrive, and missing any
 one of them looks like a different problem:
 
-1. `provision-teachers` is deployed, or the browser cannot invite at all
-2. the **Invite user** template is set, or Supabase sends its plain default
-3. `account-setup.html` is on the redirect allowlist, or the link is refused
+1. `provision-teachers` is deployed with browser CORS enabled, or the browser cannot invite at all
+2. custom SMTP is configured, or Supabase only permits mail to project-team addresses
+3. the **Invite user** template is set, or Supabase sends its plain default
+4. `account-setup.html` is on the redirect allowlist, or the link is refused
 
-One idempotent command does all three:
+One idempotent command does all four. It reads the six `GMAIL_SMTP_*` values from
+`.env` (or the shell) and never writes or prints the app password:
 
 ```powershell
 $env:SUPABASE_ACCESS_TOKEN = "sbp_..."   # https://supabase.com/dashboard/account/tokens
@@ -170,7 +172,7 @@ rather than replaces, because that list may hold entries other parts of the site
 on. Every step is safe to re-run.
 
 The pieces are also available separately: `npm run deploy:functions`,
-`npm run push:emails`.
+`npm run configure:smtp`, and `npm run push:emails`.
 
 #### Getting them onto the project
 
@@ -199,6 +201,9 @@ each template on the project matches the local file.
 - **Authentication -> Emails** must keep `{{ .ConfirmationURL }}` in **Invite user**
   and **Reset Password**. Only **Magic Link** has it removed, because that template
   carries the numeric code instead of a link.
+- **Custom SMTP** must be configured before inviting anyone outside the Supabase
+  project team. `npm run configure:smtp -- --project <project-ref>` applies the
+  `GMAIL_SMTP_*` values from `.env` through the Auth Management API.
 - The `provision-teachers` function must be deployed. Inviting is an admin API call,
   so the browser cannot do it:
 

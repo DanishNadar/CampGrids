@@ -11,6 +11,7 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { templates } from '../supabase/email/templates.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES = join(HERE, '..', 'supabase', 'email-templates');
@@ -70,8 +71,11 @@ if (!coversSettings) {
 
 console.log('\n=== Templates: did the push take? ===');
 const live = {
-  'Reset Password': { subject: cfg.mailer_subjects_recovery, content: cfg.mailer_templates_recovery_content, file: 'password-reset.html' },
-  'Invite user': { subject: cfg.mailer_subjects_invite, content: cfg.mailer_templates_invite_content, file: 'account-invitation.html' },
+  ...Object.fromEntries(templates.map((template) => [template.supabaseTemplate, {
+    subject: cfg[template.configKeys.subject],
+    content: cfg[template.configKeys.content],
+    file: `${template.id}.html`,
+  }])),
   'Magic Link': { subject: cfg.mailer_subjects_magic_link, content: cfg.mailer_templates_magic_link_content, file: 'verification-code.html' }
 };
 for (const [name, entry] of Object.entries(live)) {

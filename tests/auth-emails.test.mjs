@@ -314,4 +314,25 @@ describe('deployment covers every function the application calls', () => {
       }
     }
   });
+
+  test('every browser-invoked function handles its CORS preflight', async () => {
+    const invoked = new Set();
+    for (const file of ['account.js', 'admin/admin-login.js', 'admin-teacher-entry.js', 'dashboard.js']) {
+      const source = await read(file);
+      for (const match of source.matchAll(/functions\.invoke\(\s*'([^']+)'/g)) invoked.add(match[1]);
+    }
+    for (const slug of invoked) {
+      const source = await read(`supabase/functions/${slug}/index.ts`);
+      assert.match(source, /corsHeaders|Access-Control-Allow-Origin/, `${slug} must return CORS headers`);
+      assert.match(source, /request\.method === "OPTIONS"|request\.method === 'OPTIONS'/, `${slug} must answer OPTIONS`);
+    }
+  });
+
+  test('the deployment script uploads source through the current deploy endpoint', async () => {
+    const source = await read('scripts/deployFunctions.mjs');
+    assert.match(source, /functions\/deploy\?slug=/);
+    assert.match(source, /new FormData\(\)/);
+    assert.match(source, /form\.append\('file'/);
+    assert.doesNotMatch(source, /api\('\/functions'\)/, 'the retired JSON deployment endpoint must not return');
+  });
 });
