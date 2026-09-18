@@ -82,7 +82,7 @@
     if (classesResult.error || motherResult.error) throw classesResult.error || motherResult.error;
     state.adminClasses = classesResult.data || []; state.motherGrid = motherResult.data || [];
 
-    /* Partner organisations and their curriculum selections. A missing function
+    /* Partner organizations and their curriculum selections. A missing function
        means this project has not had the partner migration applied yet, which must
        not take the whole dashboard down with it. */
     try {
@@ -98,7 +98,7 @@
       });
       state.partners = (partnersResult.data || []).map((entry) => ({ ...entry, cellIds: selections.get(entry.id) || [] }));
     } catch (partnerError) {
-      console.warn('Partner organisations unavailable', partnerError?.message || partnerError);
+      console.warn('Partner organizations unavailable', partnerError?.message || partnerError);
       state.partners = [];
     }
   }
@@ -154,7 +154,7 @@
     const draft = partnerGridDraft();
     const picker = state.partners.length
       ? `<label class="fieldLabel compactField">Partner<select id="partnerPicker"><option value="">Choose a partner…</option>${state.partners.map((entry) => `<option value="${entry.id}" ${entry.id === state.selectedPartnerId ? 'selected' : ''}>${escapeHtml(entry.name)}${entry.is_published ? '' : ' (draft)'}</option>`).join('')}</select></label>`
-      : '<p class="emptyCopy">No partner organisations yet. Add the first one below.</p>';
+      : '<p class="emptyCopy">No partner organizations yet. Add the first one below.</p>';
 
     const detail = partner ? `<div class="partnerAdminDetail">
         <p class="helperText">Public page: <a href="partner.html?org=${encodeURIComponent(partner.slug)}" target="_blank" rel="noopener noreferrer">partner.html?org=${escapeHtml(partner.slug)}</a>${partner.is_published ? '' : ' — not published yet, so the link shows nothing to the public.'}</p>
@@ -170,14 +170,14 @@
         </div>
       </div>` : '';
 
-    return `<article class="toolCard"><div class="cardHeading"><div><p class="eyebrow">Partner organisations</p><h3>Build a partner Grid curriculum</h3>
+    return `<article class="toolCard"><div class="cardHeading"><div><p class="eyebrow">Partner organizations</p><h3>Build a partner Grid curriculum</h3>
         <p class="helperText">A company that works with MSI gets its own public page built from real Mother Grid cells, so it stays in step with the Grid instead of being a copy that goes stale. Pick the partner, choose their activities, then publish.</p></div></div>
       ${picker}
       ${detail}
       ${partner ? renderMotherGrid({ mode: 'partner', selectedIds: draft, heading: `${partner.name} curriculum`, description: 'Click a category heading to take or release that whole column, or click single cells. Belts cannot be skipped.' }) : ''}
-      <details class="partnerNewDetails" ${state.partners.length ? '' : 'open'}><summary>Add a partner organisation</summary>
+      <details class="partnerNewDetails" ${state.partners.length ? '' : 'open'}><summary>Add a partner organization</summary>
         <form id="partnerForm" class="stackForm">
-          <div class="formTwoCols"><label class="fieldLabel">Company name<input name="name" required maxlength="140" placeholder="e.g. Northside Makerspace"></label><label class="fieldLabel">URL slug<input name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" maxlength="60" placeholder="northside-makerspace"></label></div>
+          <div class="formTwoCols"><label class="fieldLabel">Company name<input name="name" required maxlength="140"></label><label class="fieldLabel">URL slug<input name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" maxlength="60" placeholder="msi-makerspace"></label></div>
           <label class="fieldLabel">Focus <span class="muted">(one line)</span><input name="focus" maxlength="140" placeholder="e.g. Digital fabrication for middle schools"></label>
           <label class="fieldLabel">Summary<textarea name="summary" rows="3" maxlength="400" placeholder="A short paragraph for the top of their page."></textarea></label>
           <div class="formTwoCols"><label class="fieldLabel">Contact name<input name="contactName" maxlength="140"></label><label class="fieldLabel">Contact email<input name="contactEmail" type="email" maxlength="320"></label></div>

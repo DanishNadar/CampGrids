@@ -1,4 +1,4 @@
-/* The public page for one partner organisation's Grid curriculum.
+/* The public page for one partner organization's Grid curriculum.
 
    A partner is a company that works with MSI to assemble its own curriculum out of
    the Mother Grid. This page presents that selection: the belts it covers, the
@@ -139,7 +139,7 @@
   async function load() {
     const slug = (new URLSearchParams(window.location.search).get('org') || '').trim().toLowerCase();
     if (!slug) {
-      host.innerHTML = panel('Partner curriculum', 'No organisation was named.', 'This page needs an organisation in its address, for example partner.html?org=example-makers.');
+      host.innerHTML = panel('Partner curriculum', 'No organization was named.', 'This page needs an organization in its address, for example partner.html?org=example-makers.');
       return;
     }
     if (!app?.configured()) {

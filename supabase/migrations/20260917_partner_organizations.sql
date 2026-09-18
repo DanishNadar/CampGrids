@@ -1,4 +1,4 @@
--- Partner organisations: a company that works with MSI to build its own Grid
+-- Partner organizations: a company that works with MSI to build its own Grid
 -- curriculum, and the public page that presents it.
 --
 -- This replaces the generic "publish a generated page" tool. That tool wrote free
@@ -8,7 +8,7 @@
 -- Grid cells, so it is always the current curriculum.
 
 -- ---------------------------------------------------------------------------
--- 1. The organisation
+-- 1. The organization
 -- ---------------------------------------------------------------------------
 
 create table if not exists public.partner_organizations (
@@ -100,7 +100,7 @@ $$;
 -- ---------------------------------------------------------------------------
 -- 4. The public page's data
 --
---    One call returns the organisation and its curriculum. It is readable without
+--    One call returns the organization and its curriculum. It is readable without
 --    a session so a partner can share the link, and it returns nothing at all for
 --    an unpublished partner, which keeps a draft private without the caller having
 --    to remember to filter.

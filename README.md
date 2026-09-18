@@ -11,7 +11,7 @@ CampGrids now includes a Supabase-backed application layer alongside the public 
 - `auth.html` provides student, teacher, and MSI staff sign-in. Student usernames are assigned atomically as first-initial + last-name (`dnadar`, `dnadar1`, `dnadar2`…), while teachers can use their email or username.
 - `dashboard.html` gives teachers unique class codes, CSV roster imports that provision student accounts, per-class completion and belt KPIs, progress reviews, belt awards, credential exports, class CSV exports, and printable Grid assignment sheets.
 - Student activity—sign-in, Grid resource/video opens, assignment completion, and belt awards—is recorded in the student profile timeline.
-- MSI admins import the Mother Grid, build partner-organisation curriculum pages, add them to the live navigation, and maintain dropdown options from their dashboard. Those controls update connected browsers live when Supabase Realtime is enabled.
+- MSI admins import the Mother Grid, build partner-organization curriculum pages, add them to the live navigation, and maintain dropdown options from their dashboard. Those controls update connected browsers live when Supabase Realtime is enabled.
 - Teachers and administrators reach camper records only after completing password sign-in plus an emailed verification code; campers continue to use class code and username only.
 
 The complete Supabase schema, RLS access rules, and secure roster-provisioning Edge Function are in [`supabase/`](supabase/README.md). Copy `supabase-config.example.js` to `supabase-config.js`, add your project URL and anon key, run the SQL migration, and deploy the function before using the account tools.
@@ -55,10 +55,10 @@ Only MSI administrators create teacher and camper accounts, which the
 Teachers pick from the accounts an administrator has already created; removing a camper
 exits them from the class and keeps their work.
 
-## Partner organisations
+## Partner organizations
 
 A company that works with MSI to build a Grid curriculum gets its own public page.
-Administrators manage this from **Partner organisations** in the dashboard: add the
+Administrators manage this from **Partner organizations** in the dashboard: add the
 company, pick its activities off the Mother Grid the same way a teacher picks a class
 sub-grid, then publish. The page lives at `partner.html?org=<slug>` and is readable
 without an account, so a partner can share the link with schools and families.
