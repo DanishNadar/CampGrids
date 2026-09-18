@@ -21,6 +21,37 @@
   /* Turns the two likely failures into something actionable. PGRST202 means the
      function is not in the database yet, which is a pending migration rather than a
      problem with what was typed. */
+  /* supabase-js reports a blocked or unreachable function this way. It is distinct
+     from a function that ran and returned an error, which must not be retried
+     against a different code path. */
+  function edgeFunctionUnreachable(error) {
+    const text = `${error?.name || ''} ${error?.message || ''}`;
+    return /FunctionsFetchError|Failed to send a request to the Edge Function|Failed to fetch|NetworkError/i.test(text);
+  }
+
+  /* Creates the account without the Edge Function and emails a set-password link.
+     Returns the row the report needs, shaped like the function's own response. */
+  async function provisionWithoutEdgeFunction(teacher) {
+    const { data, error } = await app.getClient().rpc('provision_user_pending_password', {
+      p_email: teacher.email,
+      p_first_name: teacher.firstName,
+      p_last_name: teacher.lastName,
+      p_role: 'teacher',
+      p_title: teacher.title || null,
+    });
+    if (error) throw new Error(provisionErrorMessage(error));
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row?.account_username) throw new Error('The teacher account was created, but its login name was unavailable. Contact MSI IT before creating another account.');
+    const sent = await sendPasswordSetupEmail(row.account_email || teacher.email);
+    return {
+      username: row.account_username,
+      email: row.account_email || teacher.email,
+      inviteSentAt: sent.at || '',
+      emailOk: sent.ok,
+      emailMessage: sent.message,
+    };
+  }
+
   function provisionErrorMessage(error) {
     const code = String(error?.code || '');
     const text = `${error?.message || ''} ${error?.details || ''}`;
@@ -84,30 +115,65 @@
          dedicated Invite user email. Calling resetPasswordForEmail here used the
          recovery API instead, so a brand-new teacher received a misleading
          "Reset your password" message. */
-      const { data, error } = await app.getClient().functions.invoke('provision-teachers', {
-        body: {
-          filename: 'campgrids-single-teacher.csv',
-          teachers: [teacher],
-          siteOrigin: window.location.origin,
-        },
-      });
-      if (error) throw new Error(provisionErrorMessage(error));
-      if (data?.error) throw new Error(data.error);
-      const row = data?.teachers?.[0];
-      const firstError = data?.errors?.[0]?.message;
-      if (!row?.username) throw new Error(firstError || 'The teacher account could not be created.');
+      let created = null;
+      let usedFallback = false;
+      let fallbackEmail = { ok: true, message: '' };
 
-      const created = {
-        firstName: teacher.firstName,
-        lastName: teacher.lastName,
-        title: teacher.title,
-        email: row.email || teacher.email,
-        username: row.username,
-        // inviteUserByEmail has already dispatched the invitation before the
-        // function returns. Keep the report accurate without sending a second mail.
-        inviteSentAt: new Date().toISOString(),
-      };
+      try {
+        const { data, error } = await app.getClient().functions.invoke('provision-teachers', {
+          body: {
+            filename: 'campgrids-single-teacher.csv',
+            teachers: [teacher],
+            siteOrigin: window.location.origin,
+          },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        const row = data?.teachers?.[0];
+        const firstError = data?.errors?.[0]?.message;
+        if (!row?.username) throw new Error(firstError || 'The teacher account could not be created.');
 
+        created = {
+          firstName: teacher.firstName,
+          lastName: teacher.lastName,
+          title: teacher.title,
+          email: row.email || teacher.email,
+          username: row.username,
+          // inviteUserByEmail has already dispatched the invitation before the
+          // function returns. Keep the report accurate without sending a second mail.
+          inviteSentAt: new Date().toISOString(),
+        };
+      } catch (functionError) {
+        /* Only an unreachable function falls through. A function that ran and
+           rejected the request has a real reason, and retrying that against the
+           database path would hide it. */
+        if (!edgeFunctionUnreachable(functionError)) throw new Error(provisionErrorMessage(functionError));
+        usedFallback = true;
+        const row = await provisionWithoutEdgeFunction(teacher);
+        fallbackEmail = { ok: row.emailOk, message: row.emailMessage };
+        created = {
+          firstName: teacher.firstName,
+          lastName: teacher.lastName,
+          title: teacher.title,
+          email: row.email,
+          username: row.username,
+          inviteSentAt: row.inviteSentAt,
+        };
+      }
+
+      if (usedFallback && !fallbackEmail.ok) {
+        showReport(created, `Account created for ${created.email}, but no email went out: ${fallbackEmail.message} Use Resend set-password link.`, 'isWarning');
+        formElement.reset();
+        return;
+      }
+      if (usedFallback) {
+        /* Worth saying out loud: this email is the recovery template, so it reads as
+           a password reset rather than an invitation. Deploying provision-teachers
+           restores the invitation wording. */
+        showReport(created, `Account created and a set-password link emailed to ${created.email}. The provision-teachers function is not deployed, so the message is the password-reset one rather than the account invitation.`, 'isWarning');
+        formElement.reset();
+        return;
+      }
       showReport(created, `Account created. An MSI CampGrids invitation was emailed to ${created.email}. They choose their own password the first time they sign in.`, 'isSuccess');
       formElement.reset();
     } catch (error) {

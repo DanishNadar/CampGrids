@@ -78,7 +78,9 @@ for (const [name, entry] of Object.entries(live)) {
   let local = '';
   try { local = await readFile(join(TEMPLATES, entry.file), 'utf8'); } catch { /* reported below */ }
   const remote = entry.content || '';
-  const branded = remote.includes('#FE5000');
+  // Case-insensitive: the templates write the brand orange lowercase, and a
+  // case-sensitive test reported a perfectly branded template as the default.
+  const branded = /#fe5000/i.test(remote);
   const matches = local && remote.trim() === local.trim();
   console.log(`  ${name}`);
   console.log(`    subject on project:              ${entry.subject || '(Supabase default)'}`);
