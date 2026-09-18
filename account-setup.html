@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Set up your MSI account | MSI CampGrids</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="authPage">
+  <!-- Destination for the Account activation email. password-setup.js reads the token type from
+       the URL and refuses to run if it is the wrong kind, so an activation link
+       cannot land on the recovery page or the other way round. -->
+  <main class="adminAccessShell">
+    <section class="authCard adminAccessCard" aria-labelledby="passwordSetupTitle">
+      <div id="passwordSetupHost">
+        <div class="formHeading">
+          <p class="eyebrow">Account activation</p>
+          <h1 id="passwordSetupTitle">Set up your MSI account</h1>
+          <p>Checking your link&hellip;</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="supabase-client.js"></script>
+  <script src="password-setup.js" data-flow="account-setup"></script>
+</body>
+</html>

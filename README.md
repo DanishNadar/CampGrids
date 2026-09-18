@@ -13,6 +13,7 @@ CampGrids now includes a Supabase-backed application layer alongside the public 
 - Student activity—sign-in, Grid resource/video opens, assignment completion, and belt awards—is recorded in the student profile timeline.
 - MSI admins import the Mother Grid, build partner-organization curriculum pages, add them to the live navigation, and maintain dropdown options from their dashboard. Those controls update connected browsers live when Supabase Realtime is enabled.
 - Teachers and administrators reach camper records only after completing password sign-in plus an emailed verification code; campers continue to use class code and username only.
+- Staff authentication email is split into three separate events: an account invitation when an administrator creates an account, a password reset only when someone asks to recover one, and the two-factor code. The templates are composed from shared components in [`supabase/email/`](supabase/email/) and are documented in [`supabase/README.md`](supabase/README.md).
 
 The complete Supabase schema, RLS access rules, and secure roster-provisioning Edge Function are in [`supabase/`](supabase/README.md). Copy `supabase-config.example.js` to `supabase-config.js`, add your project URL and anon key, run the SQL migration, and deploy the function before using the account tools.
 

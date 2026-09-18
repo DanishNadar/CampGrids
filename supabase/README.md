@@ -110,67 +110,103 @@ Using `{{ .Token }}` sends the numeric one-time code consumed by the CampGrids f
 
 If CampGrids reports that Gmail SMTP could not send a code, first confirm that the sender email and SMTP username are the same full Gmail address, the port/security pair is `465` + TLS or `587` + STARTTLS, and the value in Supabase is a newly generated Google App Password rather than the ordinary Gmail password. The sanitized browser error is intentional; the provider response is available to project administrators in **Edge Functions -> request-staff-email-2fa -> Logs**.
 
-### Branded email templates
+### Staff authentication emails
 
-Supabase ships plain, unbranded defaults for these, so each one has to be pasted in by
-hand. There are three, and they are separate templates that never interfere with each
-other:
+There are three, and they are three genuinely different events. Keeping them apart is
+the whole point of this part of the system:
 
-| Supabase template | Paste this file | Subject | Sent by |
-| --- | --- | --- | --- |
-| **Reset Password** | [`email-templates/password-reset.html`](email-templates/password-reset.html) | `Reset your MSI CampGrids password` | **Email me a set-password link** on both sign-in pages, and admin-initiated recovery resends |
-| **Invite user** | [`email-templates/account-invitation.html`](email-templates/account-invitation.html) | `Your MSI CampGrids account is ready` | The single-teacher form and teacher CSV import, through `inviteUserByEmail` |
-| **Magic Link** | [`email-templates/verification-code.html`](email-templates/verification-code.html) | `Your CampGrids verification code` | Staff two-factor codes |
+| Event | Supabase action | Supabase template | Built file | Subject |
+| --- | --- | --- | --- | --- |
+| An administrator creates a staff account | `admin.inviteUserByEmail()` | **Invite user** | `email-templates/staff-account-created.html` | Your MSI staff account is ready |
+| Someone asks to recover an existing password | `auth.resetPasswordForEmail()` | **Reset Password** | `email-templates/password-reset.html` | Reset your MSI password |
+| Staff two-factor code | `auth.signInWithOtp()` | **Magic Link** | `email-templates/verification-code.html` | Your MSI verification code |
 
-Nothing in this repository reaches Supabase on its own, so a template sitting in
-`email-templates/` has no effect until it is pushed to the project. Either run the
-script, which is the repeatable way:
+Account creation and password recovery must never share an email. A new teacher has
+never had a password, so telling them to reset one is both confusing and a reason to
+distrust the message.
+
+#### Where the emails come from
+
+The templates are composed rather than hand-written, so the header, logo, colours,
+button and footer exist once:
+
+```
+supabase/email/
+  brand.mjs        colours, fonts, logo, organization - every value taken from styles.css
+  components.mjs   EmailLayout, EmailHeader, EmailTitle, EmailButton,
+                   EmailInfoBox, EmailSteps, EmailSecurityNotice, EmailFooter
+  templates.mjs    the two staff emails: messaging, subject, preheader, and the
+                   Supabase action each one belongs to
+```
+
+`supabase/email-templates/*.html` and `*.txt` are **generated**. Do not edit them by
+hand; edit the source and rebuild:
+
+```powershell
+npm run build:emails      # render sources to supabase/email-templates/
+npm run check:emails      # fail if the built files are stale
+```
+
+#### Getting them onto the project
+
+Nothing in this repository reaches Supabase on its own. A template sitting in
+`email-templates/` has no effect until it is pushed:
 
 ```powershell
 $env:SUPABASE_ACCESS_TOKEN = "sbp_..."   # https://supabase.com/dashboard/account/tokens
-node scripts/pushEmailTemplates.mjs --project hofninqlkcuzgboslodq --dry-run
-node scripts/pushEmailTemplates.mjs --project hofninqlkcuzgboslodq
+npm run push:emails -- --project <project-ref> --dry-run
+npm run push:emails -- --project <project-ref>
 ```
 
-or paste each file into the dashboard by hand, remembering that the **subject** is a
-separate field from the body and has to be changed too.
+The push refuses to run if a template has lost its own placeholder, or if it carries
+the *other* flow's placeholder - crossing those two over is exactly how account
+creation once ended up sending "Reset your password".
 
-The script PATCHes six named fields through the Management API rather than using
-`supabase config push`, because config push sends the whole auth configuration and
-anything missing from `config.toml` reverts to a default — which would silently wipe
-the Gmail SMTP settings and the redirect URL allowlist. It refuses to push a template
-that has lost its `{{ .ConfirmationURL }}` or `{{ .Token }}`, since that would send a
-set-password email with no link or a code email with no code.
+`npm run check:email-config -- --project <project-ref>` is read-only and reports what
+is actually live: SMTP, the hourly email limit, the redirect allowlist, and whether
+each template on the project matches the local file.
 
-Keep the two templates separate. Both need `{{ .ConfirmationURL }}`, but their
-meaning is intentionally different: **Invite user** welcomes a teacher whose account
-has just been created, while **Reset Password** is only for a requested or
-administrator-initiated password recovery.
+#### Required project settings
 
-Both templates already carry the MSI mark, served from this repository over https at
-`raw.githubusercontent.com/DanishNadar/CampGrids/main/assets/MSI_Logo.png`. That works
-because email clients need an absolute public URL: a relative path cannot resolve, and
-Gmail and Outlook both refuse a `data:` URI. It does depend on the repository staying
-public on that branch, so a stable URL on an MSI-controlled host is better for a real
-programme — changing it means editing the two `<img src>` values and pushing again.
+- **Authentication -> URL Configuration -> Redirect URLs** must include the exact
+  `account-setup.html` and `reset-password.html` URLs for every origin you serve from.
+  A `redirect_to` that is not on this list is refused.
+- **Authentication -> Emails** must keep `{{ .ConfirmationURL }}` in **Invite user**
+  and **Reset Password**. Only **Magic Link** has it removed, because that template
+  carries the numeric code instead of a link.
+- The `provision-teachers` function must be deployed. Inviting is an admin API call,
+  so the browser cannot do it:
 
-### The sender name and avatar
+  ```powershell
+  npx supabase@latest functions deploy provision-teachers --project-ref <project-ref>
+  ```
 
-Neither is set in this repository, and neither can be changed from code.
+  Without it, creating a teacher still creates the account but sends no invitation,
+  and says so. It deliberately does **not** fall back to a password-reset email.
 
-- **Sender name** is **Authentication -> Emails -> SMTP Settings -> Sender name** in
-  Supabase. It currently reads `MSI`; `MSI CampGrids` reads better beside the subject
-  line in an inbox.
-- **The avatar** beside the sender in Gmail is the Google profile photo of the account
-  doing the sending. It is not part of the message, so no template change affects it.
-  Sign in as that sending address at <https://myaccount.google.com/personal-info> and
-  replace the profile picture with the MSI mark. If the sender is a personal Gmail
-  account with someone's own photo on it, that photo is what every recipient sees.
+#### Where the links land
 
-For a real camp programme, send from a dedicated Google Workspace address on an MSI
-domain rather than a personal Gmail account: the display name and avatar are then
-managed by the organisation, the address itself carries MSI's domain, and a verified
-logo can be published through BIMI so clients show the mark rather than an initial.
+| Email | Lands on | Heading |
+| --- | --- | --- |
+| Account activation | `account-setup.html` | Set up your MSI account |
+| Password reset | `reset-password.html` | Create a new password |
+
+Both are served by `password-setup.js`, which reads the token type from the URL. An
+invitation arriving on the reset page, or a recovery link arriving on the activation
+page, is explained and handed on rather than silently treated as the other kind.
+Expired and already-used links get their own screen naming the correct expiry window.
+
+#### Tests
+
+```powershell
+npm test
+```
+
+`tests/auth-emails.test.mjs` asserts the two flows stay separate: that activation is
+wired to the invite action and recovery to the recovery action, that the activation
+email never contains reset wording, that no account-creation code path calls
+`resetPasswordForEmail`, that the built files match their sources, and that no
+template or log can carry a password or a token.
 
 ### Resending a verification code
 

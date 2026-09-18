@@ -29,8 +29,11 @@
     return /FunctionsFetchError|Failed to send a request to the Edge Function|Failed to fetch|NetworkError/i.test(text);
   }
 
-  /* Creates the account without the Edge Function and emails a set-password link.
-     Returns the row the report needs, shaped like the function's own response. */
+  /* Creates the account when the Edge Function cannot be reached. It deliberately
+     sends no email: the only email this browser can trigger is password recovery,
+     and sending that for a brand-new account is the exact confusion being removed.
+     The account is created so the work is not lost, and the administrator is told
+     plainly that the invitation still has to go out. */
   async function provisionWithoutEdgeFunction(teacher) {
     const { data, error } = await app.getClient().rpc('provision_user_pending_password', {
       p_email: teacher.email,
@@ -42,13 +45,12 @@
     if (error) throw new Error(provisionErrorMessage(error));
     const row = Array.isArray(data) ? data[0] : data;
     if (!row?.account_username) throw new Error('The teacher account was created, but its login name was unavailable. Contact MSI IT before creating another account.');
-    const sent = await sendPasswordSetupEmail(row.account_email || teacher.email);
     return {
       username: row.account_username,
       email: row.account_email || teacher.email,
-      inviteSentAt: sent.at || '',
-      emailOk: sent.ok,
-      emailMessage: sent.message,
+      inviteSentAt: '',
+      emailOk: false,
+      emailMessage: 'No invitation was sent, because the provision-teachers function is not deployed. Deploy it, then use Resend invitation.',
     };
   }
 
@@ -76,7 +78,7 @@
   function downloadCredentials(teacher) {
     /* No password column: the account is created without one, and the teacher sets
        their own through the emailed link. There is nothing secret to write down. */
-    const header = ['First name', 'Last name', 'Work email', 'Username', 'Title', 'Set-password link sent'];
+    const header = ['First name', 'Last name', 'Work email', 'Username', 'Title', 'Invitation sent'];
     const row = [teacher.firstName, teacher.lastName, teacher.email, teacher.username, teacher.title, teacher.inviteSentAt || ''];
     const csv = `${header.map(escapeCsv).join(',')}\r\n${row.map(escapeCsv).join(',')}\r\n`;
     const link = document.createElement('a');
@@ -162,7 +164,7 @@
       }
 
       if (usedFallback && !fallbackEmail.ok) {
-        showReport(created, `Account created for ${created.email}, but no email went out: ${fallbackEmail.message} Use Resend set-password link.`, 'isWarning');
+        showReport(created, `Account created for ${created.email}, but no invitation was sent. ${fallbackEmail.message}`, 'isWarning');
         formElement.reset();
         return;
       }
@@ -170,7 +172,7 @@
         /* Worth saying out loud: this email is the recovery template, so it reads as
            a password reset rather than an invitation. Deploying provision-teachers
            restores the invitation wording. */
-        showReport(created, `Account created and a set-password link emailed to ${created.email}. The provision-teachers function is not deployed, so the message is the password-reset one rather than the account invitation.`, 'isWarning');
+        showReport(created, `Account created for ${created.email}, but no invitation was sent: the provision-teachers function is not deployed. Deploy it, then use Resend invitation.`, 'isWarning');
         formElement.reset();
         return;
       }
@@ -186,14 +188,24 @@
   /* A resend is a real password-recovery action for an account that already
      exists. It therefore uses the separate, explicitly labelled Reset Password
      template rather than pretending it is a new-account invitation. */
-  async function sendPasswordSetupEmail(email) {
-    const redirectTo = new URL('settings.html?password-setup=1', window.location.href).href;
-    const { error } = await app.getClient().auth.resetPasswordForEmail(email, { redirectTo });
-    if (error) return { ok: false, message: provisionErrorMessage(error), at: '' };
+  /* Re-sends the account *invitation*, not a password recovery. This goes through
+     the Edge Function because inviteUserByEmail is an admin API call; the browser
+     holds only the anon key, and reaching for resetPasswordForEmail instead is what
+     used to email "Reset your password" to someone who had never had one. */
+  async function resendInvitation(email) {
+    const { data, error } = await app.getClient().functions.invoke('provision-teachers', {
+      body: { action: 'resend', email, siteOrigin: window.location.origin }
+    });
+    if (error) {
+      if (edgeFunctionUnreachable(error)) {
+        return { ok: false, at: '', message: 'The provision-teachers function is not deployed, so no invitation could be sent. Deploy it, then resend.' };
+      }
+      return { ok: false, at: '', message: provisionErrorMessage(error) };
+    }
+    if (data?.error) return { ok: false, at: '', message: data.error };
     const at = new Date().toISOString();
-    // Best effort: the account works whether or not the timestamp gets recorded.
     try { await app.getClient().rpc('note_password_invite_sent', { p_email: email }); } catch (_) { /* not fatal */ }
-    return { ok: true, message: '', at };
+    return { ok: true, at, message: '' };
   }
 
   function showReport(teacher, message, kind) {
@@ -208,10 +220,10 @@
     const resend = document.getElementById('singleTeacherResend');
     if (resend) resend.onclick = async () => {
       resend.disabled = true;
-      setNotice('Resending the set-password link...');
-      const sent = await sendPasswordSetupEmail(teacher.email);
+      setNotice('Resending the invitation...');
+      const sent = await resendInvitation(teacher.email);
       teacher.inviteSentAt = sent.at || teacher.inviteSentAt;
-      showReport(teacher, sent.ok ? `A fresh set-password link was emailed to ${teacher.email}.` : sent.message, sent.ok ? 'isSuccess' : 'isError');
+      showReport(teacher, sent.ok ? `A fresh invitation was emailed to ${teacher.email}.` : sent.message, sent.ok ? 'isSuccess' : 'isError');
       resend.disabled = false;
     };
     setNotice(message, kind);
@@ -233,7 +245,7 @@
           <button class="primaryButton" type="submit">Create teacher account</button>
         </form>
         <p id="singleTeacherNotice" class="workspaceNotice" role="status" aria-live="polite"></p>
-        <section id="singleTeacherReport" class="credentialsPanel" hidden aria-live="polite"><div><p class="eyebrow">Teacher account created</p><h3 id="singleTeacherEmail"></h3><dl><div><dt>Username</dt><dd id="singleTeacherUsername"></dd></div><div><dt>Set-password link sent</dt><dd id="singleTeacherInvite"></dd></div></dl><p>No password was created. The teacher follows the emailed link to choose their own, and cannot sign in until they do.</p></div><div class="formActions"><button id="singleTeacherResend" class="secondaryButton" type="button">Resend set-password link</button><button id="singleTeacherDownload" class="secondaryButton" type="button">Download account report</button></div></section>
+        <section id="singleTeacherReport" class="credentialsPanel" hidden aria-live="polite"><div><p class="eyebrow">Teacher account created</p><h3 id="singleTeacherEmail"></h3><dl><div><dt>Username</dt><dd id="singleTeacherUsername"></dd></div><div><dt>Invitation sent</dt><dd id="singleTeacherInvite"></dd></div></dl><p>No password was created. The teacher follows the emailed link to choose their own, and cannot sign in until they do.</p></div><div class="formActions"><button id="singleTeacherResend" class="secondaryButton" type="button">Resend invitation</button><button id="singleTeacherDownload" class="secondaryButton" type="button">Download account report</button></div></section>
       </article>`);
     document.getElementById('singleTeacherForm')?.addEventListener('submit', createTeacher);
   }

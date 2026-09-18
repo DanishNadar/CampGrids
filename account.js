@@ -112,8 +112,11 @@
   /* A provisioned account has no password at all, so this is the only way in the
      first time. The confirmation is deliberately the same whether or not an account
      exists, so the form cannot be used to discover who has one. */
-  async function sendPasswordSetupLink(app, email) {
-    const redirectTo = new URL('settings.html?password-setup=1', window.location.href).href;
+  /* Genuine password recovery for an existing account, which is the only flow a
+     browser may trigger. A never-activated account is re-invited by an
+     administrator instead, so the two never share an email. */
+  async function sendPasswordRecovery(app, email) {
+    const redirectTo = new URL('reset-password.html', window.location.href).href;
     const { error } = await app.getClient().auth.resetPasswordForEmail(email, { redirectTo });
     if (error && /rate limit|too many requests|for security purposes/i.test(error.message || '')) {
       throw new Error('A link was requested very recently. Wait a minute and try again.');
@@ -246,11 +249,11 @@
     }
     button.disabled = true;
     try {
-      setNotice('Sending a set-password link...');
-      await sendPasswordSetupLink(app, identity);
-      setNotice(`If ${identity} has a CampGrids account, a set-password link is on its way. Open it to choose your password.`, 'isSuccess');
+      setNotice('Sending a password reset link...');
+      await sendPasswordRecovery(app, identity);
+      setNotice(`If ${identity} has an activated CampGrids account, a password reset link is on its way. If your account is new and you never set a password, ask an MSI administrator to resend your invitation.`, 'isSuccess');
     } catch (error) {
-      setNotice(error.message || 'The set-password link could not be sent.', 'isError');
+      setNotice(error.message || 'The password reset link could not be sent.', 'isError');
     } finally {
       button.disabled = false;
     }

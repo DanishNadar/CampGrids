@@ -85,8 +85,10 @@
 
   /* Same as the teacher entrance: a provisioned administrator has no password, so
      the emailed link is the only first way in. settings.html sits one level up. */
-  async function sendPasswordSetupLink(app, email) {
-    const redirectTo = new URL('../settings.html?password-setup=1', window.location.href).href;
+  /* Genuine password recovery for an existing administrator account. A
+     never-activated account is re-invited from the dashboard instead. */
+  async function sendPasswordRecovery(app, email) {
+    const redirectTo = new URL('../reset-password.html', window.location.href).href;
     const { error } = await app.getClient().auth.resetPasswordForEmail(email, { redirectTo });
     if (error && /rate limit|too many requests|for security purposes/i.test(error.message || '')) {
       throw new Error('A link was requested very recently. Wait a minute and try again.');
@@ -189,11 +191,11 @@
     }
     button.disabled = true;
     try {
-      setNotice('Sending a set-password link...');
-      await sendPasswordSetupLink(app, email);
-      setNotice(`If ${email} has an administrator account, a set-password link is on its way. Open it to choose your password.`, 'isSuccess');
+      setNotice('Sending a password reset link...');
+      await sendPasswordRecovery(app, email);
+      setNotice(`If ${email} has an activated administrator account, a password reset link is on its way.`, 'isSuccess');
     } catch (error) {
-      setNotice(error.message || 'The set-password link could not be sent.', 'isError');
+      setNotice(error.message || 'The password reset link could not be sent.', 'isError');
     } finally {
       button.disabled = false;
     }

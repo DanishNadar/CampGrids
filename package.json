@@ -1,0 +1,14 @@
+{
+  "name": "campgrids",
+  "private": true,
+  "version": "1.0.0",
+  "description": "MSI Camp Grids: the public Grid browser plus the Supabase-backed staff and camper application layer.",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node --test tests/auth-emails.test.mjs",
+    "build:emails": "node scripts/buildEmails.mjs",
+    "check:emails": "node scripts/buildEmails.mjs --check",
+    "push:emails": "node scripts/pushEmailTemplates.mjs",
+    "check:email-config": "node scripts/checkEmailSetup.mjs"
+  }
+}

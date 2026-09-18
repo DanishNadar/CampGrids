@@ -173,22 +173,30 @@
       return `<tr><td><strong>${escapeHtml(row.full_name || '')}</strong><small>${escapeHtml(row.account_email || '')}</small></td>
         <td>${escapeHtml(row.account_role || '')}</td>
         <td class="${stale ? 'isWarning' : ''}">${escapeHtml(sent)}</td>
-        <td><button class="quietButton" type="button" data-resend-staff="${escapeHtml(row.account_email || '')}">Send link</button></td></tr>`;
+        <td><button class="quietButton" type="button" data-resend-staff="${escapeHtml(row.account_email || '')}">Resend invitation</button></td></tr>`;
     }).join('');
     return `<article class="toolCard"><div class="cardHeading"><div><p class="eyebrow">Staff access</p><h3>Waiting on a password</h3>
       <p class="helperText">These accounts exist but cannot be signed into until the person follows a set-password link. If someone says the email never arrived, check they are listed here first: an account that is missing was never created, so nothing was ever emailed.</p></div></div>
-      <div class="tableScroll"><table class="dataTable"><thead><tr><th>Person</th><th>Role</th><th>Link last sent</th><th></th></tr></thead><tbody>${body}</tbody></table></div></article>`;
+      <div class="tableScroll"><table class="dataTable"><thead><tr><th>Person</th><th>Role</th><th>Invitation sent</th><th></th></tr></thead><tbody>${body}</tbody></table></div></article>`;
   }
 
+  /* Re-sends the account invitation. Routed through the Edge Function because
+     inviteUserByEmail is an admin API call: the browser could only call the recovery
+     API, and that sends "Reset your password" to a person who never had one. */
   async function resendStaffLink(email) {
-    const redirectTo = new URL('settings.html?password-setup=1', window.location.href).href;
-    const { error } = await app.getClient().auth.resetPasswordForEmail(email, { redirectTo });
-    if (error) throw new Error(/rate limit|too many requests|for security purposes/i.test(error.message || '')
-      ? 'Supabase is rate-limiting outgoing email. Wait about a minute and try again.'
-      : error.message);
+    const { data, error } = await app.getClient().functions.invoke('provision-teachers', {
+      body: { action: 'resend', email, siteOrigin: window.location.origin }
+    });
+    if (error) {
+      const unreachable = /FunctionsFetchError|Failed to send a request to the Edge Function|Failed to fetch/i.test(`${error.name || ''} ${error.message || ''}`);
+      throw new Error(unreachable
+        ? 'The provision-teachers function is not deployed, so no invitation could be sent. Deploy it and try again.'
+        : (error.message || 'The invitation could not be resent.'));
+    }
+    if (data?.error) throw new Error(data.error);
     try { await app.getClient().rpc('note_password_invite_sent', { p_email: email }); } catch (_) { /* not fatal */ }
     await loadAdminDashboard(); renderAdminDashboard();
-    notice(`A set-password link was sent to ${email}.`, 'isSuccess');
+    notice(`An invitation was emailed to ${email}.`, 'isSuccess');
   }
 
   function partnerCard() {

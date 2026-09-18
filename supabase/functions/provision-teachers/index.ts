@@ -13,7 +13,7 @@ const clean = (value: unknown) => String(value ?? "").trim();
 // The site sends the set-password link back to this page, which must be in the
 // project's Redirect URLs allowlist. The caller supplies it so the same function
 // works from a local server and from production.
-const setPasswordPath = "settings.html?password-setup=1";
+const setPasswordPath = "account-setup.html";
 
 Deno.serve(async (request) => {
   if (request.method !== "POST") return fail("POST only", 405);
@@ -31,11 +31,23 @@ Deno.serve(async (request) => {
   if (adminError || !isAdmin) return fail("Complete email two-factor verification before provisioning teacher accounts.", 403);
 
   const payload = await request.json();
+  /* Two shapes are accepted. { action: "resend", email } re-invites one existing
+     account; anything else is a provisioning batch. Resend is served here because
+     re-inviting is an admin API call and the browser holds only the anon key - the
+     browser's only option is the recovery API, and reaching for it is what sent
+     "Reset your password" to teachers who had never had one. */
+  const isResend = clean(payload.action) === "resend";
+  const resendEmail = clean(payload.email).toLowerCase();
   const filename = clean(payload.filename);
   const teachers = payload.teachers;
-  if (!filename.toLowerCase().endsWith(".csv")) return fail("Use the teacher CSV template.");
-  if (!Array.isArray(teachers) || teachers.length === 0) return fail("Upload at least one teacher.");
-  if (teachers.length > 250) return fail("Upload no more than 250 teachers at one time.");
+
+  if (isResend) {
+    if (!resendEmail || !resendEmail.includes("@")) return fail("A valid email address is required to resend an invitation.");
+  } else {
+    if (!filename.toLowerCase().endsWith(".csv")) return fail("Use the teacher CSV template.");
+    if (!Array.isArray(teachers) || teachers.length === 0) return fail("Upload at least one teacher.");
+    if (teachers.length > 250) return fail("Upload no more than 250 teachers at one time.");
+  }
 
   /* Where the emailed set-password link should land. The caller passes its own origin
      so the same deployed function serves a local server and production; SITE_URL is
@@ -47,6 +59,27 @@ Deno.serve(async (request) => {
     inviteRedirectTo = new URL(setPasswordPath, origin).href;
   } catch {
     return fail("The site origin for the set-password link is missing or invalid. Pass siteOrigin, or set SITE_URL on the function.");
+  }
+
+  if (isResend) {
+    /* inviteUserByEmail re-sends the invitation for an account that has not been
+       activated. If Auth reports the address as already registered, the account has
+       a password already and an invitation is the wrong message for it - the person
+       wants password recovery, which they can request themselves from the sign-in
+       page. Never silently substitute one for the other here. */
+    const { error: inviteError } = await admin.auth.admin.inviteUserByEmail(resendEmail, {
+      redirectTo: inviteRedirectTo,
+    });
+    if (inviteError) {
+      const already = /already|registered|exists/i.test(inviteError.message || "");
+      return fail(
+        already
+          ? "That account has already been activated. Ask them to use Forgot your password on the sign-in page instead."
+          : `The invitation could not be resent: ${inviteError.message}`,
+        already ? 409 : 502,
+      );
+    }
+    return new Response(JSON.stringify({ resent: true, email: resendEmail }), { headers });
   }
 
   const results: Array<Record<string, string>> = [];

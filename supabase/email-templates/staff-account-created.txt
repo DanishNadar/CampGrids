@@ -1,0 +1,24 @@
+MSI — Camp Grids Staff Portal
+
+ACCOUNT ACTIVATION
+Your MSI account is ready
+
+An MSI staff account has been created for {{ .Email }}.
+Set your password to activate it:
+
+{{ .ConfirmationURL }}
+
+This link can be used once and expires after 24 hours.
+
+What happens next:
+  1. Choose a password of at least 12 characters.
+  2. Sign in with your work email and that password.
+  3. Enter the one-time code we email you.
+
+Weren’t expecting this account? Ignore this message; the account cannot be
+signed into until a password is set. Contact an MSI administrator if it looks
+like a mistake.
+
+Museum of Science and Industry
+5700 S DuSable Lake Shore Dr, Chicago, IL 60637
+MSI staff will never ask you for your password.

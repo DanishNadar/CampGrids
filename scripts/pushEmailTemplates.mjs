@@ -19,6 +19,7 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { templates } from '../supabase/email/templates.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES = join(HERE, '..', 'supabase', 'email-templates');
@@ -26,12 +27,30 @@ const TEMPLATES = join(HERE, '..', 'supabase', 'email-templates');
 /* Each Supabase mail event has its own subject and copy. An invitation is not a
    password reset: single-teacher and CSV provisioning call inviteUserByEmail,
    while an explicit set-password request calls resetPasswordForEmail. */
+/* Which built file goes to which Supabase action. The activation and recovery
+   entries come from supabase/email/templates.mjs so the mapping lives in one place:
+   crossing those two over is precisely what made account creation send "Reset your
+   password". `forbids` fails the push if a template carries the other flow's
+   placeholder, so the two can never be swapped again unnoticed. */
+const MAGIC_LINK = {
+  id: 'verification-code',
+  supabaseTemplate: 'Magic Link',
+  configKeys: { subject: 'mailer_subjects_magic_link', content: 'mailer_templates_magic_link_content' },
+  subject: 'Your MSI verification code',
+  requires: '{{ .Token }}',
+  forbids: '{{ .ConfirmationURL }}'
+};
 const MAP = [
-  { name: 'Reset Password', file: 'password-reset.html', subjectKey: 'mailer_subjects_recovery', contentKey: 'mailer_templates_recovery_content', subject: 'Reset your MSI CampGrids password', needs: '{{ .ConfirmationURL }}' },
-  { name: 'Invite user', file: 'account-invitation.html', subjectKey: 'mailer_subjects_invite', contentKey: 'mailer_templates_invite_content', subject: 'Your MSI CampGrids account is ready', needs: '{{ .ConfirmationURL }}' },
-  { name: 'Magic Link', file: 'verification-code.html', subjectKey: 'mailer_subjects_magic_link', contentKey: 'mailer_templates_magic_link_content', subject: 'Your CampGrids verification code', needs: '{{ .Token }}' }
+  ...templates.map((t) => ({
+    id: t.id,
+    supabaseTemplate: t.supabaseTemplate,
+    configKeys: t.configKeys,
+    subject: t.subject,
+    requires: '{{ .ConfirmationURL }}',
+    forbids: '{{ .Token }}'
+  })),
+  MAGIC_LINK
 ];
-
 function arg(flag) {
   const i = process.argv.indexOf(flag);
   return i === -1 ? null : process.argv[i + 1];
@@ -56,38 +75,36 @@ let blocked = false;
 for (const entry of MAP) {
   let html;
   try {
-    html = await readFile(join(TEMPLATES, entry.file), 'utf8');
+    html = await readFile(join(TEMPLATES, `${entry.id}.html`), 'utf8');
   } catch (error) {
-    console.error(`  MISSING  ${entry.file} — ${error.message}`);
+    console.error(`  MISSING  ${entry.id}.html - ${error.message}`);
+    console.error('           Run: node scripts/buildEmails.mjs');
     blocked = true;
     continue;
   }
 
-  /* A template that has lost its placeholder would send a dead email: a set-password
-     message with no link, or a code message with no code. Better to refuse than to
-     push it. */
-  if (!html.includes(entry.needs)) {
-    console.error(`  INVALID  ${entry.file} for "${entry.name}": missing ${entry.needs}`);
+  /* A template missing its own placeholder sends a dead email: an activation with
+     no link, or a code message with no code. */
+  if (!html.includes(entry.requires)) {
+    console.error(`  INVALID  ${entry.id}.html for "${entry.supabaseTemplate}": missing ${entry.requires}`);
     blocked = true;
     continue;
   }
-  /* The Magic Link template carries the code itself, so a confirmation link in it
-     would offer a second, competing way in. */
-  if (entry.name === 'Magic Link' && html.includes('{{ .ConfirmationURL }}')) {
-    console.error(`  INVALID  ${entry.file} for "Magic Link": remove {{ .ConfirmationURL }}; that template sends the code, not a link.`);
+  /* Carrying the other flow's placeholder means the mapping has been crossed over. */
+  if (entry.forbids && html.includes(entry.forbids)) {
+    console.error(`  INVALID  ${entry.id}.html for "${entry.supabaseTemplate}": must not contain ${entry.forbids}`);
     blocked = true;
     continue;
   }
-  /* Only count a placeholder that is actually live. Commented-out markup is not
-     sent, so warning about it would train the reader to ignore the warning. */
   const live = html.replace(/<!--[\s\S]*?-->/g, '');
   if (live.includes('placehold.co')) {
-    console.warn(`  WARNING  ${entry.file} still points at placehold.co for its logo. Swap it for an MSI-hosted https URL before real sending.`);
+    console.warn(`  WARNING  ${entry.id}.html still uses a placeholder image.`);
   }
 
-  payload[entry.subjectKey] = entry.subject;
-  payload[entry.contentKey] = html;
-  console.log(`  ready    ${entry.name.padEnd(16)} <- ${entry.file}  (${html.length} bytes, subject "${entry.subject}")`);
+  payload[entry.configKeys.subject] = entry.subject;
+  payload[entry.configKeys.content] = html;
+  console.log(`  ready    ${entry.supabaseTemplate.padEnd(16)} <- ${entry.id}.html  (${html.length} bytes)`);
+  console.log(`           subject: "${entry.subject}"`);
 }
 
 if (blocked) {
