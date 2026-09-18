@@ -122,6 +122,26 @@ other:
 | **Invite user** | [`email-templates/set-password.html`](email-templates/set-password.html) | `Set your CampGrids password` | The teacher CSV import, through `inviteUserByEmail` |
 | **Magic Link** | [`email-templates/verification-code.html`](email-templates/verification-code.html) | `Your CampGrids verification code` | Staff two-factor codes |
 
+Nothing in this repository reaches Supabase on its own, so a template sitting in
+`email-templates/` has no effect until it is pushed to the project. Either run the
+script, which is the repeatable way:
+
+```powershell
+$env:SUPABASE_ACCESS_TOKEN = "sbp_..."   # https://supabase.com/dashboard/account/tokens
+node scripts/pushEmailTemplates.mjs --project hofninqlkcuzgboslodq --dry-run
+node scripts/pushEmailTemplates.mjs --project hofninqlkcuzgboslodq
+```
+
+or paste each file into the dashboard by hand, remembering that the **subject** is a
+separate field from the body and has to be changed too.
+
+The script PATCHes six named fields through the Management API rather than using
+`supabase config push`, because config push sends the whole auth configuration and
+anything missing from `config.toml` reverts to a default — which would silently wipe
+the Gmail SMTP settings and the redirect URL allowlist. It refuses to push a template
+that has lost its `{{ .ConfirmationURL }}` or `{{ .Token }}`, since that would send a
+set-password email with no link or a code email with no code.
+
 The same file goes in both **Reset Password** and **Invite user**: both carry
 `{{ .ConfirmationURL }}`, and the wording suits either. It is deliberately written
 around account creation rather than "we received a request to reset your password",
@@ -130,9 +150,12 @@ the first place — the recipient is finishing setup, not recovering. One line c
 the genuine-reset case so it is never inaccurate for a teacher who asked to change an
 existing password.
 
-Both files need their `https://placehold.co/...` logo swapped for an MSI-hosted
-absolute `https://` URL before real sending. Email clients cannot read this
-repository, and relative paths and `data:` URIs do not render.
+Both files already carry the real MSI mark, served from this repository over https at
+`raw.githubusercontent.com/DanishNadar/CampGrids/main/assets/MSI_Logo.png`. That works
+because email clients need an absolute public URL: a relative path cannot resolve, and
+Gmail and Outlook both refuse a `data:` URI. It does depend on the repository staying
+public on that branch, so a stable URL on an MSI-controlled host is better for a real
+programme — changing it means editing the two `<img src>` values and pushing again.
 
 ### The sender name and avatar
 
