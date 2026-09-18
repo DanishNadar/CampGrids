@@ -147,6 +147,31 @@ npm run build:emails      # render sources to supabase/email-templates/
 npm run check:emails      # fail if the built files are stale
 ```
 
+#### Putting everything on the project at once
+
+Three things must all be true before a staff invitation can arrive, and missing any
+one of them looks like a different problem:
+
+1. `provision-teachers` is deployed, or the browser cannot invite at all
+2. the **Invite user** template is set, or Supabase sends its plain default
+3. `account-setup.html` is on the redirect allowlist, or the link is refused
+
+One idempotent command does all three:
+
+```powershell
+$env:SUPABASE_ACCESS_TOKEN = "sbp_..."   # https://supabase.com/dashboard/account/tokens
+npm run setup:supabase -- --project <project-ref> --dry-run
+npm run setup:supabase -- --project <project-ref>
+```
+
+It works through the Management API, so it needs neither a logged-in CLI nor Docker,
+which is what usually blocks `supabase functions deploy`. The allowlist step *merges*
+rather than replaces, because that list may hold entries other parts of the site rely
+on. Every step is safe to re-run.
+
+The pieces are also available separately: `npm run deploy:functions`,
+`npm run push:emails`.
+
 #### Getting them onto the project
 
 Nothing in this repository reaches Supabase on its own. A template sitting in

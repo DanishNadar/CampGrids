@@ -190,7 +190,7 @@
     if (error) {
       const unreachable = /FunctionsFetchError|Failed to send a request to the Edge Function|Failed to fetch/i.test(`${error.name || ''} ${error.message || ''}`);
       throw new Error(unreachable
-        ? 'The provision-teachers function is not deployed, so no invitation could be sent. Deploy it and try again.'
+        ? 'The provision-teachers function is not deployed, so no invitation could be sent. Run: npm run setup:supabase -- --project <ref>'
         : (error.message || 'The invitation could not be resent.'));
     }
     if (data?.error) throw new Error(data.error);

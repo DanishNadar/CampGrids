@@ -50,7 +50,7 @@
       email: row.account_email || teacher.email,
       inviteSentAt: '',
       emailOk: false,
-      emailMessage: 'No invitation was sent, because the provision-teachers function is not deployed. Deploy it, then use Resend invitation.',
+      emailMessage: 'No invitation was sent, because the provision-teachers function is not deployed. Run: npm run setup:supabase -- --project <ref>, then use Resend invitation.',
     };
   }
 
@@ -172,7 +172,7 @@
         /* Worth saying out loud: this email is the recovery template, so it reads as
            a password reset rather than an invitation. Deploying provision-teachers
            restores the invitation wording. */
-        showReport(created, `Account created for ${created.email}, but no invitation was sent: the provision-teachers function is not deployed. Deploy it, then use Resend invitation.`, 'isWarning');
+        showReport(created, `Account created for ${created.email}, but no invitation was sent: the provision-teachers function is not deployed. Run npm run setup:supabase, then use Resend invitation.`, 'isWarning');
         formElement.reset();
         return;
       }
@@ -198,7 +198,7 @@
     });
     if (error) {
       if (edgeFunctionUnreachable(error)) {
-        return { ok: false, at: '', message: 'The provision-teachers function is not deployed, so no invitation could be sent. Deploy it, then resend.' };
+        return { ok: false, at: '', message: 'The provision-teachers function is not deployed, so no invitation could be sent. Run: npm run setup:supabase -- --project <ref>' };
       }
       return { ok: false, at: '', message: provisionErrorMessage(error) };
     }

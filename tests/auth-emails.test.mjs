@@ -279,3 +279,39 @@ describe('security properties', () => {
     assert.doesNotMatch(source, /localStorage|sessionStorage/);
   });
 });
+
+/* ------------------------------------------------------------------------ */
+describe('deployment covers every function the application calls', () => {
+  test('each invoked function exists on disk and is in the deploy list', async () => {
+    const deploy = await read('scripts/deployFunctions.mjs');
+    const inUse = (deploy.match(/const IN_USE = \[([^\]]*)\]/) || [])[1] || '';
+    const listed = new Set((inUse.match(/'([^']+)'/g) || []).map((s) => s.replace(/'/g, '')));
+
+    // Every functions.invoke('x') anywhere in the front end.
+    const invoked = new Set();
+    for (const file of ['account.js', 'admin/admin-login.js', 'admin-teacher-entry.js', 'dashboard.js']) {
+      const source = await read(file);
+      for (const m of source.matchAll(/functions\.invoke\(\s*'([^']+)'/g)) invoked.add(m[1]);
+    }
+
+    assert.ok(invoked.size > 0, 'expected the front end to invoke at least one function');
+    const dirs = new Set(await readdir(join(ROOT, 'supabase', 'functions')));
+    for (const slug of invoked) {
+      assert.ok(dirs.has(slug), `${slug} is invoked but has no supabase/functions/${slug}`);
+      assert.ok(listed.has(slug), `${slug} is invoked but is not in deployFunctions IN_USE`);
+    }
+  });
+
+  test('every deployable function is a single file with resolvable imports', async () => {
+    const deploy = await read('scripts/deployFunctions.mjs');
+    const inUse = (deploy.match(/const IN_USE = \[([^\]]*)\]/) || [])[1] || '';
+    for (const slug of (inUse.match(/'([^']+)'/g) || []).map((s) => s.replace(/'/g, ''))) {
+      const files = await readdir(join(ROOT, 'supabase', 'functions', slug));
+      assert.deepEqual(files, ['index.ts'], `${slug} must be a single index.ts to deploy via the Management API`);
+      const source = await read(`supabase/functions/${slug}/index.ts`);
+      for (const m of source.matchAll(/^import .* from ["']([^"']+)["']/gm)) {
+        assert.match(m[1], /^(npm:|https:|jsr:|node:)/, `${slug} imports ${m[1]}, which a single-file deploy cannot resolve`);
+      }
+    }
+  });
+});
