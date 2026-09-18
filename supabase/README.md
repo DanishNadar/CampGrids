@@ -91,7 +91,7 @@ Supabase continues to issue and verify the one-time code; Gmail only delivers it
    | Username | The same full Gmail address |
    | Password | The Google App Password (entered only in the Supabase dashboard) |
 
-3. Save the SMTP settings. The Email Templates editor becomes available. Open **Authentication -> Emails -> Magic Link** and remove every `{{ .ConfirmationURL }}` reference. Use this subject and body:
+3. Save the SMTP settings. The Email Templates editor becomes available. Open **Authentication -> Emails -> Magic Link** and remove every `{{ .ConfirmationURL }}` reference. This applies to **Magic Link only**, because that template carries the numeric code instead of a link. **Reset Password** and **Invite user** must keep their `{{ .ConfirmationURL }}`, or the set-password button in those emails will go nowhere. Use this subject and body:
 
    ```text
    Subject: Your CampGrids verification code
@@ -109,6 +109,48 @@ Supabase continues to issue and verify the one-time code; Gmail only delivers it
 Using `{{ .Token }}` sends the numeric one-time code consumed by the CampGrids form. `{{ .Email }}` fills the account line in the details row. Gmail/Google Workspace delivery quotas and organizational SMTP policies still apply; use a dedicated sending account, not a personal mailbox, for a real camp program.
 
 If CampGrids reports that Gmail SMTP could not send a code, first confirm that the sender email and SMTP username are the same full Gmail address, the port/security pair is `465` + TLS or `587` + STARTTLS, and the value in Supabase is a newly generated Google App Password rather than the ordinary Gmail password. The sanitized browser error is intentional; the provider response is available to project administrators in **Edge Functions -> request-staff-email-2fa -> Logs**.
+
+### Branded email templates
+
+Supabase ships plain, unbranded defaults for these, so each one has to be pasted in by
+hand. There are three, and they are separate templates that never interfere with each
+other:
+
+| Supabase template | Paste this file | Subject | Sent by |
+| --- | --- | --- | --- |
+| **Reset Password** | [`email-templates/set-password.html`](email-templates/set-password.html) | `Set your CampGrids password` | The single-teacher form, and **email me a set-password link** on both sign-in pages |
+| **Invite user** | [`email-templates/set-password.html`](email-templates/set-password.html) | `Set your CampGrids password` | The teacher CSV import, through `inviteUserByEmail` |
+| **Magic Link** | [`email-templates/verification-code.html`](email-templates/verification-code.html) | `Your CampGrids verification code` | Staff two-factor codes |
+
+The same file goes in both **Reset Password** and **Invite user**: both carry
+`{{ .ConfirmationURL }}`, and the wording suits either. It is deliberately written
+around account creation rather than "we received a request to reset your password",
+because under passwordless provisioning a staff account has no password to reset in
+the first place — the recipient is finishing setup, not recovering. One line covers
+the genuine-reset case so it is never inaccurate for a teacher who asked to change an
+existing password.
+
+Both files need their `https://placehold.co/...` logo swapped for an MSI-hosted
+absolute `https://` URL before real sending. Email clients cannot read this
+repository, and relative paths and `data:` URIs do not render.
+
+### The sender name and avatar
+
+Neither is set in this repository, and neither can be changed from code.
+
+- **Sender name** is **Authentication -> Emails -> SMTP Settings -> Sender name** in
+  Supabase. It currently reads `MSI`; `MSI CampGrids` reads better beside the subject
+  line in an inbox.
+- **The avatar** beside the sender in Gmail is the Google profile photo of the account
+  doing the sending. It is not part of the message, so no template change affects it.
+  Sign in as that sending address at <https://myaccount.google.com/personal-info> and
+  replace the profile picture with the MSI mark. If the sender is a personal Gmail
+  account with someone's own photo on it, that photo is what every recipient sees.
+
+For a real camp programme, send from a dedicated Google Workspace address on an MSI
+domain rather than a personal Gmail account: the display name and avatar are then
+managed by the organisation, the address itself carries MSI's domain, and a verified
+logo can be published through BIMI so clients show the mark rather than an initial.
 
 ### Resending a verification code
 
