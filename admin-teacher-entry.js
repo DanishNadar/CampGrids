@@ -79,47 +79,36 @@
     submit.disabled = true;
     setNotice('Creating the teacher account…');
     try {
-      /* Creating one account goes through the database function rather than the
-         provision-teachers Edge Function. The Edge Function still handles bulk CSV
-         imports, but it has to be deployed separately, and when it is not the
-         browser cannot even reach it: the gateway answers an unknown function
-         without CORS headers, so the request is blocked before it is sent and
-         supabase-js can only report "Failed to send a request to the Edge
-         Function". The RPC travels the same REST path as every other query here,
-         so it works as soon as the migration is applied. */
-      /* Two steps, in this order. The account is created with no password at all,
-         then Supabase emails the link the teacher uses to choose one. If the email
-         step fails the account still exists and the link can be resent, which is why
-         that failure is reported as a warning instead of rolling anything back. */
-      const { data, error } = await app.getClient().rpc('provision_user_pending_password', {
-        p_email: teacher.email,
-        p_first_name: teacher.firstName,
-        p_last_name: teacher.lastName,
-        p_role: 'teacher',
-        p_title: teacher.title || null,
+      /* Single and CSV provisioning deliberately share the same Edge Function.
+         That function uses Supabase's inviteUserByEmail API, which sends the
+         dedicated Invite user email. Calling resetPasswordForEmail here used the
+         recovery API instead, so a brand-new teacher received a misleading
+         "Reset your password" message. */
+      const { data, error } = await app.getClient().functions.invoke('provision-teachers', {
+        body: {
+          filename: 'campgrids-single-teacher.csv',
+          teachers: [teacher],
+          siteOrigin: window.location.origin,
+        },
       });
       if (error) throw new Error(provisionErrorMessage(error));
-      const row = Array.isArray(data) ? data[0] : data;
-      if (!row?.account_username) throw new Error('The teacher account was created, but its login name was unavailable. Contact MSI IT before creating another account.');
+      if (data?.error) throw new Error(data.error);
+      const row = data?.teachers?.[0];
+      const firstError = data?.errors?.[0]?.message;
+      if (!row?.username) throw new Error(firstError || 'The teacher account could not be created.');
 
       const created = {
         firstName: teacher.firstName,
         lastName: teacher.lastName,
         title: teacher.title,
-        email: row.account_email || teacher.email,
-        username: row.account_username,
-        inviteSentAt: '',
+        email: row.email || teacher.email,
+        username: row.username,
+        // inviteUserByEmail has already dispatched the invitation before the
+        // function returns. Keep the report accurate without sending a second mail.
+        inviteSentAt: new Date().toISOString(),
       };
 
-      const sent = await sendPasswordSetupEmail(created.email);
-      created.inviteSentAt = sent.at || '';
-      if (!sent.ok) {
-        showReport(created, `Account created for ${created.email}, but the set-password email did not go out: ${sent.message} Use Resend set-password link.`, 'isWarning');
-        formElement.reset();
-        return;
-      }
-
-      showReport(created, `Account created. A set-password link was emailed to ${created.email}. They choose their own password the first time they sign in.`, 'isSuccess');
+      showReport(created, `Account created. An MSI CampGrids invitation was emailed to ${created.email}. They choose their own password the first time they sign in.`, 'isSuccess');
       formElement.reset();
     } catch (error) {
       setNotice(error.message || 'The teacher account could not be created.', 'isError');
@@ -128,10 +117,9 @@
     }
   }
 
-  /* Supabase sends this with its Reset Password template, which is a different
-     template from the Magic Link one that staff two-factor codes overrode, so the
-     two do not interfere. redirectTo must appear in the project's Redirect URLs
-     allowlist or the link in the email will refuse to open. */
+  /* A resend is a real password-recovery action for an account that already
+     exists. It therefore uses the separate, explicitly labelled Reset Password
+     template rather than pretending it is a new-account invitation. */
   async function sendPasswordSetupEmail(email) {
     const redirectTo = new URL('settings.html?password-setup=1', window.location.href).href;
     const { error } = await app.getClient().auth.resetPasswordForEmail(email, { redirectTo });

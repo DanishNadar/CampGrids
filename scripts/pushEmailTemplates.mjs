@@ -23,12 +23,12 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES = join(HERE, '..', 'supabase', 'email-templates');
 
-/* Which file and subject belong to which Supabase template. set-password.html is
-   used twice on purpose: "Reset Password" is what resetPasswordForEmail sends and
-   "Invite user" is what the CSV import sends, and the same wording suits both. */
+/* Each Supabase mail event has its own subject and copy. An invitation is not a
+   password reset: single-teacher and CSV provisioning call inviteUserByEmail,
+   while an explicit set-password request calls resetPasswordForEmail. */
 const MAP = [
-  { name: 'Reset Password', file: 'set-password.html', subjectKey: 'mailer_subjects_recovery', contentKey: 'mailer_templates_recovery_content', subject: 'Set your CampGrids password', needs: '{{ .ConfirmationURL }}' },
-  { name: 'Invite user', file: 'set-password.html', subjectKey: 'mailer_subjects_invite', contentKey: 'mailer_templates_invite_content', subject: 'Set your CampGrids password', needs: '{{ .ConfirmationURL }}' },
+  { name: 'Reset Password', file: 'password-reset.html', subjectKey: 'mailer_subjects_recovery', contentKey: 'mailer_templates_recovery_content', subject: 'Reset your MSI CampGrids password', needs: '{{ .ConfirmationURL }}' },
+  { name: 'Invite user', file: 'account-invitation.html', subjectKey: 'mailer_subjects_invite', contentKey: 'mailer_templates_invite_content', subject: 'Your MSI CampGrids account is ready', needs: '{{ .ConfirmationURL }}' },
   { name: 'Magic Link', file: 'verification-code.html', subjectKey: 'mailer_subjects_magic_link', contentKey: 'mailer_templates_magic_link_content', subject: 'Your CampGrids verification code', needs: '{{ .Token }}' }
 ];
 

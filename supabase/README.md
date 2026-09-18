@@ -41,9 +41,9 @@ to them. Nothing secret travels through a CSV, a chat message, or a spreadsheet.
 1. An administrator creates the account: **Add one teacher** in the dashboard, the
    teacher CSV import, or [`scripts/create_admin.sql`](scripts/create_admin.sql) for
    an administrator.
-2. CampGrids emails a set-password link. The single-teacher form and the sign-in pages
-   send it with `resetPasswordForEmail`; the CSV import sends it through
-   `inviteUserByEmail` inside the `provision-teachers` function.
+2. CampGrids emails an account invitation. Both the single-teacher form and CSV import
+   send it through `inviteUserByEmail` inside the `provision-teachers` function. A
+   password-reset request from a sign-in page is a separate recovery email.
 3. The link opens `settings.html?password-setup=1`, which is the first and only thing
    the person sees. They choose a password of at least 12 characters, and
    `complete_password_setup()` clears `profiles.must_change_password`.
@@ -118,8 +118,8 @@ other:
 
 | Supabase template | Paste this file | Subject | Sent by |
 | --- | --- | --- | --- |
-| **Reset Password** | [`email-templates/set-password.html`](email-templates/set-password.html) | `Set your CampGrids password` | The single-teacher form, and **email me a set-password link** on both sign-in pages |
-| **Invite user** | [`email-templates/set-password.html`](email-templates/set-password.html) | `Set your CampGrids password` | The teacher CSV import, through `inviteUserByEmail` |
+| **Reset Password** | [`email-templates/password-reset.html`](email-templates/password-reset.html) | `Reset your MSI CampGrids password` | **Email me a set-password link** on both sign-in pages, and admin-initiated recovery resends |
+| **Invite user** | [`email-templates/account-invitation.html`](email-templates/account-invitation.html) | `Your MSI CampGrids account is ready` | The single-teacher form and teacher CSV import, through `inviteUserByEmail` |
 | **Magic Link** | [`email-templates/verification-code.html`](email-templates/verification-code.html) | `Your CampGrids verification code` | Staff two-factor codes |
 
 Nothing in this repository reaches Supabase on its own, so a template sitting in
@@ -142,15 +142,12 @@ the Gmail SMTP settings and the redirect URL allowlist. It refuses to push a tem
 that has lost its `{{ .ConfirmationURL }}` or `{{ .Token }}`, since that would send a
 set-password email with no link or a code email with no code.
 
-The same file goes in both **Reset Password** and **Invite user**: both carry
-`{{ .ConfirmationURL }}`, and the wording suits either. It is deliberately written
-around account creation rather than "we received a request to reset your password",
-because under passwordless provisioning a staff account has no password to reset in
-the first place — the recipient is finishing setup, not recovering. One line covers
-the genuine-reset case so it is never inaccurate for a teacher who asked to change an
-existing password.
+Keep the two templates separate. Both need `{{ .ConfirmationURL }}`, but their
+meaning is intentionally different: **Invite user** welcomes a teacher whose account
+has just been created, while **Reset Password** is only for a requested or
+administrator-initiated password recovery.
 
-Both files already carry the real MSI mark, served from this repository over https at
+Both templates already carry the MSI mark, served from this repository over https at
 `raw.githubusercontent.com/DanishNadar/CampGrids/main/assets/MSI_Logo.png`. That works
 because email clients need an absolute public URL: a relative path cannot resolve, and
 Gmail and Outlook both refuse a `data:` URI. It does depend on the repository staying

@@ -70,8 +70,8 @@ if (!coversSettings) {
 
 console.log('\n=== Templates: did the push take? ===');
 const live = {
-  'Reset Password': { subject: cfg.mailer_subjects_recovery, content: cfg.mailer_templates_recovery_content, file: 'set-password.html' },
-  'Invite user': { subject: cfg.mailer_subjects_invite, content: cfg.mailer_templates_invite_content, file: 'set-password.html' },
+  'Reset Password': { subject: cfg.mailer_subjects_recovery, content: cfg.mailer_templates_recovery_content, file: 'password-reset.html' },
+  'Invite user': { subject: cfg.mailer_subjects_invite, content: cfg.mailer_templates_invite_content, file: 'account-invitation.html' },
   'Magic Link': { subject: cfg.mailer_subjects_magic_link, content: cfg.mailer_templates_magic_link_content, file: 'verification-code.html' }
 };
 for (const [name, entry] of Object.entries(live)) {
