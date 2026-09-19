@@ -17,6 +17,7 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { requireToken } from './lib/env.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FUNCTIONS = join(HERE, '..', 'supabase', 'functions');
@@ -34,13 +35,8 @@ function arg(flag) {
 const dryRun = process.argv.includes('--dry-run');
 const project = arg('--project');
 const only = arg('--only');
-const token = process.env.SUPABASE_ACCESS_TOKEN;
-
 if (!project) { console.error('Pass --project <project-ref>.'); process.exit(1); }
-if (!token && !dryRun) {
-  console.error('Set SUPABASE_ACCESS_TOKEN first: https://supabase.com/dashboard/account/tokens');
-  process.exit(1);
-}
+const token = dryRun ? '' : await requireToken('SUPABASE_ACCESS_TOKEN');
 
 /* verify_jwt defaults to true. config.toml turns it off per function, which the
    camper sign-in needs because a camper has no session when it is called. */

@@ -19,6 +19,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { requireToken } from './lib/env.mjs';
 
 const run = promisify(execFile);
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -31,13 +32,8 @@ function arg(flag) {
 const dryRun = process.argv.includes('--dry-run');
 const project = arg('--project');
 const originArg = arg('--origin');
-const token = process.env.SUPABASE_ACCESS_TOKEN;
-
 if (!project) { console.error('Pass --project <project-ref>.'); process.exit(1); }
-if (!token && !dryRun) {
-  console.error('Set SUPABASE_ACCESS_TOKEN first: https://supabase.com/dashboard/account/tokens');
-  process.exit(1);
-}
+const token = dryRun ? '' : await requireToken('SUPABASE_ACCESS_TOKEN');
 
 const api = (path, init = {}) => fetch(`https://api.supabase.com/v1/projects/${project}${path}`, {
   ...init,
@@ -58,6 +54,7 @@ async function forward(script, extra = []) {
   process.stdout.write(stdout.replace(/^/gm, '  ').replace(/^ {2}$/gm, ''));
 }
 
+await step('Database migrations', () => forward('applyMigrations.mjs'));
 await step('Edge Functions', () => forward('deployFunctions.mjs'));
 await step('Custom SMTP', () => forward('configureSmtp.mjs'));
 await step('Email templates', () => forward('pushEmailTemplates.mjs'));
@@ -84,12 +81,24 @@ await step('Redirect allowlist', async () => {
     return;
   }
 
+  /* Site URL is where Auth sends anyone whose redirect_to is missing or refused, so
+     a stale one quietly lands people on the wrong deployment. Only changed when an
+     origin was passed explicitly, never inferred. */
+  if (originArg && cfg.site_url !== originArg) {
+    console.log(`  site URL: ${cfg.site_url || '(not set)'} -> ${originArg}`);
+    if (!dryRun) {
+      const sitePatch = await api('/config/auth', { method: 'PATCH', body: JSON.stringify({ site_url: originArg }) });
+      if (!sitePatch.ok) throw new Error(`Could not set the Site URL: ${sitePatch.status} ${(await sitePatch.text()).slice(0, 200)}`);
+      console.log('  Site URL updated.');
+    }
+  }
+
   const current = String(cfg.uri_allow_list || '').split(',').map((s) => s.trim()).filter(Boolean);
   const wanted = pages.map((page) => new URL(page, origin.endsWith('/') ? origin : `${origin}/`).href);
   const covered = (url) => current.some((entry) => entry === url || entry.endsWith('/**') || entry.endsWith('/*'));
   const missing = wanted.filter((url) => !covered(url));
 
-  console.log(`  site URL: ${origin}`);
+  console.log(`  building redirect entries from: ${origin}`);
   current.forEach((entry) => console.log(`  already allowed: ${entry}`));
   if (!missing.length) { console.log('  Nothing to add.'); return; }
   missing.forEach((url) => console.log(`  to add:  ${url}`));

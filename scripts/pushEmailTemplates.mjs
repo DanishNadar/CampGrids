@@ -20,6 +20,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { templates } from '../supabase/email/templates.mjs';
+import { requireToken } from './lib/env.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES = join(HERE, '..', 'supabase', 'email-templates');
@@ -58,16 +59,14 @@ function arg(flag) {
 
 const dryRun = process.argv.includes('--dry-run');
 const project = arg('--project');
-const token = process.env.SUPABASE_ACCESS_TOKEN;
 
 if (!project) {
   console.error('Pass --project <project-ref>. Find it in the Supabase dashboard URL.');
   process.exit(1);
 }
-if (!token && !dryRun) {
-  console.error('Set SUPABASE_ACCESS_TOKEN first. Create one at https://supabase.com/dashboard/account/tokens');
-  process.exit(1);
-}
+/* Resolved through the shared helper so the token may live in .env, and so a missing
+   one explains where to get it. A dry run needs no token at all. */
+const token = dryRun ? '' : await requireToken('SUPABASE_ACCESS_TOKEN');
 
 const payload = {};
 let blocked = false;

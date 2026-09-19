@@ -12,6 +12,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { templates } from '../supabase/email/templates.mjs';
+import { requireToken } from './lib/env.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES = join(HERE, '..', 'supabase', 'email-templates');
@@ -22,9 +23,8 @@ function arg(flag) {
 }
 
 const project = arg('--project');
-const token = process.env.SUPABASE_ACCESS_TOKEN;
 if (!project) { console.error('Pass --project <project-ref>.'); process.exit(1); }
-if (!token) { console.error('Set SUPABASE_ACCESS_TOKEN first.'); process.exit(1); }
+const token = await requireToken('SUPABASE_ACCESS_TOKEN');
 
 const response = await fetch(`https://api.supabase.com/v1/projects/${project}/config/auth`, {
   headers: { Authorization: `Bearer ${token}` }
