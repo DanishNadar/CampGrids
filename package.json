@@ -11,6 +11,7 @@
     "push:emails": "node scripts/pushEmailTemplates.mjs",
     "configure:smtp": "node scripts/configureSmtp.mjs",
     "check:email-config": "node scripts/checkEmailSetup.mjs",
+    "test:otp": "node scripts/testOtpDelivery.mjs",
     "deploy:functions": "node scripts/deployFunctions.mjs",
     "setup:supabase": "node scripts/setupSupabase.mjs"
   }

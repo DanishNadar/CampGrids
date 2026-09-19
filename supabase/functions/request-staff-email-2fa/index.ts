@@ -56,8 +56,9 @@ Deno.serve(async (request) => {
     return fail("Gmail SMTP could not send the verification code. Confirm the SMTP host, port, sender address, and a newly generated Google App Password in Supabase, then try again.", 502);
   }
 
-  // Auth accepted the request and SMTP did not reject it. Delivery to an inbox
-  // can still be delayed, quarantined, or filtered by the receiving provider.
-  console.log("Staff verification email accepted by Supabase Auth", logContext);
-  return new Response(JSON.stringify({ email: challenge.email, ticket: challenge.ticket, delivery: "accepted" }), { status: 202, headers });
+  // Auth accepted the request and SMTP did not reject it. This proves the message
+  // was queued, not that a receiving mailbox displayed it; inbox delivery can be
+  // delayed, quarantined, or filtered after this point.
+  console.log("Staff verification email queued by Supabase Auth", logContext);
+  return new Response(JSON.stringify({ email: challenge.email, ticket: challenge.ticket, delivery: "queued" }), { status: 202, headers });
 });

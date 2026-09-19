@@ -13,6 +13,7 @@
   const state = { email: '', ticket: '' };
   let resendTimer = null;
   const setNotice = (message, stateName = '') => { notice.textContent = message; notice.className = `formNotice ${stateName}`; };
+  const queuedCodeNotice = (email, fresh = false) => `${fresh ? 'A new' : 'A'} verification-code request was accepted for ${email}. Delivery can take a few minutes; check Inbox, Spam, and any organization quarantine before resending.`;
   const functionErrorMessage = async (error, fallback) => {
     try {
       const payload = await error?.context?.json?.();
@@ -130,7 +131,7 @@
     await requestEmailCode(app);
     showVerificationForm();
     startResendCooldown();
-    setNotice(`A verification code was accepted for delivery to ${state.email}. Check Inbox, Spam, and any organization quarantine.`, 'isSuccess');
+    setNotice(queuedCodeNotice(state.email), 'isSuccess');
   }
 
   async function finishAdminLogin(app) {
@@ -174,7 +175,7 @@
       verificationCode.value = '';
       verificationCode.focus();
       startResendCooldown();
-      setNotice(`A new verification code was accepted for delivery to ${state.email}. Check Inbox, Spam, and any organization quarantine.`, 'isSuccess');
+      setNotice(queuedCodeNotice(state.email, true), 'isSuccess');
     } catch (error) {
       if (/wait 60 seconds/i.test(error.message || '')) startResendCooldown();
       setNotice(error.message || 'We could not resend the verification code.', 'isError');

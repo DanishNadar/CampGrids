@@ -278,6 +278,14 @@ describe('security properties', () => {
     assert.doesNotMatch(source, /from\('profiles'\)[\s\S]{0,120}password/);
     assert.doesNotMatch(source, /localStorage|sessionStorage/);
   });
+
+  test('the live OTP test dispatches through Auth without exposing secrets or a code', async () => {
+    const source = await read('scripts/testOtpDelivery.mjs');
+    assert.match(source, /\/auth\/v1\/otp/);
+    assert.match(source, /create_user: false/);
+    assert.doesNotMatch(source, /console\.log\([^\n]*(serviceRole|Authorization|apikey)/);
+    assert.doesNotMatch(source, /console\.log\([^\n]*\.Token/);
+  });
 });
 
 /* ------------------------------------------------------------------------ */

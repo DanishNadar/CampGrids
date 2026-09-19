@@ -13,6 +13,8 @@
   const teacherState = { email: '', ticket: '' };
   let teacherResendTimer = null;
 
+  const queuedCodeNotice = (email, fresh = false) => `${fresh ? 'A new' : 'A'} verification-code request was accepted for ${email}. Delivery can take a few minutes; check Inbox, Spam, and any organization quarantine before resending.`;
+
   function setNotice(message, state = '') {
     notice.textContent = message;
     notice.className = `formNotice ${state}`;
@@ -191,7 +193,7 @@
     await requestStaffEmailCode(app);
     showTeacherVerification();
     startTeacherResendCooldown();
-    setNotice(`A verification code was accepted for delivery to ${teacherState.email}. Check Inbox, Spam, and any organization quarantine.`, 'isSuccess');
+    setNotice(queuedCodeNotice(teacherState.email), 'isSuccess');
   }
 
   async function verifyTeacherEmailCode(app) {
@@ -231,7 +233,7 @@
       teacherVerificationCode.value = '';
       teacherVerificationCode.focus();
       startTeacherResendCooldown();
-      setNotice(`A new verification code was accepted for delivery to ${teacherState.email}. Check Inbox, Spam, and any organization quarantine.`, 'isSuccess');
+      setNotice(queuedCodeNotice(teacherState.email, true), 'isSuccess');
     } catch (error) {
       if (/wait 60 seconds/i.test(error.message || '')) startTeacherResendCooldown();
       setNotice(error.message || 'We could not resend the verification code.', 'isError');
