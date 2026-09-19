@@ -45,9 +45,12 @@ show('username', cfg.smtp_user);
 show('sender address', cfg.smtp_admin_email);
 show('sender name', cfg.smtp_sender_name);
 if (!cfg.smtp_host) {
-  console.log('\n  Custom SMTP is OFF. Supabase then uses its own shared sender, which is');
-  console.log('  limited to a handful of messages per hour and is often dropped outright.');
-  console.log('  That alone explains mail that stops arriving.');
+  console.log('\n  Custom SMTP is OFF, so Supabase uses its own built-in sender. That sender');
+  console.log('  only delivers to addresses belonging to members of this Supabase project');
+  console.log('  and silently drops everything else, while still reporting the request as');
+  console.log('  accepted. It is why mail can reach the project owner and never arrive for');
+  console.log('  a teacher.');
+  console.log('  Fix: npm run configure:smtp -- --project <ref>');
 }
 
 console.log('\n=== Rate limits ===');

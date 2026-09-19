@@ -13,6 +13,7 @@
     "check:email-config": "node scripts/checkEmailSetup.mjs",
     "test:otp": "node scripts/testOtpDelivery.mjs",
     "deploy:functions": "node scripts/deployFunctions.mjs",
-    "setup:supabase": "node scripts/setupSupabase.mjs"
+    "setup:supabase": "node scripts/setupSupabase.mjs",
+    "verify:smtp": "node scripts/verifySmtp.mjs"
   }
 }
