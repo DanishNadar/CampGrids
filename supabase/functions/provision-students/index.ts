@@ -33,12 +33,19 @@ Deno.serve(async (request) => {
   if (callerProfileError || !isAdmin) return fail("Complete email two-factor verification before uploading camper rosters.", 403);
 
   const { classId, filename, students } = await request.json();
-  if (!classId || !Array.isArray(students) || students.length === 0) return fail("A class and at least one student are required");
+  if (!Array.isArray(students) || students.length === 0) return fail("At least one camper is required");
   if (students.length > 250) return fail("Upload no more than 250 students at one time");
-  if (!normalized(filename).toLowerCase().endsWith(".csv")) return fail("Use the standardized CSV roster file.");
+  // A filename means a CSV import and is held to the template; the People section
+  // adds one camper at a time and sends none.
+  if (filename && !normalized(filename).toLowerCase().endsWith(".csv")) return fail("Use the standardized CSV roster file.");
 
-  const { data: allowed, error: permissionError } = await caller.rpc("is_teacher_of", { p_class_id: classId });
-  if (permissionError || !allowed) return fail("You do not manage this class", 403);
+  /* A class is optional. Campers created from the People section are enrolled
+     afterwards, so requiring one here would force an administrator to invent a
+     placeholder class just to create an account. */
+  if (classId) {
+    const { data: allowed, error: permissionError } = await caller.rpc("is_teacher_of", { p_class_id: classId });
+    if (permissionError || !allowed) return fail("You do not manage this class", 403);
+  }
 
   const results: Array<Record<string, string>> = [];
   const errors: Array<Record<string, string>> = [];
@@ -69,26 +76,32 @@ Deno.serve(async (request) => {
       errors.push({ row: String(index + 1), message: createError?.message ?? "Could not create student account" });
       continue;
     }
-    const { error: enrollmentError } = await admin.from("class_enrollments").insert({ class_id: classId, student_id: created.user.id });
-    if (enrollmentError) {
-      await admin.auth.admin.deleteUser(created.user.id);
-      errors.push({ row: String(index + 1), message: enrollmentError.message });
-      continue;
+    if (classId) {
+      const { error: enrollmentError } = await admin.from("class_enrollments").insert({ class_id: classId, student_id: created.user.id });
+      if (enrollmentError) {
+        await admin.auth.admin.deleteUser(created.user.id);
+        errors.push({ row: String(index + 1), message: enrollmentError.message });
+        continue;
+      }
     }
     results.push({ firstName, lastName, username, grade: normalized(row.grade) });
   }
 
-  await admin.from("import_batches").insert({
-    class_id: classId,
-    uploaded_by: userData.user.id,
-    original_filename: normalized(filename) || "roster.csv",
-    row_count: students.length,
-    created_count: results.length,
-    failed_count: errors.length,
-    errors,
-  });
+  // An import batch records an uploaded file. A camper added one at a time did not
+  // come from one, so there is nothing to record.
+  if (classId) {
+    await admin.from("import_batches").insert({
+      class_id: classId,
+      uploaded_by: userData.user.id,
+      original_filename: normalized(filename) || "roster.csv",
+      row_count: students.length,
+      created_count: results.length,
+      failed_count: errors.length,
+      errors,
+    });
+  }
   await caller.rpc("record_audit_event", {
-    p_action: "students_imported", p_entity_type: "class", p_entity_id: classId,
+    p_action: classId ? "students_imported" : "student_added", p_entity_type: "class", p_entity_id: classId || null,
     p_metadata: { filename: normalized(filename), created: results.length, failed: errors.length },
   });
   return new Response(JSON.stringify({ students: results, errors }), { headers });

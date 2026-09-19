@@ -42,17 +42,48 @@ Deno.serve(async (request) => {
      re-inviting is an admin API call and the browser holds only the anon key - the
      browser's only option is the recovery API, and reaching for it is what sent
      "Reset your password" to teachers who had never had one. */
-  const isResend = clean(payload.action) === "resend";
+  const action = clean(payload.action);
+  const isResend = action === "resend";
+  const isDelete = action === "delete";
   const resendEmail = clean(payload.email).toLowerCase();
   const filename = clean(payload.filename);
   const teachers = payload.teachers;
 
+  /* Deleting is the only action that does not email anything, so it is handled
+     before the redirect URL is worked out. The database decides whether the account
+     may go - it is the only place that can see the work pointing at it - and the
+     auth user is removed only once that has succeeded, so a refusal cannot leave an
+     orphaned login behind. */
+  if (isDelete) {
+    const userId = clean(payload.userId);
+    if (!userId) return fail("A user id is required to delete an account.");
+
+    const { error: removeError } = await caller.rpc("delete_account", {
+      p_user_id: userId,
+      p_confirm_discard_work: payload.confirmDiscardWork === true,
+    });
+    if (removeError) return fail(removeError.message, 409);
+
+    const { error: authError } = await admin.auth.admin.deleteUser(userId);
+    // The profile is already gone, so a failure here leaves a login that can reach
+    // nothing. Report it rather than claiming a clean delete.
+    if (authError) {
+      return fail(
+        `The account record was removed but its login could not be deleted: ${authError.message}. Delete the user in Supabase Auth.`,
+        502,
+      );
+    }
+    return new Response(JSON.stringify({ deleted: true, userId }), { headers });
+  }
+
   if (isResend) {
     if (!resendEmail || !resendEmail.includes("@")) return fail("A valid email address is required to resend an invitation.");
   } else {
-    if (!filename.toLowerCase().endsWith(".csv")) return fail("Use the teacher CSV template.");
-    if (!Array.isArray(teachers) || teachers.length === 0) return fail("Upload at least one teacher.");
-    if (teachers.length > 250) return fail("Upload no more than 250 teachers at one time.");
+    if (!Array.isArray(teachers) || teachers.length === 0) return fail("Add at least one teacher.");
+    if (teachers.length > 250) return fail("Add no more than 250 teachers at one time.");
+    // A filename is only present for a CSV import; the single-teacher form in the
+    // People section sends none, and must not be held to the CSV's rules.
+    if (filename && !filename.toLowerCase().endsWith(".csv")) return fail("Use the teacher CSV template.");
   }
 
   /* Where the emailed set-password link should land. The caller passes its own origin
@@ -68,23 +99,35 @@ Deno.serve(async (request) => {
   }
 
   if (isResend) {
-    /* inviteUserByEmail re-sends the invitation for an account that has not been
-       activated. If Auth reports the address as already registered, the account has
-       a password already and an invitation is the wrong message for it - the person
-       wants password recovery, which they can request themselves from the sign-in
-       page. Never silently substitute one for the other here. */
+    /* Whether the account still needs activating is read from the profile, not
+       guessed from an error string. Re-inviting an existing unactivated account
+       returns 200 and re-sends, so matching on "already registered" both missed the
+       normal case and misreported it. */
+    const { data: profile, error: profileError } = await admin
+      .from("profiles")
+      .select("must_change_password, role, is_active")
+      .eq("email", resendEmail)
+      .maybeSingle();
+
+    if (profileError) return fail(`Could not look up that account: ${profileError.message}`, 502);
+    if (!profile) return fail("No CampGrids account uses that email address.", 404);
+    if (!profile.is_active) return fail("That account is inactive. Reactivate it before resending an invitation.", 409);
+    if (profile.must_change_password === false) {
+      return fail(
+        "That account has already been activated, so an invitation would be misleading. Ask them to use Forgot your password on the sign-in page.",
+        409,
+      );
+    }
+
     const { error: inviteError } = await admin.auth.admin.inviteUserByEmail(resendEmail, {
       redirectTo: inviteRedirectTo,
     });
-    if (inviteError) {
-      const already = /already|registered|exists/i.test(inviteError.message || "");
-      return fail(
-        already
-          ? "That account has already been activated. Ask them to use Forgot your password on the sign-in page instead."
-          : `The invitation could not be resent: ${inviteError.message}`,
-        already ? 409 : 502,
-      );
-    }
+    if (inviteError) return fail(`The invitation could not be resent: ${inviteError.message}`, 502);
+
+    await admin.from("profiles")
+      .update({ password_invite_sent_at: new Date().toISOString() })
+      .eq("email", resendEmail);
+
     return new Response(JSON.stringify({ resent: true, email: resendEmail }), { headers });
   }
 

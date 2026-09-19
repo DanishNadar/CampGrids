@@ -2082,3 +2082,79 @@ footer {
   .partnerCategoryGrid { grid-template-columns: 1fr; }
   .partnerActivities li { align-items: stretch; flex-direction: column; }
 }
+
+/* Per-row feedback in admin tables. The shared workspace notice sits in the page
+   header, which can be well over a thousand pixels above a button further down the
+   page; a result written only there reads as nothing having happened. */
+.rowAction { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rowStatus { font-size: .8rem; font-weight: 700; }
+.rowStatus.isSuccess { color: #067647; }
+.rowStatus.isError { color: #b42318; }
+.rowStatus.isWarning { color: #9a6700; }
+
+/* People directory. The table carries four kinds of information per row - who,
+   what role, what state, which classes - plus its actions, so each is given a
+   shape rather than a column of prose. */
+.peopleCard { margin-top: 18px; }
+.peopleFilters { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; }
+.peopleFilters .fieldLabel { min-width: 150px; }
+.peopleTable td { vertical-align: top; }
+.peopleTable td small { display: block; color: var(--muted); font-size: .76rem; line-height: 1.35; }
+
+.personRoleTag {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 100px;
+  background: #e2e8f0;
+  color: #334155;
+  font-size: .72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.personRoleTag.role-admin { border: 1px solid var(--accentLine); background: var(--accentWash); color: var(--accentStrong); }
+.personRoleTag.role-teacher { background: #dbeafe; color: #1d4ed8; }
+
+/* Status reads as a stack of flags rather than one word, because an account can be
+   active and still unusable until its password is set. */
+.statusFlag {
+  display: block;
+  width: fit-content;
+  margin-bottom: 4px;
+  padding: 3px 9px;
+  border-radius: 100px;
+  font-size: .72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.statusFlag.isOn { background: #dcfce7; color: #166534; }
+.statusFlag.isOff { background: #fee4e2; color: #b42318; }
+.statusFlag.isPending { background: #fef0c7; color: #9a6700; }
+
+.classChipRow { display: flex; flex-wrap: wrap; gap: 5px; max-width: 260px; }
+.classChip {
+  padding: 3px 9px;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  background: var(--paper);
+  font-size: .74rem;
+  font-weight: 600;
+}
+
+.personActions { display: flex; flex-wrap: wrap; gap: 6px; }
+.personActions .quietButton { min-height: 30px; padding: 4px 8px; font-size: .78rem; }
+.quietButton.isDanger { color: #b42318; }
+.quietButton.isDanger:hover { color: #912018; }
+
+/* The class editor opens as a row beneath the person it belongs to, so the name
+   stays visible while the chips are being chosen. */
+.personEditorRow > td { background: var(--accentWash); }
+.personEditor { padding: 6px 0 10px; }
+.personEditor .rosterPicker { margin: 12px 0 14px; }
+.rosterChip[disabled] { cursor: default; opacity: .72; border-style: dashed; }
+.rosterChip[disabled]:hover { border-color: var(--line); }
+
+@media (max-width: 860px) {
+  .peopleFilters { width: 100%; }
+  .peopleFilters .fieldLabel { flex: 1 1 150px; }
+  .classChipRow { max-width: none; }
+}

@@ -4,7 +4,7 @@
   const app = window.CampGridsApp;
   const beltNames = ['White', 'Yellow', 'Orange', 'Green', 'Blue', 'Purple', 'Brown', 'Black'];
   const gridRows = [['WT', 'White'], ['YW', 'Yellow'], ['OR', 'Orange'], ['GN', 'Green'], ['BU', 'Blue'], ['PL', 'Purple'], ['BN', 'Brown'], ['BK', 'Black']];
-  const state = { profile: null, classes: [], adminClasses: [], selectedClassId: '', motherGrid: [], studentCredentialRows: [], teacherCredentialRows: [], editingMotherGridCellId: '', gridZoom: 1, classGridDraft: null, classGridDraftFor: '', availableStudents: [], rosterDraft: null, partners: [], selectedPartnerId: '', partnerGridDraft: null, partnerGridDraftFor: '', awaitingPassword: [] };
+  const state = { profile: null, classes: [], adminClasses: [], selectedClassId: '', motherGrid: [], studentCredentialRows: [], teacherCredentialRows: [], editingMotherGridCellId: '', gridZoom: 1, classGridDraft: null, classGridDraftFor: '', availableStudents: [], rosterDraft: null, partners: [], selectedPartnerId: '', partnerGridDraft: null, partnerGridDraftFor: '', awaitingPassword: [], directory: [], classDirectory: [], directoryRole: '', directorySearch: '', managingPersonId: '', classDraft: null, classDraftFor: '' };
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
   const dateValue = (value) => value ? new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
   const initials = (profile) => `${profile.first_name?.[0] || ''}${profile.last_name?.[0] || ''}`.toUpperCase();
@@ -102,6 +102,16 @@
       state.partners = [];
     }
 
+    /* The directory is its own function rather than a table read, because which
+       classes a person belongs to comes from a different table depending on their
+       role. A project without this migration must still render the rest. */
+    try {
+      await loadDirectory();
+    } catch (directoryError) {
+      console.warn('People directory unavailable', directoryError?.message || directoryError);
+      state.directory = []; state.classDirectory = [];
+    }
+
     try {
       const { data, error } = await client.rpc('staff_awaiting_password');
       if (error) throw error;
@@ -170,10 +180,13 @@
     const body = rows.map((row) => {
       const sent = row.invite_sent_at ? new Date(row.invite_sent_at).toLocaleString() : 'never sent';
       const stale = !row.invite_sent_at;
+      /* The status cell is next to the button on purpose. The shared notice at the
+         top of the workspace is far off screen from here, so a result written only
+         there reads as nothing having happened. */
       return `<tr><td><strong>${escapeHtml(row.full_name || '')}</strong><small>${escapeHtml(row.account_email || '')}</small></td>
         <td>${escapeHtml(row.account_role || '')}</td>
         <td class="${stale ? 'isWarning' : ''}">${escapeHtml(sent)}</td>
-        <td><button class="quietButton" type="button" data-resend-staff="${escapeHtml(row.account_email || '')}">Resend invitation</button></td></tr>`;
+        <td class="rowAction"><button class="quietButton" type="button" data-resend-staff="${escapeHtml(row.account_email || '')}">Resend invitation</button><span class="rowStatus" data-row-status="${escapeHtml(row.account_email || '')}" role="status" aria-live="polite"></span></td></tr>`;
     }).join('');
     return `<article class="toolCard"><div class="cardHeading"><div><p class="eyebrow">Staff access</p><h3>Waiting on a password</h3>
       <p class="helperText">These accounts exist but cannot be signed into until the person follows a set-password link. If someone says the email never arrived, check they are listed here first: an account that is missing was never created, so nothing was ever emailed.</p></div></div>
@@ -183,20 +196,49 @@
   /* Re-sends the account invitation. Routed through the Edge Function because
      inviteUserByEmail is an admin API call: the browser could only call the recovery
      API, and that sends "Reset your password" to a person who never had one. */
-  async function resendStaffLink(email) {
-    const { data, error } = await app.getClient().functions.invoke('provision-teachers', {
-      body: { action: 'resend', email, siteOrigin: window.location.origin }
-    });
-    if (error) {
-      const unreachable = /FunctionsFetchError|Failed to send a request to the Edge Function|Failed to fetch/i.test(`${error.name || ''} ${error.message || ''}`);
-      throw new Error(unreachable
-        ? 'The provision-teachers function is not deployed, so no invitation could be sent. Run: npm run setup:supabase -- --project <ref>'
-        : (error.message || 'The invitation could not be resent.'));
+  /* Writes the outcome beside the button that caused it. Keyed by whatever
+     identifies the row - an email in the waiting-on-a-password card, an account id
+     in the People table - so both can report in place. */
+  function rowStatus(key, message, kind = '') {
+    const node = document.querySelector(`[data-row-status="${CSS.escape(String(key))}"]`);
+    if (node) { node.textContent = message; node.className = `rowStatus ${kind}`; }
+    return node;
+  }
+
+  async function resendStaffLink(email, statusKey = email) {
+    const button = document.querySelector(`[data-resend-staff="${CSS.escape(email)}"], [data-person-resend="${CSS.escape(email)}"]`);
+    if (button) button.disabled = true;
+    rowStatus(statusKey, 'Sending...');
+
+    try {
+      const { data, error } = await app.getClient().functions.invoke('provision-teachers', {
+        body: { action: 'resend', email, siteOrigin: window.location.origin }
+      });
+      if (error) {
+        const unreachable = /FunctionsFetchError|Failed to send a request to the Edge Function|Failed to fetch/i.test(`${error.name || ''} ${error.message || ''}`);
+        /* A non-2xx from the function carries its explanation in the response body,
+           which supabase-js does not put in error.message. Read it, or the person
+           sees "Edge Function returned a non-2xx status code" and nothing useful. */
+        let detail = '';
+        try { detail = (await error.context?.json?.())?.error || ''; } catch (_) { /* body already read or empty */ }
+        throw new Error(unreachable
+          ? 'The provision-teachers function is not deployed. Run: npm run setup:supabase -- --project <ref>'
+          : (detail || error.message || 'The invitation could not be resent.'));
+      }
+      if (data?.error) throw new Error(data.error);
+      try { await app.getClient().rpc('note_password_invite_sent', { p_email: email }); } catch (_) { /* not fatal */ }
+
+      /* Reported beside the button first, because re-rendering replaces the row. */
+      rowStatus(statusKey, 'Invitation sent', 'isSuccess');
+      notice(`An invitation was emailed to ${email}.`, 'isSuccess');
+      await loadAdminDashboard();
+      renderAdminDashboard();
+      rowStatus(statusKey, 'Invitation sent', 'isSuccess');
+    } catch (error) {
+      if (button) button.disabled = false;
+      rowStatus(statusKey, error.message, 'isError');
+      throw error;
     }
-    if (data?.error) throw new Error(data.error);
-    try { await app.getClient().rpc('note_password_invite_sent', { p_email: email }); } catch (_) { /* not fatal */ }
-    await loadAdminDashboard(); renderAdminDashboard();
-    notice(`An invitation was emailed to ${email}.`, 'isSuccess');
   }
 
   function partnerCard() {
@@ -288,9 +330,269 @@
 
   function reportPanels() { const teacher = state.teacherCredentialRows.length ? `<article class="credentialsPanel"><div><p class="eyebrow">Provisioning report ready</p><h3>${state.teacherCredentialRows.length} teacher account${state.teacherCredentialRows.length === 1 ? '' : 's'} created</h3><p>Download it now. Temporary passwords are intentionally not stored in CampGrids.</p></div><button class="secondaryButton" type="button" data-action="download-teacher-report">Download teacher access report</button></article>` : ''; const student = state.studentCredentialRows.length ? `<article class="credentialsPanel"><div><p class="eyebrow">Camper report ready</p><h3>${state.studentCredentialRows.length} student account${state.studentCredentialRows.length === 1 ? '' : 's'} created</h3><p>Share each username with its class code. Campers do not use passwords.</p></div><button class="secondaryButton" type="button" data-action="download-student-report">Download student access report</button></article>` : ''; return teacher + student; }
 
+
+  /* ---------------------------------------------------------------- People ----
+     One table for every account, because the questions an administrator arrives
+     with - who exists, who never activated, who is in which class, who has left -
+     are all the same question asked of one list. Every action sits on the row it
+     affects, and its result is written next to it. */
+
+  const ROLE_LABELS = { admin: 'Administrator', teacher: 'Teacher', student: 'Camper' };
+  function classLabel(id) { const entry = state.classDirectory.find((item) => item.id === id); return entry ? `${entry.name} · ${entry.code}` : 'Unknown class'; }
+
+  /* Membership is edited as a staged set for the same reason a class Grid is: the
+     database takes the whole list, so the row shows what will be saved rather than
+     firing one request per chip. */
+  function classDraft(person) {
+    if (state.classDraftFor === person.id && state.classDraft) return state.classDraft;
+    state.classDraft = new Set(person.class_ids || []);
+    state.classDraftFor = person.id;
+    return state.classDraft;
+  }
+  function classDraftIsDirty(person) {
+    const draft = classDraft(person); const saved = new Set(person.class_ids || []);
+    return draft.size !== saved.size || [...draft].some((id) => !saved.has(id));
+  }
+
+  function classEditorRow(person) {
+    if (!state.classDirectory.length) return '<tr class="personEditorRow"><td colspan="5"><p class="emptyCopy">No classes exist yet. A teacher or administrator creates the first one.</p></td></tr>';
+    const draft = classDraft(person);
+    const isCamper = person.account_role === 'student';
+    const chips = state.classDirectory.map((entry) => {
+      const chosen = draft.has(entry.id);
+      /* A lead teacher belongs to their own class by construction, so offering to
+         remove them would promise something the database refuses. */
+      const locked = !isCamper && entry.owner_id === person.id;
+      return `<button type="button" class="rosterChip ${chosen ? 'isSelected' : ''}" data-person-class="${escapeHtml(entry.id)}" data-person-id="${escapeHtml(person.id)}" aria-pressed="${String(chosen)}" ${locked ? 'disabled title="Leads this class"' : ''}><strong>${escapeHtml(entry.name)}</strong><small>${escapeHtml(entry.code)}${locked ? ' &middot; leads' : ''} &middot; ${entry.camper_count} camper${entry.camper_count === 1 ? '' : 's'}</small></button>`;
+    }).join('');
+    return `<tr class="personEditorRow"><td colspan="5"><div class="personEditor"><p class="helperText">${isCamper ? 'Choosing a class enrols this camper; removing one exits them and keeps the work they did in it.' : 'These are the classes this member of staff can open and manage.'}</p><div class="rosterPicker">${chips}</div><div class="formActions"><button class="primaryButton" type="button" data-person-save-classes="${escapeHtml(person.id)}" ${classDraftIsDirty(person) ? '' : 'disabled'}>Save classes</button><button class="secondaryButton" type="button" data-person-cancel-classes="1">Close</button><span class="rowStatus" data-row-status="editor-${escapeHtml(person.id)}" role="status" aria-live="polite"></span></div></div></td></tr>`;
+  }
+
+  function personRow(person) {
+    const classes = (person.class_ids || []).length
+      ? (person.class_ids || []).map((id) => `<span class="classChip">${escapeHtml(classLabel(id))}</span>`).join('')
+      : '<span class="muted">None</span>';
+    const flags = `${person.is_active ? '<span class="statusFlag isOn">Active</span>' : '<span class="statusFlag isOff">Deactivated</span>'}${person.awaiting_password ? '<span class="statusFlag isPending">Awaiting password</span>' : ''}`;
+    const leads = person.owned_class_count > 0 ? `leads ${person.owned_class_count} class${person.owned_class_count === 1 ? '' : 'es'}` : '';
+    /* Leading a class is what makes a staff account undeletable, so it is shown
+       on the row rather than only in the refusal that comes back. */
+    const detail = [person.account_role === 'student' ? (person.grade ? `Grade ${person.grade}` : '') : (person.title || person.department || ''), leads].filter(Boolean).join(' &middot; ');
+    /* Campers have a synthesized address they cannot receive mail at, so offering to
+       email them a link would be a button that can only fail. */
+    const mailbox = person.account_email && !person.account_email.endsWith('@students.campgrids.local') ? person.account_email : '';
+    return `<tr><td><strong>${escapeHtml(person.full_name)}</strong><small>${escapeHtml(person.account_username || '')}${detail ? ` &middot; ${detail}` : ''}</small>${mailbox ? `<small>${escapeHtml(mailbox)}</small>` : ''}</td>
+      <td><span class="personRoleTag role-${escapeHtml(person.account_role)}">${escapeHtml(ROLE_LABELS[person.account_role] || person.account_role)}</span></td>
+      <td>${flags}</td>
+      <td><div class="classChipRow">${classes}</div></td>
+      <td class="rowAction"><div class="personActions">
+        <button class="quietButton" type="button" data-person-classes="${escapeHtml(person.id)}">${state.managingPersonId === person.id ? 'Close' : 'Classes'}</button>
+        ${person.awaiting_password && mailbox ? `<button class="quietButton" type="button" data-person-resend="${escapeHtml(mailbox)}" data-person-id="${escapeHtml(person.id)}">Resend invite</button>` : ''}
+        <button class="quietButton" type="button" data-person-active="${escapeHtml(person.id)}" data-next-active="${String(!person.is_active)}">${person.is_active ? 'Deactivate' : 'Reactivate'}</button>
+        <button class="quietButton isDanger" type="button" data-person-delete="${escapeHtml(person.id)}" data-person-name="${escapeHtml(person.full_name)}">Delete</button>
+      </div><span class="rowStatus" data-row-status="${escapeHtml(person.id)}" role="status" aria-live="polite"></span></td></tr>`;
+  }
+
+  function peopleSection() {
+    const rows = state.directory.length
+      ? state.directory.map((person) => `${personRow(person)}${state.managingPersonId === person.id ? classEditorRow(person) : ''}`).join('')
+      : `<tr><td colspan="5" class="emptyTable">${state.directoryRole || state.directorySearch ? 'No account matches this filter.' : 'No accounts yet. Add a teacher or a camper above.'}</td></tr>`;
+    const counts = state.directory.reduce((totals, person) => { totals[person.account_role] = (totals[person.account_role] || 0) + 1; return totals; }, {});
+    const summary = ['admin', 'teacher', 'student'].filter((role) => counts[role]).map((role) => `${counts[role]} ${ROLE_LABELS[role].toLowerCase()}${counts[role] === 1 ? '' : 's'}`).join(' &middot; ');
+    const roleOption = (value, label) => `<option value="${value}" ${state.directoryRole === value ? 'selected' : ''}>${label}</option>`;
+
+    return `<section class="adminSection" id="peopleSection"><div class="sectionHeading"><div><p class="eyebrow">People</p><h2>Teachers, campers, and administrators</h2><p>Every CampGrids account in one place. Deactivating blocks every sign-in at once and keeps the person's record; deleting is refused when work would be lost with it.</p></div></div>
+      <div class="workspaceGrid adminGrid adminGridTwo">
+        <article class="toolCard"><div class="cardHeading"><div><p class="eyebrow">Add a teacher</p><h3>One staff account</h3></div></div><p class="helperText">No password is created. They are emailed a link to choose their own, and appear below as awaiting a password until they use it.</p><form id="addTeacherForm" class="stackForm"><div class="formTwoCols"><label class="fieldLabel">First name<input name="firstName" required maxlength="80"></label><label class="fieldLabel">Last name<input name="lastName" required maxlength="80"></label></div><label class="fieldLabel">Work email<input name="email" type="email" required></label><label class="fieldLabel">Title<input name="title" placeholder="Optional, e.g. Camp Instructor"></label><button class="primaryButton" type="submit">Create teacher account</button></form></article>
+        <article class="toolCard"><div class="cardHeading"><div><p class="eyebrow">Add a camper</p><h3>One camper account</h3></div></div><p class="helperText">Campers sign in with a username and their class code, so no email address is needed. A class can be chosen now or assigned later.</p><form id="addStudentForm" class="stackForm"><div class="formTwoCols"><label class="fieldLabel">First name<input name="firstName" required maxlength="80"></label><label class="fieldLabel">Last name<input name="lastName" required maxlength="80"></label></div><div class="formTwoCols"><label class="fieldLabel">Grade<input name="grade" placeholder="Optional"></label><label class="fieldLabel">Class<select name="classId"><option value="">Assign later</option>${state.classDirectory.map((entry) => `<option value="${escapeHtml(entry.id)}">${escapeHtml(`${entry.name} · ${entry.code}`)}</option>`).join('')}</select></label></div><div class="formTwoCols"><label class="fieldLabel">Guardian name<input name="guardianName" placeholder="Optional"></label><label class="fieldLabel">Guardian email<input name="guardianEmail" type="email" placeholder="Optional"></label></div><button class="primaryButton" type="submit">Create camper account</button></form></article>
+      </div>
+      <article class="toolCard peopleCard"><div class="cardHeading"><div><p class="eyebrow">Directory</p><h3>${state.directory.length} account${state.directory.length === 1 ? '' : 's'}</h3><p class="helperText">${summary || 'Nothing to show'}</p></div><form id="peopleFilterForm" class="peopleFilters"><label class="fieldLabel compactField">Role<select name="role">${roleOption('', 'Everyone')}${roleOption('teacher', 'Teachers')}${roleOption('student', 'Campers')}${roleOption('admin', 'Administrators')}</select></label><label class="fieldLabel compactField">Search<input name="search" value="${escapeHtml(state.directorySearch)}" placeholder="Name, username, or email"></label><button class="secondaryButton" type="submit">Apply</button></form></div>
+      <div class="tableScroll"><table class="dataTable peopleTable"><thead><tr><th>Person</th><th>Role</th><th>Status</th><th>Classes</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></article></section>`;
+  }
+
+  async function loadDirectory() {
+    const client = app.getClient();
+    const [directoryResult, classesResult] = await Promise.all([
+      client.rpc('admin_directory', { p_role: state.directoryRole || null, p_search: state.directorySearch || null }),
+      client.rpc('admin_classes')
+    ]);
+    if (directoryResult.error) throw directoryResult.error;
+    if (classesResult.error) throw classesResult.error;
+    state.directory = directoryResult.data || [];
+    state.classDirectory = classesResult.data || [];
+  }
+
+  /* Reloads only the directory and redraws, so acting on one row does not rebuild
+     the Mother Grid and every other card underneath it. */
+  async function refreshDirectory(statusKey, message, kind = 'isSuccess') {
+    await loadDirectory();
+    renderAdminDashboard();
+    if (statusKey) rowStatus(statusKey, message, kind);
+  }
+
+  async function setPersonActive(personId, nextActive) {
+    rowStatus(personId, nextActive ? 'Reactivating...' : 'Deactivating...');
+    const { error } = await app.getClient().rpc('set_account_active', { p_user_id: personId, p_active: nextActive });
+    if (error) return rowStatus(personId, error.message, 'isError');
+    await refreshDirectory(personId, nextActive ? 'Reactivated' : 'Deactivated. This account can no longer sign in.');
+  }
+
+  /* Deleting asks the database first without permission to discard work. A camper
+     with completed activities comes back refused and naming the count, which is the
+     only point at which the administrator can be told what they would destroy. */
+  async function deletePerson(personId, name) {
+    if (!window.confirm(`Delete ${name}? Their account and their sign-in are removed permanently.`)) return;
+    rowStatus(personId, 'Deleting...');
+
+    const attempt = async (confirmDiscardWork) => {
+      const { data, error } = await app.getClient().functions.invoke('provision-teachers', {
+        body: { action: 'delete', userId: personId, confirmDiscardWork }
+      });
+      if (error) {
+        let detail = '';
+        try { detail = (await error.context?.json?.())?.error || ''; } catch (_) { /* body already consumed */ }
+        return { message: detail || error.message || 'The account could not be deleted.' };
+      }
+      if (data?.error) return { message: data.error };
+      return { ok: true };
+    };
+
+    let result = await attempt(false);
+    if (!result.ok && /confirm the deletion/i.test(result.message)) {
+      if (!window.confirm(`${result.message}\n\nDelete anyway and discard that work?`)) return rowStatus(personId, 'Deletion cancelled.');
+      result = await attempt(true);
+    }
+    if (!result.ok) return rowStatus(personId, result.message, 'isError');
+
+    if (state.managingPersonId === personId) state.managingPersonId = '';
+    await loadAdminDashboard();
+    renderAdminDashboard();
+    notice(`${name} was deleted.`, 'isSuccess');
+  }
+
+  async function savePersonClasses(personId) {
+    const person = state.directory.find((entry) => entry.id === personId);
+    if (!person) return;
+    const key = `editor-${personId}`;
+    rowStatus(key, 'Saving...');
+    const ids = [...classDraft(person)];
+    const isCamper = person.account_role === 'student';
+    const { error } = await app.getClient().rpc(
+      isCamper ? 'set_student_classes' : 'set_teacher_classes',
+      isCamper ? { p_student_id: personId, p_class_ids: ids } : { p_teacher_id: personId, p_class_ids: ids }
+    );
+    if (error) return rowStatus(key, error.message, 'isError');
+    state.classDraft = null; state.classDraftFor = '';
+    await refreshDirectory(personId, `Saved. In ${ids.length} class${ids.length === 1 ? '' : 'es'}.`);
+  }
+
+  /* supabase-js puts a failed function's explanation in the response body, not in
+     error.message, so without reading it the person sees only "non-2xx status code". */
+  async function functionError(error, fallback) {
+    let detail = '';
+    try { detail = (await error.context?.json?.())?.error || ''; } catch (_) { /* body already consumed */ }
+    return new Error(detail || error.message || fallback);
+  }
+
+  async function addTeacher(event) {
+    event.preventDefault();
+    /* Captured before the first await: currentTarget is only set while the event is
+       being dispatched, and is null by the time the request comes back. */
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const teacher = {
+      firstName: String(form.get('firstName') || '').trim(),
+      lastName: String(form.get('lastName') || '').trim(),
+      email: String(form.get('email') || '').trim().toLowerCase(),
+      title: String(form.get('title') || '').trim()
+    };
+    notice(`Creating an account for ${teacher.firstName} ${teacher.lastName}...`);
+    const { data, error } = await app.getClient().functions.invoke('provision-teachers', {
+      body: { teachers: [teacher], siteOrigin: window.location.origin }
+    });
+    if (error) throw await functionError(error, 'The teacher account could not be created.');
+    if (data?.error) throw new Error(data.error);
+    const failure = data?.errors?.[0];
+    if (failure) throw new Error(failure.message || 'The teacher account could not be created.');
+
+    formElement.reset();
+    state.teacherCredentialRows = data?.teachers || [];
+    await loadAdminDashboard();
+    renderAdminDashboard();
+    notice(`${teacher.firstName} ${teacher.lastName} was created and emailed a link to set their password.`, 'isSuccess');
+  }
+
+  async function addStudent(event) {
+    event.preventDefault();
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const classId = String(form.get('classId') || '');
+    const student = {
+      firstName: String(form.get('firstName') || '').trim(),
+      lastName: String(form.get('lastName') || '').trim(),
+      grade: String(form.get('grade') || '').trim(),
+      guardianName: String(form.get('guardianName') || '').trim(),
+      guardianEmail: String(form.get('guardianEmail') || '').trim()
+    };
+    notice(`Creating an account for ${student.firstName} ${student.lastName}...`);
+    const { data, error } = await app.getClient().functions.invoke('provision-students', {
+      body: { students: [student], classId: classId || null }
+    });
+    if (error) throw await functionError(error, 'The camper account could not be created.');
+    if (data?.error) throw new Error(data.error);
+    const failure = data?.errors?.[0];
+    if (failure) throw new Error(failure.message || 'The camper account could not be created.');
+
+    formElement.reset();
+    const created = data?.students?.[0];
+    const where = classId ? `, enrolled in ${classLabel(classId)}` : '';
+    await loadAdminDashboard();
+    renderAdminDashboard();
+    notice(created ? `${created.firstName} ${created.lastName} was created. Their username is ${created.username}${where}.` : 'The camper account was created.', 'isSuccess');
+  }
+
+  async function applyPeopleFilter(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    state.directoryRole = String(form.get('role') || '');
+    state.directorySearch = String(form.get('search') || '').trim();
+    state.managingPersonId = ''; state.classDraft = null; state.classDraftFor = '';
+    await loadDirectory();
+    renderAdminDashboard();
+    /* The filter inputs are rebuilt by the render, so the caret is put back where it
+       was; otherwise the field loses focus the moment a search is applied. */
+    const search = document.querySelector('#peopleFilterForm [name="search"]');
+    if (search && state.directorySearch) { search.focus(); search.setSelectionRange(search.value.length, search.value.length); }
+  }
+
+  function closeClassEditor() { state.managingPersonId = ''; state.classDraft = null; state.classDraftFor = ''; renderAdminDashboard(); }
+
+  function bindPeopleEvents() {
+    document.getElementById('addTeacherForm')?.addEventListener('submit', (event) => run(addTeacher, event));
+    document.getElementById('addStudentForm')?.addEventListener('submit', (event) => run(addStudent, event));
+    document.getElementById('peopleFilterForm')?.addEventListener('submit', (event) => run(applyPeopleFilter, event));
+    document.querySelectorAll('[data-person-classes]').forEach((button) => button.addEventListener('click', () => {
+      const id = button.dataset.personClasses;
+      if (state.managingPersonId === id) return closeClassEditor();
+      state.managingPersonId = id; state.classDraft = null; state.classDraftFor = '';
+      renderAdminDashboard();
+    }));
+    document.querySelector('[data-person-cancel-classes]')?.addEventListener('click', closeClassEditor);
+    document.querySelectorAll('[data-person-class]').forEach((button) => button.addEventListener('click', () => {
+      const person = state.directory.find((entry) => entry.id === button.dataset.personId);
+      if (!person) return;
+      const draft = classDraft(person); const id = button.dataset.personClass;
+      if (draft.has(id)) draft.delete(id); else draft.add(id);
+      renderAdminDashboard();
+    }));
+    document.querySelectorAll('[data-person-save-classes]').forEach((button) => button.addEventListener('click', () => run(() => savePersonClasses(button.dataset.personSaveClasses), null)));
+    document.querySelectorAll('[data-person-active]').forEach((button) => button.addEventListener('click', () => run(() => setPersonActive(button.dataset.personActive, button.dataset.nextActive === 'true'), null)));
+    document.querySelectorAll('[data-person-delete]').forEach((button) => button.addEventListener('click', () => run(() => deletePerson(button.dataset.personDelete, button.dataset.personName), null)));
+    document.querySelectorAll('[data-person-resend]').forEach((button) => button.addEventListener('click', () => run(() => resendStaffLink(button.dataset.personResend, button.dataset.personId), null)));
+  }
+
   function renderAdminDashboard() {
     const cell = state.motherGrid.find((entry) => entry.id === state.editingMotherGridCellId); const roster = state.adminClasses.length ? `<article class="toolCard"><div class="cardHeading"><div><p class="eyebrow">Camper accounts</p><h3>Import a standardized roster</h3></div><a class="smallLink" href="data:text/csv;charset=utf-8,first_name,last_name,grade,guardian_name,guardian_email%0AFannie,Yu,5,," download="campgrids-student-roster-template.csv">CSV template</a></div><p class="helperText">Required columns: first_name, last_name, grade, guardian_name, guardian_email.</p><form id="adminRosterImportForm" class="stackForm"><label class="fieldLabel">Class<select name="classId" required>${adminClassOptions()}</select></label><label class="fileField"><input name="roster" type="file" accept=".csv,text/csv" required><span>Choose student CSV</span></label><button class="primaryButton" type="submit">Create student accounts</button></form></article>` : '<article class="toolCard"><p class="eyebrow">Camper accounts</p><h3>Import a standardized roster</h3><p class="emptyCopy">A teacher must create a class before campers can be imported.</p></article>';
-    workspace.innerHTML = `${actionsHeader('MSI administration', 'Administration workspace', 'Manage the Mother Grid, provision staff and campers from CSV, and maintain the live site.')}${reportPanels()}<section class="adminSection"><div class="sectionHeading"><div><p class="eyebrow">Mother Grid</p><h2>The overall Grid</h2><p>Only MSI administrators can change the source Grid. Teacher class selections always use these published cells.</p></div></div>${renderMotherGrid({ mode: 'admin', heading: 'Mother Grid editor' })}<div class="workspaceGrid adminGrid adminGridTwo"><article class="toolCard"><p class="eyebrow">Mother Grid</p><h3>Import a Mother Grid</h3><p class="helperText">Upload the whole Grid as one standardized sheet. Row 1 names a category per column, column A names the belt at the start of each belt band, and each cell reads <code>Project name: Instructions | https://...</code> (<code>Video</code> works too, and the URL half is optional). <a href="assets/mother-grid-template.csv" download>Download the template</a> exported from Fab Lab Camp Grids.xlsx.</p><form id="motherGridImportForm" class="stackForm"><label class="fieldLabel">Mother Grid sheet (.csv)<input name="grid" type="file" accept=".csv,text/csv" required></label><p class="helperText">A cell keeps its identity across imports, so re-importing an edited sheet updates activities in place and leaves every teacher's class selection intact. Intersections missing from the sheet are withdrawn from teachers rather than deleted.</p><div class="formActions"><button class="primaryButton" type="submit">Import Mother Grid</button></div></form>${cell ? `<p class="helperText"><strong>${escapeHtml(`${cell.belt_code} C${cell.column_number}`)}</strong> &middot; ${escapeHtml(cell.category || 'Grid activity')}${cell.projects?.length ? ` &middot; ${cell.projects.length} activit${cell.projects.length === 1 ? 'y' : 'ies'}` : ''}<br><button class="quietButton" type="button" data-action="clear-grid-cell">Clear selection</button></p>` : ''}</article>${awaitingPasswordCard()}<article class="toolCard"><div class="cardHeading"><div><p class="eyebrow">Teacher accounts</p><h3>Import teachers from CSV</h3></div><a class="smallLink" href="data:text/csv;charset=utf-8,first_name,last_name,email,title%0AFannie,Yu,fannie.yu@example.org,Camp%20Instructor" download="campgrids-teacher-template.csv">CSV template</a></div><p class="helperText">Required columns: first_name, last_name, email. Optional: title. CampGrids generates usernames and temporary passwords in the report.</p><form id="teacherCsvImportForm" class="stackForm"><label class="fileField"><input name="teacherCsv" type="file" accept=".csv,text/csv" required><span>Choose teacher CSV</span></label><button class="primaryButton" type="submit">Create teacher accounts and report</button></form></article>${roster}</div></section><section class="adminSection"><div class="sectionHeading"><div><p class="eyebrow">Live site controls</p><h2>Published content</h2><p>These controls are administrator-only and save directly to Supabase.</p></div></div><div class="workspaceGrid adminGrid">${partnerCard()}<article class="toolCard"><p class="eyebrow">Navigation</p><h3>Add a live menu link</h3><p class="helperText">Adds a published partner page to the site navigation.</p><form id="navForm" class="stackForm"><label class="fieldLabel">Link label<input name="label" required></label><label class="fieldLabel">Partner page<select name="slug" required><option value="">Choose a partner page…</option>${state.partners.map((entry) => `<option value="${escapeHtml(entry.slug)}">${escapeHtml(entry.name)}${entry.is_published ? '' : ' (draft)'}</option>`).join('')}</select></label><div class="formTwoCols"><label class="fieldLabel">Position<input name="position" type="number" min="0" required></label><label class="fieldLabel">Location<select name="location"><option value="primary">Primary navigation</option><option value="footer">Footer</option><option value="teacher">Teacher workspace</option></select></label></div><button class="primaryButton" type="submit">Publish link</button></form></article><article class="toolCard"><p class="eyebrow">Live dropdowns</p><h3>Update option lists</h3><form id="dropdownForm" class="stackForm"><label class="fieldLabel">Dropdown key<input name="groupKey" required pattern="[a-z0-9_-]+" placeholder="e.g. camp-selector"></label><div class="formTwoCols"><label class="fieldLabel">Stored value<input name="value" required></label><label class="fieldLabel">Visible label<input name="label" required></label></div><label class="fieldLabel">Position<input name="position" type="number" min="0" required></label><button class="primaryButton" type="submit">Save dropdown option</button></form></article></div></section>`;
+    workspace.innerHTML = `${actionsHeader('MSI administration', 'Administration workspace', 'Manage the Mother Grid, provision staff and campers from CSV, and maintain the live site.')}${reportPanels()}<section class="adminSection"><div class="sectionHeading"><div><p class="eyebrow">Mother Grid</p><h2>The overall Grid</h2><p>Only MSI administrators can change the source Grid. Teacher class selections always use these published cells.</p></div></div>${renderMotherGrid({ mode: 'admin', heading: 'Mother Grid editor' })}<div class="workspaceGrid adminGrid adminGridTwo"><article class="toolCard"><p class="eyebrow">Mother Grid</p><h3>Import a Mother Grid</h3><p class="helperText">Upload the whole Grid as one standardized sheet. Row 1 names a category per column, column A names the belt at the start of each belt band, and each cell reads <code>Project name: Instructions | https://...</code> (<code>Video</code> works too, and the URL half is optional). <a href="assets/mother-grid-template.csv" download>Download the template</a> exported from Fab Lab Camp Grids.xlsx.</p><form id="motherGridImportForm" class="stackForm"><label class="fieldLabel">Mother Grid sheet (.csv)<input name="grid" type="file" accept=".csv,text/csv" required></label><p class="helperText">A cell keeps its identity across imports, so re-importing an edited sheet updates activities in place and leaves every teacher's class selection intact. Intersections missing from the sheet are withdrawn from teachers rather than deleted.</p><div class="formActions"><button class="primaryButton" type="submit">Import Mother Grid</button></div></form>${cell ? `<p class="helperText"><strong>${escapeHtml(`${cell.belt_code} C${cell.column_number}`)}</strong> &middot; ${escapeHtml(cell.category || 'Grid activity')}${cell.projects?.length ? ` &middot; ${cell.projects.length} activit${cell.projects.length === 1 ? 'y' : 'ies'}` : ''}<br><button class="quietButton" type="button" data-action="clear-grid-cell">Clear selection</button></p>` : ''}</article>${awaitingPasswordCard()}<article class="toolCard"><div class="cardHeading"><div><p class="eyebrow">Teacher accounts</p><h3>Import teachers from CSV</h3></div><a class="smallLink" href="data:text/csv;charset=utf-8,first_name,last_name,email,title%0AFannie,Yu,fannie.yu@example.org,Camp%20Instructor" download="campgrids-teacher-template.csv">CSV template</a></div><p class="helperText">Required columns: first_name, last_name, email. Optional: title. CampGrids generates usernames and temporary passwords in the report.</p><form id="teacherCsvImportForm" class="stackForm"><label class="fileField"><input name="teacherCsv" type="file" accept=".csv,text/csv" required><span>Choose teacher CSV</span></label><button class="primaryButton" type="submit">Create teacher accounts and report</button></form></article>${roster}</div></section>${peopleSection()}<section class="adminSection"><div class="sectionHeading"><div><p class="eyebrow">Live site controls</p><h2>Published content</h2><p>These controls are administrator-only and save directly to Supabase.</p></div></div><div class="workspaceGrid adminGrid">${partnerCard()}<article class="toolCard"><p class="eyebrow">Navigation</p><h3>Add a live menu link</h3><p class="helperText">Adds a published partner page to the site navigation.</p><form id="navForm" class="stackForm"><label class="fieldLabel">Link label<input name="label" required></label><label class="fieldLabel">Partner page<select name="slug" required><option value="">Choose a partner page…</option>${state.partners.map((entry) => `<option value="${escapeHtml(entry.slug)}">${escapeHtml(entry.name)}${entry.is_published ? '' : ' (draft)'}</option>`).join('')}</select></label><div class="formTwoCols"><label class="fieldLabel">Position<input name="position" type="number" min="0" required></label><label class="fieldLabel">Location<select name="location"><option value="primary">Primary navigation</option><option value="footer">Footer</option><option value="teacher">Teacher workspace</option></select></label></div><button class="primaryButton" type="submit">Publish link</button></form></article><article class="toolCard"><p class="eyebrow">Live dropdowns</p><h3>Update option lists</h3><form id="dropdownForm" class="stackForm"><label class="fieldLabel">Dropdown key<input name="groupKey" required pattern="[a-z0-9_-]+" placeholder="e.g. camp-selector"></label><div class="formTwoCols"><label class="fieldLabel">Stored value<input name="value" required></label><label class="fieldLabel">Visible label<input name="label" required></label></div><label class="fieldLabel">Position<input name="position" type="number" min="0" required></label><button class="primaryButton" type="submit">Save dropdown option</button></form></article></div></section>`;
     bindAdminEvents(); window.CampGridsLiveContent?.refresh();
   }
 
@@ -518,7 +820,7 @@
     document.querySelector('[data-action="toggle-partner-published"]')?.addEventListener('click', () => run(togglePartnerPublished, null));
     document.querySelectorAll('[data-resend-staff]').forEach((button) => button.addEventListener('click', () => run(() => resendStaffLink(button.dataset.resendStaff), null)));
     document.querySelectorAll('[data-class-grid-cell]').forEach((button) => button.addEventListener('click', () => run(() => applyPartnerDraftChange((draft) => { const id = button.dataset.classGridCell; if (draft.has(id)) draft.delete(id); else draft.add(id); }), null)));
-    document.querySelectorAll('[data-grid-column-select]').forEach((button) => button.addEventListener('click', () => run(() => { const column = state.motherGrid.filter((cell) => Number(cell.column_number) === Number(button.dataset.gridColumnSelect)); if (!column.length) return; applyPartnerDraftChange((draft) => { const holdsAll = column.every((cell) => draft.has(cell.id)); column.forEach((cell) => { if (holdsAll) draft.delete(cell.id); else draft.add(cell.id); }); }); }, null))); document.getElementById('navForm')?.addEventListener('submit', (event) => run(createNavigation, event)); document.getElementById('dropdownForm')?.addEventListener('submit', (event) => run(createDropdownOption, event)); document.querySelectorAll('[data-mother-grid-cell]').forEach((button) => button.addEventListener('click', () => { state.editingMotherGridCellId = button.dataset.motherGridCell || ''; renderAdminDashboard(); })); document.querySelector('[data-action="clear-grid-cell"]')?.addEventListener('click', () => { state.editingMotherGridCellId = ''; renderAdminDashboard(); }); document.querySelector('[data-action="download-teacher-report"]')?.addEventListener('click', () => downloadCsv(`campgrids-teacher-access-${new Date().toISOString().slice(0, 10)}.csv`, ['First name', 'Last name', 'Work email', 'Username', 'Title', 'Set-password link emailed'], state.teacherCredentialRows.map((row) => [row.firstName, row.lastName, row.email, row.username, row.title, row.invited ? 'yes' : 'no']))); document.querySelector('[data-action="download-student-report"]')?.addEventListener('click', () => downloadCsv(`campgrids-student-access-${new Date().toISOString().slice(0, 10)}.csv`, ['First name', 'Last name', 'Username', 'Grade'], state.studentCredentialRows.map((row) => [row.firstName, row.lastName, row.username, row.grade]))); document.querySelector('[data-action="sign-out"]')?.addEventListener('click', signOut); bindZoomControls(); }
+    document.querySelectorAll('[data-grid-column-select]').forEach((button) => button.addEventListener('click', () => run(() => { const column = state.motherGrid.filter((cell) => Number(cell.column_number) === Number(button.dataset.gridColumnSelect)); if (!column.length) return; applyPartnerDraftChange((draft) => { const holdsAll = column.every((cell) => draft.has(cell.id)); column.forEach((cell) => { if (holdsAll) draft.delete(cell.id); else draft.add(cell.id); }); }); }, null))); document.getElementById('navForm')?.addEventListener('submit', (event) => run(createNavigation, event)); document.getElementById('dropdownForm')?.addEventListener('submit', (event) => run(createDropdownOption, event)); document.querySelectorAll('[data-mother-grid-cell]').forEach((button) => button.addEventListener('click', () => { state.editingMotherGridCellId = button.dataset.motherGridCell || ''; renderAdminDashboard(); })); document.querySelector('[data-action="clear-grid-cell"]')?.addEventListener('click', () => { state.editingMotherGridCellId = ''; renderAdminDashboard(); }); document.querySelector('[data-action="download-teacher-report"]')?.addEventListener('click', () => downloadCsv(`campgrids-teacher-access-${new Date().toISOString().slice(0, 10)}.csv`, ['First name', 'Last name', 'Work email', 'Username', 'Title', 'Set-password link emailed'], state.teacherCredentialRows.map((row) => [row.firstName, row.lastName, row.email, row.username, row.title, row.invited ? 'yes' : 'no']))); document.querySelector('[data-action="download-student-report"]')?.addEventListener('click', () => downloadCsv(`campgrids-student-access-${new Date().toISOString().slice(0, 10)}.csv`, ['First name', 'Last name', 'Username', 'Grade'], state.studentCredentialRows.map((row) => [row.firstName, row.lastName, row.username, row.grade]))); document.querySelector('[data-action="sign-out"]')?.addEventListener('click', signOut); bindPeopleEvents(); bindZoomControls(); }
 
   async function renderStudent() {
     const client = app.getClient(); const [enrollmentsResult, assignmentsResult, progressResult, awardsResult, eventsResult] = await Promise.all([client.from('class_enrollments').select('id, class_id, classes(name, code, status)').eq('student_id', state.profile.id).is('exited_at', null), client.from('class_assignments').select('id, class_id, title, instructions, category, belt, resource_url, due_at, published_at').not('published_at', 'is', null).order('created_at', { ascending: false }), client.from('student_assignment_progress').select('id, assignment_id, enrollment_id, status, score, submitted_at, feedback, class_assignments(class_id, title)').order('updated_at', { ascending: false }), client.from('belt_awards').select('id, belt, category, awarded_at, note, class_enrollments(class_id)').order('awarded_at', { ascending: false }), client.from('student_activity_events').select('id, event_type, metadata, occurred_at, class_id').order('occurred_at', { ascending: false }).limit(12)]);
