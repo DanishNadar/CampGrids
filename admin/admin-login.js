@@ -10,7 +10,7 @@
   // one of them and holds no input.
   const credentialHint = form.querySelector('[data-credential-hint]');
   const verificationCode = form.elements.verificationCode;
-  const state = { email: '', ticket: '' };
+  const state = { email: '', ticket: '', passwordChangePending: false };
   let resendTimer = null;
   const setNotice = (message, stateName = '') => { notice.textContent = message; notice.className = `formNotice ${stateName}`; };
   const queuedCodeNotice = (email, fresh = false) => `${fresh ? 'A new' : 'A'} verification-code request was accepted for ${email}. Delivery can take a few minutes; check Inbox, Spam, and any organization quarantine before resending.`;
@@ -114,18 +114,17 @@
       await app.getClient().auth.signOut();
       throw new Error(`The signed-in email (${email}) is not an MSI administrator account. Promote this exact email in Supabase before trying again.`);
     }
-    /* An administrator holding a provisioned temporary password has to replace it
-       before anything else. Until they do, profiles.must_change_password makes
-       is_staff_2fa_verified false, so every administrative control would refuse
-       them anyway; sending a verification code first would just be a dead end. */
+    /* An administrator holding a password IT issued has to replace it before
+       anything else - but not before proving the mailbox is theirs. That password
+       is known to whoever issued it and to anyone who saw it in transit, so if the
+       code came afterwards, knowing the password alone would be enough to set a new
+       one and take the account. complete_password_setup() refuses without a recent
+       verified code, so the code is requested first and the replacement happens
+       after it is accepted. */
     const { data: passwordState, error: passwordStateError } = await app.getClient().rpc('my_password_state');
     if (passwordStateError) throw passwordStateError;
     const pending = Array.isArray(passwordState) ? passwordState[0] : passwordState;
-    if (pending?.change_required) {
-      setNotice('Your temporary password was accepted. Choose a personal password to continue.');
-      window.location.replace('../settings.html?password-reset=staff');
-      return;
-    }
+    state.passwordChangePending = Boolean(pending?.change_required);
 
     setNotice('Sending a verification code to your MSI email...');
     await requestEmailCode(app);
@@ -141,6 +140,15 @@
     if (profile?.role !== 'admin' || !profile.is_active) {
       await app.getClient().auth.signOut();
       throw new Error('This account does not have MSI administrator access.');
+    }
+
+    /* Now that the mailbox is proven, the issued password can be replaced. Until
+       it is, must_change_password keeps is_staff_2fa_verified false and the
+       workspace would refuse every query anyway. */
+    if (state.passwordChangePending) {
+      setNotice('Code accepted. Choose a personal password to finish.');
+      window.location.replace('../settings.html?password-reset=staff');
+      return;
     }
     window.location.assign('../dashboard.html');
   }

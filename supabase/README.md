@@ -267,11 +267,63 @@ You can also use **Deploy a new function -> Via Editor** in the dashboard.
 
 Only an IT super-admin with Supabase project access creates or resets administrator credentials. Passwords belong in Supabase Auth, never in `public.profiles` or a spreadsheet. The `profiles` table stores only the login name, role, and account status.
 
+### Create an administrator with a password you choose
+
+`supabase/scripts/set_admin.sql` is the IT manager's script: it creates the account
+with an email and a password you set, for handing over directly. It is a single
+statement, so there is no wrapper to miss and nothing that half-works if only part
+of it is pasted:
+
+```sql
+select * from public.create_admin_account(
+  p_email      => 'newadmin@msichicago.org',
+  p_first_name => 'Jordan',
+  p_last_name  => 'Smith',
+  p_password   => 'Thundering7Bison',
+  p_department => 'MSI Camps'
+);
+```
+
+Add `p_allowed_domains => array['msichicago.org', 'hawk.illinoistech.edu']` to accept
+a second domain. `create_admin_account` is granted to `service_role` only, so it can
+be called from the SQL editor and the Management API but never from a browser.
+
+What the new administrator then does:
+
+1. Signs in at `/admin/` with that email and password.
+2. Receives a verification code at the same MSI mailbox and enters it.
+3. Is required to replace your password with one only they know.
+4. Reaches the workspace, and is never prompted again.
+
+**Step 2 comes before step 3 deliberately.** The password you issue is a shared
+secret until it is replaced, so replacing it has to prove more than knowing it -
+otherwise anyone who saw the password in transit could set their own and take the
+account. `complete_password_setup()` refuses without a recently verified code, so
+the ordering is enforced by the database, not just by the order of the screens.
+
+The script refuses to run unless the password passes
+`public.password_policy_violation()`: 12-72 characters, at least one letter and one
+digit, no leading or trailing space, and not containing the person's name, their
+email, or an obvious word. The check lives in the database so the script cannot be
+edited around it.
+
+`v_allowed_domains` refuses an address outside the approved domains, so a typo or a
+personal address cannot quietly become an administrator.
+
+An issued password is valid for `public.admin_password_setup_window()` (72 hours).
+After that it will not complete setup, and `public.expire_stale_issued_passwords()`
+removes the credential entirely from any account that never used it.
+
+The password is never written to `profiles`, to `audit_log`, or to the verification
+report. Hand it over directly and issue a different one per administrator.
+
 ### Create, reset, or diagnose an administrator
 
-Everything is in **`supabase/scripts/manage_admin.sql`**. Paste the whole file into
-the SQL editor (**SQL Editor -> New query**) and run it. Edit only the block marked
-`EDIT THIS`:
+Everything is in **`supabase/scripts/manage_admin.sql`**. Paste the **whole file** into
+the SQL editor (**SQL Editor -> New query**) and run it, then edit the block marked
+`EDIT THIS`. Pasting only that block gives `syntax error at or near "v_email"` -
+those lines are plpgsql declarations and exist only inside the `do $$ ... $$`
+wrapper around them:
 
 ```sql
 v_action     text := 'check';   -- check | create | password | repair | deactivate

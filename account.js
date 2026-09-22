@@ -10,7 +10,7 @@
   // Presentation only: travels with the credential fields but contains no input.
   const teacherCredentialHint = teacherLoginForm.querySelector('[data-credential-hint]');
   const teacherVerificationCode = teacherLoginForm.elements.verificationCode;
-  const teacherState = { email: '', ticket: '' };
+  const teacherState = { email: '', ticket: '', passwordChangePending: false };
   let teacherResendTimer = null;
 
   const queuedCodeNotice = (email, fresh = false) => `${fresh ? 'A new' : 'A'} verification-code request was accepted for ${email}. Delivery can take a few minutes; check Inbox, Spam, and any organization quarantine before resending.`;
@@ -177,18 +177,16 @@
       await app.getClient().auth.signOut();
       throw new Error('This is not an active teacher account.');
     }
-    /* A pending password change is now recorded on the profile, so it covers every
-       role rather than only teachers. The temporary password was just accepted, so
-       the session is already valid and the new password can be chosen directly
-       instead of going out and back through a reset email. */
+    /* A pending password change is recorded on the profile, so it covers every role
+       rather than only teachers. The code is requested before the replacement:
+       a password someone else issued is a shared secret until it is replaced, so
+       replacing it has to prove more than knowing it. complete_password_setup()
+       refuses without a recent verified code for exactly that reason. */
     const { data: passwordState, error: passwordStateError } = await app.getClient().rpc('my_password_state');
     if (passwordStateError) throw passwordStateError;
     const pending = Array.isArray(passwordState) ? passwordState[0] : passwordState;
-    if (pending?.change_required) {
-      setNotice('Your temporary password was accepted. Choose a personal password to continue.');
-      window.location.replace('settings.html?password-reset=staff');
-      return;
-    }
+    teacherState.passwordChangePending = Boolean(pending?.change_required);
+
     setNotice('Sending a verification code to your work email...');
     await requestStaffEmailCode(app);
     showTeacherVerification();
@@ -208,6 +206,13 @@
     if (profile?.role !== 'teacher' || !profile.is_active) {
       await app.getClient().auth.signOut();
       throw new Error('This is not an active teacher account.');
+    }
+
+    /* The mailbox is proven, so the issued password can now be replaced. */
+    if (teacherState.passwordChangePending) {
+      setNotice('Code accepted. Choose a personal password to finish.');
+      window.location.replace('settings.html?password-reset=staff');
+      return;
     }
     window.location.assign(app.dashboardHref('teacher'));
   }

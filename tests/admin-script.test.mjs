@@ -146,3 +146,116 @@ describe('the portability migration matches the AWS contract', () => {
     }
   });
 });
+
+/* ------------------------------------------------------------------------ */
+describe('create_admin_account issues a password safely', () => {
+  let fn = '';
+  let script = '';
+  before(async () => {
+    fn = await readFile(join(ROOT, 'supabase/migrations/20260922_zzz_create_admin_function.sql'), 'utf8');
+    script = await readFile(join(ROOT, 'supabase/scripts/set_admin.sql'), 'utf8');
+  });
+
+  /* The settings block of the old do $$ ... $$ script read like the thing to run,
+     so it got pasted alone - and plpgsql declarations outside their block fail with
+     "syntax error at or near v_email", which explains nothing. A single call cannot
+     be half-pasted, and a wrong argument is reported by name. */
+  test('the script is one statement with no wrapper to miss', () => {
+    const executable = script.replace(/--.*$/gm, '').trim();
+    assert.ok(!/do\s*\$\$/.test(executable), 'a do-block settings section can be pasted on its own');
+    assert.ok(!/\bdeclare\b/i.test(executable), 'bare plpgsql declarations are a syntax error outside their block');
+    assert.match(executable, /select \* from public\.create_admin_account\(/);
+    assert.equal((executable.match(/;/g) || []).length, 1, 'the script must be exactly one statement');
+  });
+
+  test('every argument is passed by name', () => {
+    for (const parameter of ['p_email', 'p_first_name', 'p_last_name', 'p_password']) {
+      assert.match(script, new RegExp(`${parameter}\\s*=>`), `${parameter} must be passed by name`);
+    }
+  });
+
+  test('the account it creates can be read by the Auth service', () => {
+    const insert = fn.slice(fn.indexOf('insert into auth.users'), fn.indexOf('insert into auth.identities'));
+    for (const column of TOKEN_COLUMNS) assert.ok(insert.includes(column), `auth.users.${column} must be given ''`);
+  });
+
+  test('the password is held to the policy, inside the function', () => {
+    assert.match(fn, /public\.password_policy_violation\(p_password, v_email, v_first, v_last\)/,
+      'applying the policy inside the function means no caller can route around it');
+  });
+
+  test('an address outside the allowlist is refused', () => {
+    assert.match(fn, /p_allowed_domains text\[\] default array\['msichicago\.org'\]/,
+      'the default must be the organisation domain, not whatever the last caller used');
+    assert.match(fn, /Refusing to make an administrator at %/);
+  });
+
+  test('the issued password must be replaced, and expires', () => {
+    assert.match(fn, /must_change_password = true/);
+    assert.match(fn, /temporary_password_issued_at = now\(\)/,
+      'without this the expiry window never starts and the emailed code is never demanded');
+  });
+
+  test('the plaintext password is never stored or returned', () => {
+    const audit = fn.slice(fn.indexOf('insert into public.audit_log'), fn.indexOf('-------- report'));
+    assert.ok(!audit.includes('p_password'), 'the audit entry must not carry the password');
+
+    const report = fn.slice(fn.indexOf('return query'));
+    assert.ok(!report.includes('p_password'), 'the returned row must not carry the password');
+    for (const match of report.matchAll(/encrypted_password(.{0,12})/g)) {
+      assert.match(match[1], /^\s*(is\b|<>|=)/,
+        'the report must only compare encrypted_password, never return it');
+    }
+  });
+
+  /* It mints an administrator. A browser holds the anon key and authenticates as
+     anon or authenticated; neither may reach it. */
+  test('it is callable only by service_role', () => {
+    for (const role of ['public', 'anon', 'authenticated']) {
+      assert.match(fn, new RegExp(`revoke execute on function public\.create_admin_account[^;]*from ${role};`),
+        `execute must be revoked from ${role}`);
+    }
+    assert.match(fn, /grant execute on function public\.create_admin_account[^;]*to service_role;/);
+  });
+});
+
+describe('an issued password cannot be replaced without the emailed code', () => {
+  let policy = '';
+  before(async () => {
+    policy = await readFile(join(ROOT, 'supabase/migrations/20260922_zz_admin_password_policy.sql'), 'utf8');
+  });
+
+  test('the check applies only to a password someone else issued', () => {
+    /* An invited account arrives through a link already sent to its mailbox, so
+       demanding a code there would break activation for every teacher. */
+    assert.match(policy, /if issued_at is not null then/);
+    const guarded = policy.slice(policy.indexOf('if issued_at is not null then'), policy.indexOf('-- The teacher trigger'));
+    assert.match(guarded, /staff_email_2fa_sessions/);
+    assert.match(guarded, /Confirm the verification code/);
+  });
+
+  test('an issued password expires', () => {
+    assert.match(policy, /issued_at < now\(\) - public\.admin_password_setup_window\(\)/);
+    assert.match(policy, /create or replace function public\.expire_stale_issued_passwords/);
+  });
+
+  test('the code is matched to the account, not to one session id', () => {
+    /* Updating a password can rotate the session, so binding to session_id would
+       refuse the very request it is meant to allow. */
+    const guarded = policy.slice(policy.indexOf('if issued_at is not null then'), policy.indexOf('-- The teacher trigger'));
+    assert.match(guarded, /s\.user_id = auth\.uid\(\)/);
+    assert.ok(!/s\.session_id/.test(guarded), 'the check must not be bound to a single session id');
+  });
+
+  for (const file of ['admin/admin-login.js', 'account.js']) {
+    test(`${file} asks for the code before the password is replaced`, async () => {
+      const source = await readFile(join(ROOT, file), 'utf8');
+      const redirect = source.indexOf('password-reset=staff');
+      const requestCode = source.search(/Sending a verification code/);
+      assert.ok(redirect > 0 && requestCode > 0, 'both steps must exist');
+      assert.ok(requestCode < redirect,
+        'the code must be requested before the redirect, or the hardened check dead-ends the sign-in');
+      assert.match(source, /passwordChangePending/, 'the pending change must be carried past verification');
+    });
+  }
+});
