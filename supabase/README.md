@@ -274,18 +274,27 @@ the SQL editor (**SQL Editor -> New query**) and run it. Edit only the block mar
 `EDIT THIS`:
 
 ```sql
-v_action     text := 'check';                          -- 'check' | 'create' | 'reset'
+v_action     text := 'check';   -- check | create | password | repair | deactivate
 v_email      text := 'dnadar@hawk.illinoistech.edu';
 v_first      text := 'Danish';
 v_last       text := 'Nadar';
 v_department text := 'MSI Camps';
+v_password   text := '';        -- 12+ chars; blank keeps the account passwordless
+v_force_passwordless boolean := false;
 ```
 
 | `v_action` | What it does |
 | --- | --- |
 | `check` | Reports on the account and changes nothing. Start here. |
-| `create` | Creates the administrator, or promotes an existing account. Running it on someone who is already an administrator behaves as `reset` rather than failing. |
-| `reset` | For an administrator who cannot get in: clears the password, reactivates the account, clears a stuck half-accepted invitation, ends every open session, and re-arms the set-password email. |
+| `create` | Creates the administrator, or promotes an existing account. Set `v_password` to make it usable straight away; leave it blank to use the emailed set-password link. |
+| `password` | Sets or replaces the password on an existing account and nothing else. **Use this when a password has stopped working.** |
+| `repair` | For an administrator who cannot get in: reactivate, lift a ban, clear a stuck half-accepted invitation, rebuild a missing `admin_profiles` row, heal unreadable Auth columns, end every open session. Keeps an existing password. |
+| `deactivate` | Blocks every sign-in at once and keeps the record. |
+
+**No action removes a working password unless you ask for it.** Only `password`
+replaces one, and only `repair` with `v_force_passwordless = true` removes one. An
+earlier version of this script cleared `encrypted_password` on every run, which is
+what made a password appear to be forgotten after each use.
 
 The script prints a report. Read that rather than the notices:
 
@@ -301,6 +310,22 @@ workspace, or **Authentication -> Users -> Send invitation**.
 design: the person follows an emailed link and chooses their own password, and
 `must_change_password` keeps `is_staff_2fa_verified()` false until they have.
 
+#### If sign-in returns 500 rather than "invalid credentials"
+
+`auth.users` has four columns with no default - `confirmation_token`,
+`recovery_token`, `email_change_token_new`, `email_change` - that the Auth service
+reads into non-nullable strings. A hand-written `insert` leaves them `NULL`, which
+does not fail the insert but makes the row unreadable:
+
+```
+500  Database error querying schema
+```
+
+It answers 500 for *every* password, including a wrong one, so it looks like a
+server outage rather than an account problem. A healthy account returns
+`400 Invalid login credentials`. `v_action = 'repair'` heals it, and `create` now
+writes `''` into all four.
+
 #### Do not confirm the email by hand
 
 Creating the user through **Authentication -> Users** with *auto-confirm* on, or
@@ -313,7 +338,7 @@ password. Supabase then refuses to invite that address at all:
 
 There is no supported API to undo the confirmation - `PUT /admin/users` with
 `email_confirm: false` and with `email_confirmed_at: null` both answer `200` and
-leave it in place. `manage_admin.sql` with `v_action = 'reset'` clears it directly,
+leave it in place. `manage_admin.sql` with `v_action = 'repair'` clears it directly,
 and `provision-teachers` calls `reopen_staff_invitation()` to do the same
 automatically when a resend hits that error.
 
