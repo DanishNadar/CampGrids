@@ -119,9 +119,29 @@ Deno.serve(async (request) => {
       );
     }
 
-    const { error: inviteError } = await admin.auth.admin.inviteUserByEmail(resendEmail, {
-      redirectTo: inviteRedirectTo,
-    });
+    const sendInvitation = () => admin.auth.admin.inviteUserByEmail(resendEmail, { redirectTo: inviteRedirectTo });
+
+    let { error: inviteError } = await sendInvitation();
+
+    /* Someone who opened their set-password link and closed the tab without choosing
+       a password is left confirmed with no password, and Auth then refuses to invite
+       them again. The profile above has already established that this account is not
+       activated, so the refusal is about Auth's record, not about the person. Put
+       that record back and send the invitation - rather than substituting a "reset
+       your password" email, which is the wrong message for an account that has never
+       had one. */
+    if (inviteError && /already.*(registered|exists)/i.test(inviteError.message || "")) {
+      const { data: reopened, error: reopenError } = await admin.rpc("reopen_staff_invitation", { p_email: resendEmail });
+      if (reopenError) return fail(`The invitation could not be resent: ${reopenError.message}`, 502);
+      if (!reopened) {
+        return fail(
+          "Auth reports this address as already registered, but the account could not be reopened. It may already have a password; ask them to use Forgot your password on the sign-in page.",
+          409,
+        );
+      }
+      ({ error: inviteError } = await sendInvitation());
+    }
+
     if (inviteError) return fail(`The invitation could not be resent: ${inviteError.message}`, 502);
 
     await admin.from("profiles")

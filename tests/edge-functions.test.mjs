@@ -62,6 +62,10 @@ export function createClient(url, key, options) {
         inviteUserByEmail: async (email, options) => {
           calls.push(\`invite:\${email}:\${options?.redirectTo}\`);
           if (scenario.inviteFails) return result(null, { message: scenario.inviteFails });
+          // Auth refuses a confirmed address until the account has been reopened.
+          if (scenario.confirmedInAuth && !globalThis.__reopened) {
+            return result(null, { message: 'A user with this email address has already been registered' });
+          }
           return result({ user: { id: 'new-user-id', email } });
         },
         createUser: async (attributes) => {
@@ -76,6 +80,7 @@ export function createClient(url, key, options) {
     },
     rpc: async (name, args) => {
       calls.push(\`rpc:\${name}:\${JSON.stringify(args ?? {})}\`);
+      if (name === 'reopen_staff_invitation' && scenario.reopenSucceeds !== false) globalThis.__reopened = true;
       if (name in (scenario.rpc ?? {})) {
         const value = scenario.rpc[name];
         return value instanceof Error ? result(null, { message: value.message }) : result(value);
@@ -126,6 +131,7 @@ async function loadHandler(name) {
 async function call(handler, body, scenario = {}) {
   globalThis.__scenario = { serviceRoleKey: ENV.SUPABASE_SERVICE_ROLE_KEY, ...scenario };
   globalThis.__calls = [];
+  globalThis.__reopened = false;
   const request = new Request('https://stub.functions.supabase.co/fn', {
     method: 'POST',
     headers: { Authorization: 'Bearer caller-jwt', 'Content-Type': 'application/json' },
@@ -170,6 +176,54 @@ describe('provision-teachers', () => {
     const invite = result.calls.find((entry) => entry.startsWith('invite:'));
     assert.ok(invite, `inviteUserByEmail was never called. Calls: ${result.calls.join(', ')}`);
     assert.equal(invite, `invite:fannie.yu@example.org:${ORIGIN}/account-setup.html`);
+  });
+
+  /* The state that broke Resend invitation in production: the teacher opened their
+     link once, which confirmed the address, and never chose a password. Auth then
+     refuses to invite them, and there is no supported way to undo the confirmation,
+     so the account is reopened in the database and the invitation retried. */
+  test('a half-accepted invitation is reopened and the invitation resent', async () => {
+    const result = await call(handler, { action: 'resend', email: 'stuck@example.org', siteOrigin: ORIGIN }, {
+      ...ADMIN,
+      confirmedInAuth: true,
+      rpc: { ...ADMIN.rpc, reopen_staff_invitation: true },
+      tables: { profiles: [{ must_change_password: true, role: 'teacher', is_active: true }] }
+    });
+    assert.equal(result.threw, undefined, `the handler threw: ${result.threw?.stack}`);
+    assert.equal(result.status, 200, `expected 200, got ${result.status}: ${result.text}`);
+    assert.equal(result.body.resent, true);
+
+    const invites = result.calls.filter((entry) => entry.startsWith('invite:'));
+    assert.equal(invites.length, 2, `expected a retry after reopening. Calls: ${result.calls.join(', ')}`);
+    const reopenAt = result.calls.findIndex((entry) => entry.startsWith('rpc:reopen_staff_invitation'));
+    assert.ok(reopenAt > 0, 'the account was never reopened');
+    assert.ok(result.calls.lastIndexOf(invites[1]) > reopenAt, 'the retry came before the reopen');
+  });
+
+  /* The whole point of reopening rather than reaching for recovery. An account that
+     has never had a password must never be sent "reset your password". */
+  test('a resend never falls back to the password-reset flow', async () => {
+    const result = await call(handler, { action: 'resend', email: 'stuck@example.org', siteOrigin: ORIGIN }, {
+      ...ADMIN,
+      confirmedInAuth: true,
+      rpc: { ...ADMIN.rpc, reopen_staff_invitation: true },
+      tables: { profiles: [{ must_change_password: true, role: 'teacher', is_active: true }] }
+    });
+    const forbidden = result.calls.filter((entry) => /recovery|resetPassword|generateLink|magiclink/i.test(entry));
+    assert.deepEqual(forbidden, [], `a recovery path was used: ${forbidden.join(', ')}`);
+  });
+
+  test('an account that cannot be reopened is reported rather than retried forever', async () => {
+    const result = await call(handler, { action: 'resend', email: 'stuck@example.org', siteOrigin: ORIGIN }, {
+      ...ADMIN,
+      confirmedInAuth: true,
+      reopenSucceeds: false,
+      rpc: { ...ADMIN.rpc, reopen_staff_invitation: false },
+      tables: { profiles: [{ must_change_password: true, role: 'teacher', is_active: true }] }
+    });
+    assert.equal(result.status, 409);
+    assert.match(result.body.error, /could not be reopened|Forgot your password/i);
+    assert.equal(result.calls.filter((entry) => entry.startsWith('invite:')).length, 1, 'it kept retrying');
   });
 
   test('a resend for an account that has already set a password is refused', async () => {

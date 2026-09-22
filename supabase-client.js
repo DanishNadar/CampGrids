@@ -105,6 +105,24 @@ window.CampGridsApp = (() => {
     return role === 'student' ? 'dashboard.html#student' : 'dashboard.html';
   }
 
+  /* A staff member stays identified for a fixed period after email two-factor
+     verification. Their Supabase session outlives that - it refreshes itself - so
+     without this check the navigation kept showing their name and a link straight
+     into the workspace long after they had to re-identify. The database is asked,
+     rather than a timestamp being compared here, because only it can be trusted to
+     decide whether the identification still stands. */
+  async function staffSessionExpired(profile) {
+    if (profile.role !== 'teacher' && profile.role !== 'admin') return false;
+    try {
+      const { data, error } = await getClient().rpc('is_staff_2fa_verified');
+      if (error) return false;   // Unknown is not the same as expired.
+      return data !== true;
+    } catch (error) {
+      console.warn('CampGrids could not check the staff session:', error.message);
+      return false;
+    }
+  }
+
   async function updateAccountNavigation() {
     const link = document.getElementById('accountNavLink');
     if (!link || !configured()) return;
@@ -112,6 +130,14 @@ window.CampGridsApp = (() => {
       const profile = await getProfile();
       const label = link.querySelector('.navLabel');
       if (!profile || !label) return;
+
+      /* Ending the session rather than only hiding the name: leaving a live session
+         behind a signed-out-looking menu would be a cosmetic lock, and the next page
+         load would show the account again. */
+      if (await staffSessionExpired(profile)) {
+        await getClient().auth.signOut();
+        return;
+      }
       const name = `${profile.first_name} ${profile.last_name}`.trim();
       const workspaceHref = dashboardHref(profile.role);
       link.href = workspaceHref;

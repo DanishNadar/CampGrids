@@ -116,7 +116,7 @@ describe('no account-creation code path triggers password recovery', () => {
 
   test('recovery is called only from the sign-in pages', async () => {
     const offenders = [];
-    for (const file of ['admin-teacher-entry.js', 'dashboard.js', 'settings.js', 'password-setup.js']) {
+    for (const file of ['dashboard.js', 'settings.js', 'password-setup.js']) {
       let source = '';
       try { source = await read(file); } catch { continue; }
       // Strip comments so prose about the bug does not trip the check.
@@ -135,11 +135,25 @@ describe('no account-creation code path triggers password recovery', () => {
   });
 
   test('creating and re-inviting a teacher go through the invite function', async () => {
-    const entry = await read('admin-teacher-entry.js');
-    assert.match(entry, /functions\.invoke\('provision-teachers'/, 'creation must use the Edge Function invite path');
-    assert.match(entry, /action: 'resend'/, 're-invite must use the function resend action');
     const dash = await read('dashboard.js');
+    assert.match(dash, /functions\.invoke\('provision-teachers'/, 'creation must use the Edge Function invite path');
     assert.match(dash, /action: 'resend'/, 'the pending-password panel must re-invite, not recover');
+  });
+
+  /* There were three ways to create a teacher, one of which went through the
+     retired temp-password RPC rather than the invite path. It was removed; a second
+     creation path reappearing is how the flows drift apart again. */
+  test('there is exactly one single-teacher creation path', async () => {
+    const { readdir } = await import('node:fs/promises');
+    const entries = await readdir(ROOT);
+    assert.ok(!entries.includes('admin-teacher-entry.js'), 'the duplicate single-teacher form is back');
+
+    const markup = await read('dashboard.html');
+    assert.doesNotMatch(markup, /admin-teacher-entry/, 'dashboard.html still loads the removed form');
+
+    const dash = await read('dashboard.js');
+    assert.doesNotMatch(dash, /provision_user_with_temp_password|provision_user_pending_password/,
+      'a retired password-issuing RPC is being called again');
   });
 
   test('the Edge Function invites and never recovers', async () => {
@@ -237,7 +251,7 @@ describe('security properties', () => {
   });
 
   test('nothing logs a token, a link, or a password', async () => {
-    for (const file of ['password-setup.js', 'admin-teacher-entry.js', 'scripts/pushEmailTemplates.mjs']) {
+    for (const file of ['password-setup.js', 'scripts/pushEmailTemplates.mjs']) {
       const source = await read(file);
       const logs = source.match(/console\.(log|warn|error|info)\([^\n]*/g) || [];
       for (const line of logs) {
@@ -297,7 +311,7 @@ describe('deployment covers every function the application calls', () => {
 
     // Every functions.invoke('x') anywhere in the front end.
     const invoked = new Set();
-    for (const file of ['account.js', 'admin/admin-login.js', 'admin-teacher-entry.js', 'dashboard.js']) {
+    for (const file of ['account.js', 'admin/admin-login.js', 'dashboard.js']) {
       const source = await read(file);
       for (const m of source.matchAll(/functions\.invoke\(\s*'([^']+)'/g)) invoked.add(m[1]);
     }
@@ -325,7 +339,7 @@ describe('deployment covers every function the application calls', () => {
 
   test('every browser-invoked function handles its CORS preflight', async () => {
     const invoked = new Set();
-    for (const file of ['account.js', 'admin/admin-login.js', 'admin-teacher-entry.js', 'dashboard.js']) {
+    for (const file of ['account.js', 'admin/admin-login.js', 'dashboard.js']) {
       const source = await read(file);
       for (const match of source.matchAll(/functions\.invoke\(\s*'([^']+)'/g)) invoked.add(match[1]);
     }

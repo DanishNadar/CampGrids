@@ -39,7 +39,7 @@ sign-in for it, and the person chooses their own password by following a link em
 to them. Nothing secret travels through a CSV, a chat message, or a spreadsheet.
 
 1. An administrator creates the account: **Add one teacher** in the dashboard, the
-   teacher CSV import, or [`scripts/create_admin.sql`](scripts/create_admin.sql) for
+   teacher CSV import, or [`scripts/manage_admin.sql`](scripts/manage_admin.sql) for
    an administrator.
 2. CampGrids emails an account invitation. Both the single-teacher form and CSV import
    send it through `inviteUserByEmail` inside the `provision-teachers` function. A
@@ -267,54 +267,84 @@ You can also use **Deploy a new function -> Via Editor** in the dashboard.
 
 Only an IT super-admin with Supabase project access creates or resets administrator credentials. Passwords belong in Supabase Auth, never in `public.profiles` or a spreadsheet. The `profiles` table stores only the login name, role, and account status.
 
-### Create an administrator
+### Create, reset, or diagnose an administrator
 
-1. In **Authentication -> Users**, create the staff user's Auth account with their MSI email address and a unique temporary password. Mark the email confirmed when creating the user.
-2. In the SQL editor, run the following promotion query with the actual values. It changes the default student profile into an active administrator profile.
+Everything is in **`supabase/scripts/manage_admin.sql`**. Paste the whole file into
+the SQL editor (**SQL Editor -> New query**) and run it. Edit only the block marked
+`EDIT THIS`:
 
-   ```sql
-   begin;
-   select set_config('request.jwt.claim.role', 'service_role', true);
+```sql
+v_action     text := 'check';                          -- 'check' | 'create' | 'reset'
+v_email      text := 'dnadar@hawk.illinoistech.edu';
+v_first      text := 'Danish';
+v_last       text := 'Nadar';
+v_department text := 'MSI Camps';
+```
 
-   update public.profiles
-   set
-     first_name = 'Danish',
-     last_name = 'Nadar',
-     role = 'admin',
-     is_active = true
-   where email = 'danish.t.nadar@gmail.com';
+| `v_action` | What it does |
+| --- | --- |
+| `check` | Reports on the account and changes nothing. Start here. |
+| `create` | Creates the administrator, or promotes an existing account. Running it on someone who is already an administrator behaves as `reset` rather than failing. |
+| `reset` | For an administrator who cannot get in: clears the password, reactivates the account, clears a stuck half-accepted invitation, ends every open session, and re-arms the set-password email. |
 
-   delete from public.student_profiles
-   where user_id = (
-     select id from public.profiles where email = 'danish.t.nadar@gmail.com'
-   );
+The script prints a report. Read that rather than the notices:
 
-   insert into public.admin_profiles (user_id, department)
-   select id, 'MSI Camps'
-   from public.profiles
-   where email = 'danish.t.nadar@gmail.com'
-   on conflict (user_id) do update
-   set department = excluded.department;
+| Column | Meaning |
+| --- | --- |
+| `sign_in_ready` | Everything the portal checks before it will let them in |
+| `next_step` | What to do now, in words |
 
-   commit;
-   ```
+Then send the set-password email: **People -> Resend invite** in the admin
+workspace, or **Authentication -> Users -> Send invitation**.
 
-3. Confirm the generated username and status:
+**No password is ever set or printed.** CampGrids staff accounts are passwordless by
+design: the person follows an emailed link and chooses their own password, and
+`must_change_password` keeps `is_staff_2fa_verified()` false until they have.
 
-   ```sql
-   select username, email, role, is_active
-   from public.profiles
-   where email = 'danish.t.nadar@gmail.com';
-   ```
+#### Do not confirm the email by hand
 
-Administrator usernames are still generated as first initial + last name: `Danish Nadar` becomes `dnadar`. If it is already taken, the next suffix is used: `dnadar1`, `dnadar2`, and so on. It is an internal account identifier; administrators sign in with their email address and password. IT should share the email address and temporary password through an approved channel, then require the staff member to change the temporary password using the Supabase Auth administration process.
+Creating the user through **Authentication -> Users** with *auto-confirm* on, or
+opening a set-password link and abandoning it, leaves the account confirmed with no
+password. Supabase then refuses to invite that address at all:
 
-### Reset, deactivate, or remove access
+```
+422  A user with this email address has already been registered
+```
 
-- Reset an administrator password in **Authentication -> Users**. Do not place a plaintext password in SQL, frontend JavaScript, or source control.
-- Change `is_active` to `false` in `public.profiles` to revoke CampGrids access immediately; existing email-verified sessions will fail the database check.
-- Keep the staff user's email current. The verification code always goes to `profiles.email`, which is created from the Auth email identity.
-- Create teacher accounts only from the verified administrator dashboard. The dashboard supports a single-teacher form and a CSV batch import; both generate a username and temporary password, then produce a downloadable one-time report. Do not store that report in a shared drive.
+There is no supported API to undo the confirmation - `PUT /admin/users` with
+`email_confirm: false` and with `email_confirmed_at: null` both answer `200` and
+leave it in place. `manage_admin.sql` with `v_action = 'reset'` clears it directly,
+and `provision-teachers` calls `reopen_staff_invitation()` to do the same
+automatically when a resend hits that error.
+
+Administrator usernames are generated as first initial + last name (`Danish Nadar`
+becomes `dnadar`), with a numeric suffix on collision. The username is an internal
+identifier; administrators sign in with their email address.
+
+### Session length
+
+A staff member stays identified for **10 hours** after entering their email
+verification code. The value lives in one place, `public.staff_session_limit()`, and
+changing it takes effect immediately - including for sessions already open, because
+`is_staff_2fa_verified()` compares `verified_at` against the limit rather than
+trusting the expiry stored on the row.
+
+Once it lapses the site navigation stops showing the account and signs the session
+out, so the person has to re-identify rather than seeing their name on a session
+that no longer grants anything.
+
+### Deactivate or remove access
+
+- **People** in the admin workspace is the normal route: deactivate blocks every
+  sign-in at once and keeps the person's record; delete is refused when work would
+  be lost with it.
+- Setting `is_active = false` in `public.profiles` has the same immediate effect -
+  existing email-verified sessions fail the database check on their next query.
+- Keep the staff email current. The verification code always goes to
+  `profiles.email`, which comes from the Auth email identity.
+- Teacher accounts are created only from the verified administrator dashboard:
+  **People -> Add a teacher** for one, or the teacher CSV import for a batch. Both
+  send an invitation; neither produces a password to hand over.
 
 ## Admin CSV workflows and the Mother Grid
 
@@ -332,7 +362,7 @@ first_name,last_name,email,title
 Fannie,Yu,fannie.yu@example.org,Camp Instructor
 ```
 
-`first_name`, `last_name`, and `email` are required. `title` is optional. CampGrids allocates each username as first initial plus last name (`fyu`, `fyu1`, and so on), generates a high-entropy temporary password, and returns it only in the downloaded report.
+`first_name`, `last_name`, and `email` are required. `title` is optional. CampGrids allocates each username as first initial plus last name (`fyu`, `fyu1`, and so on) and emails each teacher a link to set their own password. No password is generated, so the downloaded report lists who was created and whether their invitation was sent — never a credential.
 
 Student CSV columns remain:
 
@@ -345,10 +375,10 @@ The teacher selects a class, clicks the Mother Grid cells that should make up th
 
 ### Teacher first sign-in
 
-1. The administrator privately shares the generated username and temporary password from the one-time CSV report.
-2. The teacher signs in on the Teacher tab with those credentials.
-3. CampGrids immediately sends a Supabase password-recovery email to the teacher's work address and signs out the temporary session.
-4. The teacher opens that email, chooses a personal password in `settings.html`, then signs in normally and completes emailed 2FA.
+1. The administrator creates the account. CampGrids emails a set-password link to the teacher's work address; nothing has to be shared by hand.
+2. The teacher opens that email and chooses a password on `account-setup.html`. Until they do, the account appears under **Waiting on a password** in the admin workspace and cannot sign in at all — it has no password to sign in with.
+3. They then sign in on the Teacher tab and complete emailed 2FA.
+4. If the email never arrives, use **Resend invite** on that row. Never send a password-reset email instead: it says "reset your password" to someone who has never had one.
 
 Add this exact URL to **Authentication → URL Configuration → Redirect URLs** so the recovery email can return safely:
 

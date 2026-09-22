@@ -692,3 +692,51 @@ renderCampPage();
 renderGalleryPage();
 renderCampCards();
 window.CampGridsApp?.updateAccountNavigation?.();
+
+
+/* Every required field says so, including in views the dashboard renders after
+   this script has run - hence the observer rather than a single pass on load.
+   The browser already enforces `required`; this is only about saying it before
+   someone fills the form in and is told at the end. */
+function markRequiredFields(root = document) {
+  const fields = root.querySelectorAll ? root.querySelectorAll('input[required], select[required], textarea[required]') : [];
+  fields.forEach((field) => {
+    const label = field.closest('.fieldLabel, .fileField, label');
+    if (!label || label.querySelector('.requiredMark')) return;
+    const mark = document.createElement('span');
+    mark.className = 'requiredMark';
+    mark.textContent = '*Required';
+    label.appendChild(mark);
+    field.setAttribute('aria-required', 'true');
+  });
+
+  /* One note per form, so a form of entirely optional fields is not implied to
+     have required ones and vice versa. */
+  const forms = root.querySelectorAll ? root.querySelectorAll('form') : [];
+  forms.forEach((form) => {
+    if (form.querySelector('.requiredLegend')) return;
+    if (!form.querySelector('[required]')) return;
+    const legend = document.createElement('p');
+    legend.className = 'requiredLegend';
+    legend.textContent = '*Required';
+    form.appendChild(legend);
+  });
+}
+
+function watchForRequiredFields() {
+  markRequiredFields(document);
+  let queued = false;
+  const observer = new MutationObserver(() => {
+    if (queued) return;
+    queued = true;
+    // Coalesced: a render replaces a whole subtree and would otherwise fire per node.
+    window.requestAnimationFrame(() => { queued = false; markRequiredFields(document); });
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', watchForRequiredFields);
+} else {
+  watchForRequiredFields();
+}

@@ -2158,3 +2158,143 @@ footer {
   .peopleFilters .fieldLabel { flex: 1 1 150px; }
   .classChipRow { max-width: none; }
 }
+
+/* A populated teacher cell carries two actions. The wrapper keeps the belt colour,
+   selection ring, and border it always had; the inner button takes over the padding
+   and the click target so the corner can hold a second, smaller one. */
+.motherGridCell.hasPreview { padding: 0; }
+.cellSelect {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  padding: 11px 26px 11px 11px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.cellSelect:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
+.cellInfo {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 19px;
+  height: 19px;
+  padding: 0;
+  border: 1px solid rgba(23, 32, 51, .34);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .82);
+  color: #172033;
+  font-family: var(--font-heading);
+  font-size: .68rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+.cellInfo:hover { border-color: var(--accent); background: white; color: var(--accentStrong); }
+.cellInfo:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+/* Black and Brown bands are dark enough that the default mark disappears. */
+.motherGridCell.beltBK .cellInfo { border-color: rgba(255,255,255,.5); }
+
+/* The preview itself. */
+.cellPreview {
+  /* The reset at the top of this file zeroes every margin, which overrides the
+     `margin: auto` a browser uses to centre a modal dialog. Without this the
+     preview opens hard against the top-left corner. */
+  margin: auto;
+  width: min(560px, calc(100vw - 32px));
+  max-height: min(78vh, 720px);
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: var(--paper);
+  color: var(--ink);
+  overflow: hidden;
+}
+.cellPreview::backdrop { background: rgba(23, 32, 51, .55); }
+.previewShell { display: grid; grid-template-rows: auto minmax(0, 1fr); max-height: inherit; }
+.previewHeader {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #a8adb6;
+}
+.previewHeader h2 { margin-top: 4px; font-size: 1.2rem; line-height: 1.25; }
+.previewHeader .eyebrow { color: inherit; opacity: .78; }
+.previewClose {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid rgba(23, 32, 51, .3);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .78);
+  color: inherit;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.previewClose:hover { background: white; }
+.previewBody { padding: 18px 20px 22px; overflow-y: auto; }
+.previewLede { color: var(--muted); font-size: .89rem; line-height: 1.5; }
+.previewInstructions {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--accentWash);
+  font-size: .88rem;
+  line-height: 1.5;
+}
+.previewProjects { display: grid; gap: 10px; margin-top: 16px; padding-left: 20px; }
+.previewProjects li { padding-left: 4px; }
+.previewProjects strong { display: block; font-size: .95rem; line-height: 1.3; }
+.previewLinks { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 6px; }
+.previewLink {
+  padding: 4px 10px;
+  border: 1px solid var(--accentLine);
+  border-radius: 100px;
+  background: var(--accentWash);
+  color: var(--accentStrong);
+  font-size: .76rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.previewLink:hover { background: var(--accentSoft); }
+.previewLink.isNone { border-color: var(--line); background: var(--paper); color: var(--muted); }
+
+/* Required fields. Positioned rather than placed in flow, so it sits beside the
+   label text instead of pushing the input down a row. */
+.fieldLabel, .fileField { position: relative; }
+.requiredMark {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: var(--accentStrong);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.fileField .requiredMark { top: 6px; right: 8px; }
+.requiredLegend {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 640px) {
+  .cellPreview { width: calc(100vw - 20px); }
+}
