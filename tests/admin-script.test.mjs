@@ -259,3 +259,69 @@ describe('an issued password cannot be replaced without the emailed code', () =>
     });
   }
 });
+
+/* ------------------------------------------------------------------------ */
+describe('a temporary password is good for one sign-in', () => {
+  let m = '';
+  before(async () => {
+    m = await readFile(join(ROOT, 'supabase/migrations/20260923_temporary_password_single_use.sql'), 'utf8');
+  });
+
+  test('first use is recorded', () => {
+    assert.match(m, /add column if not exists temporary_password_first_used_at timestamptz/);
+    assert.match(m, /update public\.profiles\s*\n\s*set temporary_password_first_used_at = now\(\)/);
+  });
+
+  test('a second attempt after the grace is refused', () => {
+    assert.match(m, /create or replace function public\.temporary_password_reuse_grace/);
+    assert.match(m, /now\(\) > deadline/);
+    assert.match(m, /has already been used and no longer works/);
+  });
+
+  /* Refusing in the browser alone would leave the credential live in Auth, so the
+     refusal would be a suggestion rather than a fact. */
+  test('the refused credential is removed from Auth, not just rejected', () => {
+    const retire = m.slice(m.indexOf('function public.retire_temporary_password'));
+    assert.match(retire, /update auth\.users set encrypted_password = null/);
+    assert.match(m, /perform public\.retire_temporary_password\(auth\.uid\(\)\)/);
+  });
+
+  test('it only ever retires a password still pending replacement', () => {
+    const retire = m.slice(m.indexOf('function public.retire_temporary_password'));
+    const guard = retire.slice(0, retire.indexOf('update auth.users'));
+    assert.match(guard, /must_change_password and temporary_password_issued_at is not null/,
+      'a password that is already the account owner\'s must never be cleared by this');
+  });
+
+  test('an invited account is never consumed', () => {
+    /* It has no issued password: it arrived through a link sent to its own mailbox,
+       so there is no shared secret to spend. */
+    const begin = m.slice(m.indexOf('function public.begin_password_setup'));
+    assert.match(begin, /if p\.temporary_password_issued_at is null then\s*\n\s*return query select true, false/);
+  });
+
+  test('the limit is checked again when the password is actually replaced', () => {
+    const complete = m.slice(m.indexOf('function public.complete_password_setup'));
+    assert.match(complete, /first_used_at is not null\s*\n\s*and now\(\) > first_used_at \+ public\.temporary_password_reuse_grace\(\)/,
+      'a page left open past the grace must not still be able to complete');
+  });
+
+  test('the read-only state function does not consume anything', () => {
+    /* settings.js calls my_password_state() to decide whether to draw the panel;
+       rendering a page must not spend the credential. */
+    const state = m.slice(m.indexOf('create function public.my_password_state'));
+    assert.match(state, /language sql stable/);
+    assert.ok(!state.includes('update '), 'my_password_state must stay read-only');
+  });
+
+  test('both sign-in paths consume the password', async () => {
+    for (const file of ['admin/admin-login.js', 'account.js']) {
+      const source = await readFile(join(ROOT, file), 'utf8');
+      assert.match(source, /rpc\('begin_password_setup'\)/, `${file} must consume the temporary password`);
+      assert.match(source, /setup\?\.blocked/, `${file} must handle a retired password`);
+      assert.match(source, /auth\.signOut\(\)/);
+      assert.ok(!/rpc\('my_password_state'\)/.test(source),
+        `${file} must not use the read-only state function, which never consumes`);
+    }
+  });
+});

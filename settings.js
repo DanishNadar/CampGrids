@@ -41,8 +41,16 @@
       || resetKind === 'teacher' || resetKind === 'staff'
       || arrivingFromEmail
       || Boolean(pendingState?.change_required);
+    /* Two different people reach this panel: someone invited with no password at
+       all, and someone handed a temporary one by IT. Telling the second group their
+       account "was created without a password" contradicts what they just typed. */
+    const wasIssuedPassword = Boolean(pendingState?.issued_at);
+    const deadline = pendingState?.setup_deadline ? new Date(pendingState.setup_deadline) : null;
+    const passwordLede = wasIssuedPassword
+      ? `Replace the temporary password you were given with one only you know. It is the only way to sign in afterwards, and you will not be asked again.${deadline ? ` Finish by ${deadline.toLocaleString()}.` : ''}`
+      : 'This account was created without a password. Choose one now; it is the only way to sign in, and you will not be asked again. After saving you will sign in once with it and complete email verification.';
     const passwordPanel = passwordReset ? `
-      <article class="toolCard"><p class="eyebrow">First sign-in</p><h2>Choose your password</h2><p class="helperText">This account was created without a password. Choose one now; it is the only way to sign in, and you will not be asked again. After saving you will sign in once with it and complete email verification.</p><form id="teacherPasswordSetupForm" class="stackForm"><label class="fieldLabel">New password<input name="password" type="password" autocomplete="new-password" minlength="12" required></label><label class="fieldLabel">Confirm new password<input name="confirmation" type="password" autocomplete="new-password" minlength="12" required></label><button class="primaryButton" type="submit">Save password and continue</button></form></article>` : '';
+      <article class="toolCard"><p class="eyebrow">First sign-in</p><h2>Choose your password</h2><p class="helperText">${passwordLede}</p><form id="teacherPasswordSetupForm" class="stackForm"><label class="fieldLabel">New password<input name="password" type="password" autocomplete="new-password" minlength="12" required></label><label class="fieldLabel">Confirm new password<input name="confirmation" type="password" autocomplete="new-password" minlength="12" required></label><button class="primaryButton" type="submit">Save password and continue</button></form></article>` : '';
     host.innerHTML = `
       <header class="workspaceHeader"><div><p class="eyebrow">My settings</p><h1>Personalize your account.</h1><p>Make changes to your personal CampGrids information here.</p></div><a class="secondaryButton" href="profile.html">Back to profile</a></header>
       <p id="settingsNotice" class="workspaceNotice" role="status" aria-live="polite"></p><br>

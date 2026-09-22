@@ -310,7 +310,21 @@ edited around it.
 `v_allowed_domains` refuses an address outside the approved domains, so a typo or a
 personal address cannot quietly become an administrator.
 
-An issued password is valid for `public.admin_password_setup_window()` (72 hours).
+A temporary password is good for **one sign-in**. The first sign-in stamps
+`temporary_password_first_used_at`; after
+`public.temporary_password_reuse_grace()` (15 minutes) a further attempt is refused
+and the credential is **removed from Auth**, so the refusal is a fact rather than a
+screen. The grace exists so a closed tab or a slow verification email is not an
+immediate lockout; set the function to `interval '0'` for strictly one sign-in.
+
+Someone who abandons setup recovers without IT: the **set-password link** on the
+sign-in page still works, because the account is intact and only its temporary
+credential was removed.
+
+Invited accounts are unaffected. They have no issued password - they arrive through
+a link already sent to their own mailbox - so there is no shared secret to spend.
+
+An issued password is also valid for `public.admin_password_setup_window()` (72 hours).
 After that it will not complete setup, and `public.expire_stale_issued_passwords()`
 removes the credential entirely from any account that never used it.
 

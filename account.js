@@ -182,10 +182,16 @@
        a password someone else issued is a shared secret until it is replaced, so
        replacing it has to prove more than knowing it. complete_password_setup()
        refuses without a recent verified code for exactly that reason. */
-    const { data: passwordState, error: passwordStateError } = await app.getClient().rpc('my_password_state');
-    if (passwordStateError) throw passwordStateError;
-    const pending = Array.isArray(passwordState) ? passwordState[0] : passwordState;
-    teacherState.passwordChangePending = Boolean(pending?.change_required);
+    /* Consumes the temporary password. See admin-login.js for why one sign-in is
+       the right lifetime for a credential someone else chose. */
+    const { data: setupState, error: setupError } = await app.getClient().rpc('begin_password_setup');
+    if (setupError) throw setupError;
+    const setup = Array.isArray(setupState) ? setupState[0] : setupState;
+    if (setup?.blocked) {
+      await app.getClient().auth.signOut();
+      throw new Error(setup.reason || 'That temporary password can no longer be used.');
+    }
+    teacherState.passwordChangePending = Boolean(setup?.change_required);
 
     setNotice('Sending a verification code to your work email...');
     await requestStaffEmailCode(app);

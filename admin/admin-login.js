@@ -121,10 +121,18 @@
        one and take the account. complete_password_setup() refuses without a recent
        verified code, so the code is requested first and the replacement happens
        after it is accepted. */
-    const { data: passwordState, error: passwordStateError } = await app.getClient().rpc('my_password_state');
-    if (passwordStateError) throw passwordStateError;
-    const pending = Array.isArray(passwordState) ? passwordState[0] : passwordState;
-    state.passwordChangePending = Boolean(pending?.change_required);
+    /* This call consumes the temporary password: a credential someone else chose
+       is good for one sign-in, not for as long as its owner leaves it unchanged.
+       A second attempt after the grace is refused here and the credential is
+       removed from Auth, so the refusal is real rather than a screen. */
+    const { data: setupState, error: setupError } = await app.getClient().rpc('begin_password_setup');
+    if (setupError) throw setupError;
+    const setup = Array.isArray(setupState) ? setupState[0] : setupState;
+    if (setup?.blocked) {
+      await app.getClient().auth.signOut();
+      throw new Error(setup.reason || 'That temporary password can no longer be used.');
+    }
+    state.passwordChangePending = Boolean(setup?.change_required);
 
     setNotice('Sending a verification code to your MSI email...');
     await requestEmailCode(app);
