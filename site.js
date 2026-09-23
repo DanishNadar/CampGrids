@@ -714,14 +714,144 @@ function markRequiredFields(root = document) {
      "*Required" at the foot of the form only repeats what is already on screen. */
 }
 
+
+/* ------------------------------------------------------------- loading ----
+   Something visible whenever the app is waiting on the network.
+
+   Wiring each call site was rejected: there are dozens across the dashboard,
+   the sign-in pages and the settings forms, and the ones that get missed are
+   exactly the ones that feel broken. Every one of them reaches Supabase through
+   fetch, so counting requests there covers all of them at once, including any
+   added later.
+
+   Three signals, because they answer different questions:
+     a bar at the top of the page   something is happening
+     a spinner in the pressed button   the thing I just did is happening
+     a spinner in a loading block   this page is still coming
+
+   The bar waits before appearing. Most calls finish in well under a second, and
+   an indicator that flashes on every one of them reads as a glitch. */
+
+const BUSY_DELAY_MS = 180;
+
+function installActivityIndicator() {
+  if (window.__campgridsActivity) return;
+
+  const bar = document.createElement('div');
+  bar.className = 'activityBar';
+  bar.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(bar);
+
+  let inFlight = 0;
+  let showTimer = null;
+  let clearTimer = null;
+  const busyElements = new Set();
+
+  function releaseElements() {
+    busyElements.forEach((el) => {
+      el.classList.remove('isLoading');
+      el.removeAttribute('aria-busy');
+    });
+    busyElements.clear();
+  }
+
+  function render() {
+    const busy = inFlight > 0;
+    if (busy) {
+      if (showTimer === null) {
+        showTimer = window.setTimeout(() => {
+          document.documentElement.classList.add('isBusy');
+          showTimer = null;
+        }, BUSY_DELAY_MS);
+      }
+    } else {
+      window.clearTimeout(showTimer);
+      showTimer = null;
+      document.documentElement.classList.remove('isBusy');
+      releaseElements();
+    }
+    document.body.setAttribute('aria-busy', busy ? 'true' : 'false');
+  }
+
+  /* Marks the control the person actually pressed, so the feedback appears where
+     they are looking rather than only at the top of the window. */
+  function markBusy(element) {
+    if (!element || element.disabled) return;
+    element.classList.add('isLoading');
+    element.setAttribute('aria-busy', 'true');
+    busyElements.add(element);
+
+    /* A control that starts no request must not spin forever, so it is released
+       shortly afterwards unless something is actually in flight by then. */
+    window.clearTimeout(clearTimer);
+    clearTimer = window.setTimeout(() => { if (inFlight === 0) releaseElements(); }, 400);
+  }
+
+  document.addEventListener('submit', (event) => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement)) return;
+    markBusy(event.submitter || form.querySelector('button[type="submit"], button:not([type])'));
+  }, true);
+
+  document.addEventListener('click', (event) => {
+    const button = event.target?.closest?.('button');
+    // Submits are handled above; marking them here would double up.
+    if (button && button.type !== 'submit') markBusy(button);
+  }, true);
+
+  const original = window.fetch;
+  if (typeof original === 'function') {
+    window.fetch = function campgridsFetch(...args) {
+      inFlight += 1;
+      render();
+      let result;
+      try {
+        result = original.apply(this, args);
+      } catch (error) {
+        // A synchronous throw would otherwise leave the count stuck above zero.
+        inFlight = Math.max(0, inFlight - 1);
+        render();
+        throw error;
+      }
+      return Promise.resolve(result).finally(() => {
+        inFlight = Math.max(0, inFlight - 1);
+        render();
+      });
+    };
+  }
+
+  window.__campgridsActivity = { busy: () => inFlight > 0 };
+}
+
+/* A block that says a page is loading should look like it is. */
+function enhanceLoadingBlocks(root = document) {
+  const blocks = root.querySelectorAll ? root.querySelectorAll('.loadingState') : [];
+  blocks.forEach((block) => {
+    if (block.querySelector('.loadingSpinner')) return;
+    const heading = block.querySelector('h1, h2');
+    if (!heading) return;
+    const spinner = document.createElement('span');
+    spinner.className = 'loadingSpinner';
+    spinner.setAttribute('aria-hidden', 'true');
+    heading.prepend(spinner);
+    block.setAttribute('aria-busy', 'true');
+  });
+}
+
 function watchForRequiredFields() {
+  installActivityIndicator();
   markRequiredFields(document);
+  enhanceLoadingBlocks(document);
   let queued = false;
   const observer = new MutationObserver(() => {
     if (queued) return;
     queued = true;
     // Coalesced: a render replaces a whole subtree and would otherwise fire per node.
-    window.requestAnimationFrame(() => { queued = false; markRequiredFields(document); });
+    window.requestAnimationFrame(() => {
+      queued = false;
+      markRequiredFields(document);
+      enhanceLoadingBlocks(document);
+    });
   });
   observer.observe(document.body, { childList: true, subtree: true });
 }

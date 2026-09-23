@@ -111,3 +111,65 @@ describe('the tab emblem', () => {
     assert.match(svg, /data:image\/png;base64,/, 'the mark must be embedded so the file works wherever it is served');
   });
 });
+
+describe('loading feedback', () => {
+  /* Wiring each call site was rejected: there are dozens, and the ones that get
+     missed are exactly the ones that feel broken. Everything reaches Supabase
+     through fetch, so the count lives there. */
+  test('every request is counted, and the count always comes back down', async () => {
+    const source = await readFile(join(ROOT, 'site.js'), 'utf8');
+    assert.match(source, /window\.fetch = function campgridsFetch/);
+    assert.match(source, /\.finally\(\(\) => \{[\s\S]{0,120}inFlight = Math\.max\(0, inFlight - 1\)/,
+      'a rejected request must decrement too, or the indicator sticks on forever');
+    assert.match(source, /catch \(error\) \{[\s\S]{0,200}inFlight = Math\.max\(0, inFlight - 1\)/,
+      'a synchronous throw must decrement as well');
+  });
+
+  test('a quick call does not flash the indicator', async () => {
+    const source = await readFile(join(ROOT, 'site.js'), 'utf8');
+    assert.match(source, /BUSY_DELAY_MS/, 'showing instantly makes every fast call look like a glitch');
+    const delay = Number((source.match(/BUSY_DELAY_MS\s*=\s*(\d+)/) || [])[1]);
+    assert.ok(delay >= 120 && delay <= 400, `the delay should be perceptible but short, got ${delay}ms`);
+  });
+
+  test('a control that starts no request is released', async () => {
+    const source = await readFile(join(ROOT, 'site.js'), 'utf8');
+    assert.match(source, /if \(inFlight === 0\) releaseElements\(\)/,
+      'otherwise a button whose handler returns early spins forever');
+  });
+
+  test('waiting is announced, not only drawn', async () => {
+    const source = await readFile(join(ROOT, 'site.js'), 'utf8');
+    assert.match(source, /aria-busy/);
+  });
+
+  test('motion has an alternative', async () => {
+    const css = await readFile(join(ROOT, 'styles.css'), 'utf8');
+    const reduced = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
+    assert.ok(reduced.length > 0, 'there must be a reduced-motion block');
+    assert.match(reduced, /campgridsPulse/, 'the indicator should fade rather than spin');
+    assert.ok(!/campgridsSpin/.test(reduced.slice(0, 600)),
+      'nothing should still be spinning under reduced motion');
+  });
+
+  test('a loading button keeps its size', async () => {
+    /* Adding a spinner beside the label would resize the button mid-click. */
+    const css = await readFile(join(ROOT, 'styles.css'), 'utf8');
+    const block = css.slice(css.indexOf('.primaryButton.isLoading'));
+    assert.match(block.slice(0, 200), /color: transparent/);
+    assert.match(block.slice(0, 400), /position: absolute/);
+  });
+
+  /* The gap this test exists for: admin/index.html, account-setup.html and
+     reset-password.html carry no navigation, so site.js had never been added to
+     them - and with it went the loading indicators and the required-field labels,
+     on the three pages where waiting is most visible. */
+  test('every page loads the shared behaviour', async () => {
+    const missing = [];
+    for (const page of pages) {
+      const html = await readFile(page, 'utf8');
+      if (!/<script[^>]+src="[^"]*site\.js"/.test(html)) missing.push(relative(ROOT, page));
+    }
+    assert.deepEqual(missing, [], `these pages have no loading feedback: ${missing.join(', ')}`);
+  });
+});

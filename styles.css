@@ -2290,3 +2290,116 @@ footer {
 @media (max-width: 640px) {
   .cellPreview { width: calc(100vw - 20px); }
 }
+
+/* Loading indicators. Three of them, because they answer different questions:
+   the bar says the app is working, a spinner in a pressed control says the thing
+   you just did is working, and a spinner in a loading block says the page is still
+   arriving. */
+
+@keyframes campgridsSpin { to { transform: rotate(360deg); } }
+@keyframes campgridsSlide {
+  0%   { transform: translateX(-100%) scaleX(.4); }
+  50%  { transform: translateX(0) scaleX(.7); }
+  100% { transform: translateX(100%) scaleX(.4); }
+}
+@keyframes campgridsPulse { 50% { opacity: .35; } }
+
+/* The bar sits above everything, including the sticky navigation, and is only
+   painted while the page is waiting. Kept off the layout entirely so it cannot
+   shift anything when it appears. */
+.activityBar {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 200;
+  height: 3px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease;
+}
+.activityBar::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accentStrong), transparent);
+}
+:root.isBusy .activityBar { opacity: 1; }
+:root.isBusy .activityBar::after { animation: campgridsSlide 1.1s ease-in-out infinite; }
+
+/* A pressed control keeps its label and its width, so nothing jumps: the spinner
+   takes the space the text vacates rather than being added beside it. */
+.primaryButton.isLoading,
+.secondaryButton.isLoading,
+.quietButton.isLoading,
+.copyButton.isLoading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+.primaryButton.isLoading::after,
+.secondaryButton.isLoading::after,
+.quietButton.isLoading::after,
+.copyButton.isLoading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 15px;
+  height: 15px;
+  margin: -8px 0 0 -8px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  color: white;
+  animation: campgridsSpin .7s linear infinite;
+}
+/* On the pale buttons the ring has to be the brand colour to be visible at all. */
+.secondaryButton.isLoading::after,
+.quietButton.isLoading::after,
+.copyButton.isLoading::after { color: var(--accentStrong); }
+
+.loadingSpinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin-right: 12px;
+  vertical-align: -2px;
+  border: 3px solid var(--accentLine);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: campgridsSpin .8s linear infinite;
+}
+
+/* Status text that reports work in progress, rather than its result. */
+.rowStatus:not(.isSuccess):not(.isError):not(.isWarning):not(:empty)::before,
+.workspaceNotice:not(.isSuccess):not(.isError):not(.isWarning):not(:empty)::before,
+.formNotice:not(.isSuccess):not(.isError):not(.isWarning):not(:empty)::before {
+  content: "";
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  margin-right: 8px;
+  vertical-align: baseline;
+  border: 2px solid var(--accentLine);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: campgridsSpin .8s linear infinite;
+}
+
+/* Spinning is decoration; the information is that something is happening. Where
+   motion is unwelcome the same three indicators fade instead of rotating. */
+@media (prefers-reduced-motion: reduce) {
+  :root.isBusy .activityBar::after { animation: campgridsPulse 1.4s ease-in-out infinite; }
+  .primaryButton.isLoading::after,
+  .secondaryButton.isLoading::after,
+  .quietButton.isLoading::after,
+  .copyButton.isLoading::after,
+  .loadingSpinner,
+  .rowStatus::before,
+  .workspaceNotice::before,
+  .formNotice::before {
+    animation: campgridsPulse 1.4s ease-in-out infinite;
+    border-top-color: var(--accent);
+  }
+}

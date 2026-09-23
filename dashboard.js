@@ -818,7 +818,10 @@
     const payload = [...cells.values()].map((cell) => {
       const projects = [...cell.projects.values()];
       const first = projects[0];
-      return { belt_code: cell.belt_code, column_number: cell.column_number, category: cell.category, title: projects.length === 1 ? first.name.slice(0, 180) : `${cell.category} (${projects.length} activities)`.slice(0, 180), instructions: null, resource_url: first.instructions_url || first.video_url || null, projects };
+      /* The title is the name of the thing, nothing else. The cell already prints
+         the activity count on its own line, so putting it in the title too showed
+         it twice and pushed the actual name out of the available width. */
+      return { belt_code: cell.belt_code, column_number: cell.column_number, category: cell.category, title: (projects.length === 1 ? first.name : cell.category).slice(0, 180), instructions: null, resource_url: first.instructions_url || first.video_url || null, projects };
     });
     return { cells: payload, categories: categories.filter(Boolean) };
   }

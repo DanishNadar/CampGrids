@@ -291,3 +291,32 @@ describe('finishing setup is not the same as reusing a password', () => {
     assert.match(begin, /retire_temporary_password/);
   });
 });
+
+describe('a Grid cell title is just the title', () => {
+  /* The importer used to name a multi-activity cell "Category (N activities)".
+     The cell already prints the count on its own line underneath, so it appeared
+     twice - and because the title is clamped to two lines, the suffix pushed the
+     real name out of view: "Origami (Figure) (2...". */
+  test('the importer does not put a count in the title', async () => {
+    const source = await read('dashboard.js');
+    const parser = source.slice(source.indexOf('function parseMotherGridCsv'));
+    assert.ok(!/activit(y|ies)\)\`/.test(parser.slice(0, 4000)),
+      'the title must not be built with an activity count');
+    assert.match(parser, /\(projects\.length === 1 \? first\.name : cell\.category\)/,
+      'one activity uses its own name; several use the category name');
+  });
+
+  test('the count is still shown, on its own line', async () => {
+    const source = await read('dashboard.js');
+    assert.match(source, /\$\{count\} activit\$\{count === 1 \? 'y' : 'ies'\}/,
+      'the cell subtext is where the count belongs');
+  });
+
+  test('rows stored with the old title are cleaned up', async () => {
+    const sql = await read('supabase/migrations/20260923_zzzz_strip_activity_count_from_titles.sql');
+    for (const table of ['public.mother_grid_cells', 'public.class_assignments']) {
+      assert.ok(sql.includes(table), `${table} also stores copies of the title`);
+    }
+    assert.match(sql, /<> ''/, 'stripping must never leave a title empty; the table requires one');
+  });
+});
