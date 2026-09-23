@@ -710,17 +710,8 @@ function markRequiredFields(root = document) {
     field.setAttribute('aria-required', 'true');
   });
 
-  /* One note per form, so a form of entirely optional fields is not implied to
-     have required ones and vice versa. */
-  const forms = root.querySelectorAll ? root.querySelectorAll('form') : [];
-  forms.forEach((form) => {
-    if (form.querySelector('.requiredLegend')) return;
-    if (!form.querySelector('[required]')) return;
-    const legend = document.createElement('p');
-    legend.className = 'requiredLegend';
-    legend.textContent = '*Required';
-    form.appendChild(legend);
-  });
+  /* No form-level note: each required field is labelled individually, so a second
+     "*Required" at the foot of the form only repeats what is already on screen. */
 }
 
 function watchForRequiredFields() {

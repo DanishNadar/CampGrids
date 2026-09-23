@@ -114,9 +114,18 @@ window.CampGridsApp = (() => {
   async function staffSessionExpired(profile) {
     if (profile.role !== 'teacher' && profile.role !== 'admin') return false;
     try {
-      const { data, error } = await getClient().rpc('is_staff_2fa_verified');
+      const { data, error } = await getClient().rpc('staff_session_state');
       if (error) return false;   // Unknown is not the same as expired.
-      return data !== true;
+      const state = Array.isArray(data) ? data[0] : data;
+      if (!state) return false;
+
+      /* Someone still choosing a password is not someone whose session has run
+         out. Signing them out here ended the session while they were typing, and
+         saving the password then failed with "Auth session missing!" - on every
+         first-time route, because the navigation is personalised on every page. */
+      if (state.password_setup_pending) return false;
+
+      return state.verified !== true;
     } catch (error) {
       console.warn('CampGrids could not check the staff session:', error.message);
       return false;

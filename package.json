@@ -17,6 +17,7 @@
     "verify:smtp": "node scripts/verifySmtp.mjs",
     "sync:vercel": "node scripts/syncVercelEnv.mjs",
     "migrate": "node scripts/applyMigrations.mjs",
-    "build:favicons": "node scripts/buildFavicons.cjs"
+    "build:favicons": "node scripts/buildFavicons.cjs",
+    "check:email-delivery": "node scripts/checkEmailDelivery.mjs"
   }
 }

@@ -117,6 +117,22 @@
   /* Genuine password recovery for an existing account, which is the only flow a
      browser may trigger. A never-activated account is re-invited by an
      administrator instead, so the two never share an email. */
+
+  /* Auth refuses a second reset for the same address within 60 seconds. Without
+     this the button invites a click that can only fail, and the failure reads as
+     the link never having been sent. */
+  function holdResetButton(button, seconds = 60) {
+    const label = button.dataset.defaultLabel || button.textContent;
+    button.dataset.defaultLabel = label;
+    let left = seconds;
+    const tick = () => {
+      button.disabled = left > 0;
+      button.textContent = left > 0 ? `Sent — retry in ${left}s` : label;
+      if (left > 0) { left -= 1; window.setTimeout(tick, 1000); }
+    };
+    tick();
+  }
+
   async function sendPasswordRecovery(app, email) {
     const redirectTo = new URL('reset-password.html', window.location.href).href;
     const { error } = await app.getClient().auth.resetPasswordForEmail(email, { redirectTo });
@@ -298,12 +314,15 @@
     }
     button.disabled = true;
     try {
-      setNotice('Sending a password reset link...');
+      setNotice('Sending a set-password link...');
       await sendPasswordRecovery(app, identity);
-      setNotice(`If ${identity} has an activated CampGrids account, a password reset link is on its way. If your account is new and you never set a password, ask an MSI administrator to resend your invitation.`, 'isSuccess');
+      /* Deliberately not conditional on the account existing: saying so either way
+         would turn this form into a way to discover who has an account. */
+      setNotice(`A set-password link for ${identity} has been sent from MSI CampGrids. Delivery usually takes under a minute but can take several; look in Spam and any organization quarantine before requesting another. If your account is new and never had a password, ask an MSI administrator to resend your invitation instead.`, 'isSuccess');
+      holdResetButton(button);
+      return;
     } catch (error) {
       setNotice(error.message || 'The password reset link could not be sent.', 'isError');
-    } finally {
       button.disabled = false;
     }
   });

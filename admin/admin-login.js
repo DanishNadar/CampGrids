@@ -119,6 +119,22 @@
      the emailed link is the only first way in. settings.html sits one level up. */
   /* Genuine password recovery for an existing administrator account. A
      never-activated account is re-invited from the dashboard instead. */
+
+  /* Auth refuses a second reset for the same address within 60 seconds. Without
+     this the button invites a click that can only fail, and the failure reads as
+     the link never having been sent. */
+  function holdResetButton(button, seconds = 60) {
+    const label = button.dataset.defaultLabel || button.textContent;
+    button.dataset.defaultLabel = label;
+    let left = seconds;
+    const tick = () => {
+      button.disabled = left > 0;
+      button.textContent = left > 0 ? `Sent — retry in ${left}s` : label;
+      if (left > 0) { left -= 1; window.setTimeout(tick, 1000); }
+    };
+    tick();
+  }
+
   async function sendPasswordRecovery(app, email) {
     const redirectTo = new URL('../reset-password.html', window.location.href).href;
     const { error } = await app.getClient().auth.resetPasswordForEmail(email, { redirectTo });
@@ -248,12 +264,18 @@
     }
     button.disabled = true;
     try {
-      setNotice('Sending a password reset link...');
+      setNotice('Sending a set-password link...');
       await sendPasswordRecovery(app, email);
-      setNotice(`If ${email} has an activated administrator account, a password reset link is on its way.`, 'isSuccess');
+      /* Deliberately not conditional on the account existing: saying so either way
+         would turn this form into a way to discover which addresses are
+         administrators. */
+      setNotice(`A set-password link for ${email} has been sent from MSI CampGrids. Delivery usually takes under a minute but can take several; look in Spam and any organization quarantine before requesting another.`, 'isSuccess');
+      /* Returns rather than falling through: a finally that re-enables the button
+         would immediately undo the cooldown it was just put into. */
+      holdResetButton(button);
+      return;
     } catch (error) {
       setNotice(error.message || 'The password reset link could not be sent.', 'isError');
-    } finally {
       button.disabled = false;
     }
   });

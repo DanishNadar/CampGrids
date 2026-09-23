@@ -61,7 +61,8 @@ describe('the account shown in the navigation', () => {
   test('a staff session is checked before the name is shown', async () => {
     const source = await read('supabase-client.js');
     assert.match(source, /staffSessionExpired/, 'updateAccountNavigation must consult the staff session');
-    assert.match(source, /rpc\('is_staff_2fa_verified'\)/, 'the database decides, not a local clock');
+    assert.match(source, /rpc\('staff_session_state'\)/,
+      'the database decides, and it must also say whether setup is still pending');
 
     /* The check has to happen before the name, avatar and workspace link are
        written, or the account is shown for the moment before it is taken away. */
@@ -97,8 +98,10 @@ describe('required fields', () => {
     assert.match(source, /markRequiredFields/);
     assert.match(source, /input\[required\], select\[required\], textarea\[required\]/);
     assert.match(source, /'\*Required'/);
-    assert.match(source, /if \(!form\.querySelector\('\[required\]'\)\) return;/,
-      'a form with no required fields must not get a note');
+    /* Each field is labelled individually, so there must be no second note at the
+       foot of the form repeating it. */
+    assert.ok(!source.includes('requiredLegend'),
+      'a form-level *Required note duplicates the per-field labels');
   });
 
   test('views rendered after load are covered', async () => {
@@ -215,4 +218,39 @@ describe('a sign-in that times out returns to the sign-in step', () => {
       });
     });
   }
+});
+
+describe('choosing a password is not an expired session', () => {
+  /* is_staff_2fa_verified() is false for two unrelated reasons: the ten-hour
+     identification lapsed, or a password is still to be chosen. The navigation
+     treated both as expiry and signed the person out - on every page, because the
+     navigation is personalised everywhere - so saving a new password failed with
+     "Auth session missing!" on every first-time route. */
+  test('the database distinguishes the two', async () => {
+    const sql = await read('supabase/migrations/20260923_zz_setup_is_not_expiry.sql');
+    assert.match(sql, /password_setup_pending boolean/);
+    assert.match(sql, /must_change_password/, 'the pending flag must come from the profile');
+    assert.match(sql, /teacher_profiles/, 'a teacher carries the flag on their own row too');
+  });
+
+  test('the navigation asks, and leaves a setup session alone', async () => {
+    const source = await read('supabase-client.js');
+    assert.match(source, /rpc\('staff_session_state'\)/,
+      'is_staff_2fa_verified alone cannot tell expiry from unfinished setup');
+
+    const fn = source.slice(source.indexOf('async function staffSessionExpired'));
+    const guard = fn.indexOf('state.password_setup_pending');
+    const verdict = fn.indexOf('state.verified !== true');
+    assert.ok(guard > 0, 'the pending case must be handled');
+    assert.ok(verdict > 0, 'expiry must still be reported');
+    assert.ok(guard < verdict, 'the pending case must be checked before expiry is concluded');
+    assert.match(fn.slice(guard, guard + 120), /return false/,
+      'a pending setup must not be reported as expired');
+  });
+
+  test('a real expiry still ends the session', async () => {
+    const source = await read('supabase-client.js');
+    const block = source.slice(source.indexOf('await staffSessionExpired(profile)'));
+    assert.match(block.slice(0, 260), /auth\.signOut\(\)/);
+  });
 });
