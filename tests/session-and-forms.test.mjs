@@ -254,3 +254,40 @@ describe('choosing a password is not an expired session', () => {
     assert.match(block.slice(0, 260), /auth\.signOut\(\)/);
   });
 });
+
+describe('finishing setup is not the same as reusing a password', () => {
+  /* temporary_password_reuse_grace() answers one question: may this temporary
+     password start another sign-in? It was also gating whether the session already
+     in progress could finish. At a grace of zero - the setting that means "one
+     sign-in only" - first use is stamped at sign-in and completion was refused a
+     second later with "used more than 00:00:00 ago", so activation was impossible. */
+  let sql = '';
+  before(async () => { sql = await read('supabase/migrations/20260923_zzz_completion_is_not_reuse.sql'); });
+
+  test('completion no longer consults the reuse grace', () => {
+    const fn = sql.slice(sql.indexOf('function public.complete_password_setup'));
+    const code = fn.replace(/\/\*[\s\S]*?\*\//g, '').replace(/--.*$/gm, '');
+    assert.ok(!code.includes('temporary_password_reuse_grace'),
+      'the reuse grace governs starting a sign-in, not finishing one');
+  });
+
+  test('the checks that do belong are kept', () => {
+    const fn = sql.slice(sql.indexOf('function public.complete_password_setup'));
+    assert.match(fn, /admin_password_setup_window\(\)/, 'the outer issue window still applies');
+    assert.match(fn, /staff_email_2fa_sessions/, 'the emailed code is still required');
+  });
+
+  test('a duration is not shown to someone as a clock time', () => {
+    /* An interval renders as 72:00:00, which reads like a time of day. */
+    assert.match(sql, /% hours ago/);
+    assert.match(sql, /extract\(epoch from public\.admin_password_setup_window\(\)\) \/ 3600/);
+  });
+
+  test('the door is still guarded at sign-in', async () => {
+    const single = await read('supabase/migrations/20260923_temporary_password_single_use.sql');
+    const begin = single.slice(single.indexOf('function public.begin_password_setup'));
+    assert.match(begin, /temporary_password_reuse_grace\(\)/,
+      'begin_password_setup is where a second sign-in must be refused');
+    assert.match(begin, /retire_temporary_password/);
+  });
+});
