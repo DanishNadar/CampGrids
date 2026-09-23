@@ -75,6 +75,37 @@
     verificationCode.focus();
   }
 
+
+  /* Everything that means "there is no longer a signed-in session behind this
+     page": the database guards, the Auth client, and an expired or rejected JWT.
+     They arrive as plain messages from three different layers, so they are matched
+     rather than typed. */
+  function sessionLost(error) {
+    const text = `${error?.name || ''} ${error?.message || ''} ${error?.code || ''}`;
+    return /Sign in (with your password |)?before|Auth session missing|session_not_found|JWT expired|invalid claim|token is expired|refresh_token_not_found|Invalid Refresh Token|not authenticated|401/i.test(text);
+  }
+
+  /* Returns false when the session has gone, having already put the page back to
+     the sign-in step. The email is carried across so only the password has to be
+     typed again. */
+  async function stillSignedIn(app) {
+    let session = null;
+    try { session = await app.getSession(); } catch (_) { session = null; }
+    if (session) return true;
+    returnToSignIn(app, 'Your sign-in timed out. Enter your administrator email and password again to continue.');
+    return false;
+  }
+
+  /* One way back from every dead end: the credentials step, with a reason. */
+  function returnToSignIn(app, message) {
+    const email = state.email || String(new FormData(form).get('email') || '');
+    if (app?.configured?.()) { try { app.getClient().auth.signOut(); } catch (_) { /* already gone */ } }
+    resetVerificationForm();
+    if (email && form.elements.email) form.elements.email.value = email;
+    setNotice(message, 'isError');
+    (form.elements.password || form.elements.email)?.focus();
+  }
+
   async function requestEmailCode(app) {
     const { data: request, error } = await app.getClient().functions.invoke('request-staff-email-2fa', { body: {} });
     if (error) throw new Error(await functionErrorMessage(error, 'We could not send the verification code. Please try again.'));
@@ -164,6 +195,7 @@
   async function verifyEmailCode(app) {
     const code = String(verificationCode.value || '').replace(/\D/g, '');
     if (!/^\d{6,8}$/.test(code)) throw new Error('Enter the verification code from your email.');
+    if (!await stillSignedIn(app)) return;
     setNotice('Verifying code...');
     const { error } = await app.getClient().auth.verifyOtp({ email: state.email, token: code, type: 'email' });
     if (error) throw new Error(error.message || 'The verification code was not accepted.');
@@ -178,6 +210,10 @@
       if (state.ticket) await verifyEmailCode(app);
       else await beginAdminLogin(app, new FormData(form));
     } catch (error) {
+      if (sessionLost(error)) {
+        returnToSignIn(app, 'Your sign-in timed out before the code was accepted. Enter your administrator email and password again to continue.');
+        return;
+      }
       setNotice(error.message || 'We could not sign you in.', 'isError');
     }
   });
@@ -193,6 +229,10 @@
       startResendCooldown();
       setNotice(queuedCodeNotice(state.email, true), 'isSuccess');
     } catch (error) {
+      if (sessionLost(error)) {
+        returnToSignIn(app, 'Your sign-in timed out. Enter your administrator email and password again to continue.');
+        return;
+      }
       if (/wait 60 seconds/i.test(error.message || '')) startResendCooldown();
       setNotice(error.message || 'We could not resend the verification code.', 'isError');
     }
@@ -216,6 +256,16 @@
     } finally {
       button.disabled = false;
     }
+  });
+
+  /* The usual way this happens is a tab left open. Checking when it is looked at
+     again means the page has already recovered by the time anything is clicked. */
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState !== 'visible') return;
+    if (!state.ticket) return;
+    const app = window.CampGridsApp;
+    if (!app?.configured()) return;
+    await stillSignedIn(app);
   });
 
   startOverButton.addEventListener('click', async () => {

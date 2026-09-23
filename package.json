@@ -5,7 +5,7 @@
   "description": "MSI Camp Grids: the public Grid browser plus the Supabase-backed staff and camper application layer.",
   "type": "commonjs",
   "scripts": {
-    "test": "node --test tests/auth-emails.test.mjs tests/scripts.test.mjs tests/edge-functions.test.mjs tests/session-and-forms.test.mjs tests/admin-script.test.mjs",
+    "test": "node --test tests/auth-emails.test.mjs tests/scripts.test.mjs tests/edge-functions.test.mjs tests/session-and-forms.test.mjs tests/admin-script.test.mjs tests/page-assets.test.mjs",
     "build:emails": "node scripts/buildEmails.mjs",
     "check:emails": "node scripts/buildEmails.mjs --check",
     "push:emails": "node scripts/pushEmailTemplates.mjs",
@@ -16,6 +16,7 @@
     "setup:supabase": "node scripts/setupSupabase.mjs",
     "verify:smtp": "node scripts/verifySmtp.mjs",
     "sync:vercel": "node scripts/syncVercelEnv.mjs",
-    "migrate": "node scripts/applyMigrations.mjs"
+    "migrate": "node scripts/applyMigrations.mjs",
+    "build:favicons": "node scripts/buildFavicons.cjs"
   }
 }

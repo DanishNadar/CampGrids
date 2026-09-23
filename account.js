@@ -200,9 +200,37 @@
     setNotice(queuedCodeNotice(teacherState.email), 'isSuccess');
   }
 
+
+  /* Everything that means "there is no longer a signed-in session behind this
+     page": the database guards, the Auth client, and an expired or rejected JWT.
+     They arrive as plain messages from three different layers, so they are matched
+     rather than typed. */
+  function sessionLost(error) {
+    const text = `${error?.name || ''} ${error?.message || ''} ${error?.code || ''}`;
+    return /Sign in (with your password |)?before|Auth session missing|session_not_found|JWT expired|invalid claim|token is expired|refresh_token_not_found|Invalid Refresh Token|not authenticated|401/i.test(text);
+  }
+
+  async function teacherStillSignedIn(app) {
+    let session = null;
+    try { session = await app.getSession(); } catch (_) { session = null; }
+    if (session) return true;
+    returnToTeacherSignIn(app, 'Your sign-in timed out. Enter your work email and password again to continue.');
+    return false;
+  }
+
+  function returnToTeacherSignIn(app, message) {
+    const email = teacherState.email || String(new FormData(teacherLoginForm).get('email') || '');
+    if (app?.configured?.()) { try { app.getClient().auth.signOut(); } catch (_) { /* already gone */ } }
+    resetTeacherVerification();
+    if (email && teacherLoginForm.elements.email) teacherLoginForm.elements.email.value = email;
+    setNotice(message, 'isError');
+    (teacherLoginForm.elements.password || teacherLoginForm.elements.email)?.focus();
+  }
+
   async function verifyTeacherEmailCode(app) {
     const code = String(teacherVerificationCode.value || '').replace(/\D/g, '');
     if (!/^\d{6,8}$/.test(code)) throw new Error('Enter the verification code from your email.');
+    if (!await teacherStillSignedIn(app)) return;
     setNotice('Verifying code...');
     const { error } = await app.getClient().auth.verifyOtp({ email: teacherState.email, token: code, type: 'email' });
     if (error) throw new Error(error.message || 'The verification code was not accepted.');
@@ -231,6 +259,10 @@
       if (teacherState.ticket) await verifyTeacherEmailCode(app);
       else await beginTeacherLogin(app, new FormData(teacherLoginForm));
     } catch (error) {
+      if (sessionLost(error)) {
+        returnToTeacherSignIn(app, 'Your sign-in timed out before the code was accepted. Enter your work email and password again to continue.');
+        return;
+      }
       setNotice(error.message || 'We could not sign you in.', 'isError');
     }
   });
@@ -246,6 +278,10 @@
       startTeacherResendCooldown();
       setNotice(queuedCodeNotice(teacherState.email, true), 'isSuccess');
     } catch (error) {
+      if (sessionLost(error)) {
+        returnToTeacherSignIn(app, 'Your sign-in timed out. Enter your work email and password again to continue.');
+        return;
+      }
       if (/wait 60 seconds/i.test(error.message || '')) startTeacherResendCooldown();
       setNotice(error.message || 'We could not resend the verification code.', 'isError');
     }
@@ -270,6 +306,16 @@
     } finally {
       button.disabled = false;
     }
+  });
+
+  /* The usual way this happens is a tab left open. Checking when it is looked at
+     again means the page has already recovered by the time anything is clicked. */
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState !== 'visible') return;
+    if (!teacherState.ticket) return;
+    const app = window.CampGridsApp;
+    if (!app?.configured()) return;
+    await teacherStillSignedIn(app);
   });
 
   teacherStartOver.addEventListener('click', async () => {

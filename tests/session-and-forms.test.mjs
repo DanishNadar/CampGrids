@@ -7,7 +7,7 @@
  * have to re-identify, and a grid cell that goes back to being a single button.
  */
 
-import { test, describe } from 'node:test';
+import { test, describe, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -140,4 +140,79 @@ describe('the grid cell preview', () => {
     const block = css.slice(css.indexOf('.cellPreview {'), css.indexOf('.cellPreview::backdrop'));
     assert.match(block, /margin: auto;/);
   });
+});
+
+describe('a sign-in that times out returns to the sign-in step', () => {
+  /* The reported failure: a tab left open on the verification step long enough for
+     the session to lapse. Every button then answered "Sign in with your password
+     before requesting an email code" and the only way out was a quiet link. The
+     reset already existed; nothing called it. */
+  const PAGES = [
+    {
+      file: 'admin/admin-login.js',
+      reset: 'resetVerificationForm()',
+      back: 'function returnToSignIn(',
+      guard: 'if (!await stillSignedIn(app)) return;',
+      ticket: 'if (!state.ticket) return;'
+    },
+    {
+      file: 'account.js',
+      reset: 'resetTeacherVerification()',
+      back: 'function returnToTeacherSignIn(',
+      guard: 'if (!await teacherStillSignedIn(app)) return;',
+      ticket: 'if (!teacherState.ticket) return;'
+    }
+  ];
+
+  for (const page of PAGES) {
+    describe(page.file, () => {
+      let source = '';
+      before(async () => { source = await read(page.file); });
+
+      test('recognises a lapsed session from any layer', () => {
+        /* The database guards, the Auth client and an expired JWT all report this
+           differently, and none of them as a typed error. */
+        assert.ok(source.includes('function sessionLost(error)'), 'sessionLost must exist');
+        for (const signal of ['Auth session missing', 'JWT expired', 'Sign in']) {
+          assert.ok(source.includes(signal), `sessionLost must recognise "${signal}"`);
+        }
+      });
+
+      test('has one way back, and it restores the credentials step', () => {
+        const at = source.indexOf(page.back);
+        assert.ok(at > 0, `${page.back} must exist`);
+        const body = source.slice(at, at + 700);
+        assert.ok(body.includes(page.reset),
+          'it must call the existing reset rather than hiding fields by hand');
+        assert.ok(body.includes('signOut'),
+          'the dead session must be cleared, not left behind');
+      });
+
+      test('the email is carried across so only the password is retyped', () => {
+        const at = source.indexOf(page.back);
+        const body = source.slice(at, at + 700);
+        assert.ok(body.includes('elements.email.value = email'), 'the email must be refilled');
+        assert.ok(/password.*focus\(\)/s.test(body), 'the cursor belongs in the password field');
+      });
+
+      test('the guard runs before a code is verified', () => {
+        assert.ok(source.includes(page.guard),
+          'verifying needs a live session for both the OTP exchange and what follows');
+      });
+
+      test('both the submit and the resend paths recover', () => {
+        const recoveries = source.split('if (sessionLost(error)) {').length - 1;
+        assert.ok(recoveries >= 2,
+          `expected the submit and resend handlers to recover, found ${recoveries}`);
+      });
+
+      test('a tab being looked at again recovers before anything is clicked', () => {
+        const at = source.indexOf("addEventListener('visibilitychange'");
+        assert.ok(at > 0, 'the page must notice when it is looked at again');
+        const handler = source.slice(at, at + 400);
+        assert.ok(handler.includes(page.ticket),
+          'the check belongs only to the verification step, not the credentials step');
+      });
+    });
+  }
 });
