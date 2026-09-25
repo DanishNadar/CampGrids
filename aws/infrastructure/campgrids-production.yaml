@@ -1,0 +1,1689 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  CampGrids production foundation: two-AZ VPC, ALB/EC2 API, private RDS,
+  Cognito, encrypted S3, monitoring, WAF, and optional Redshift Serverless.
+  Deploy bootstrap-artifacts.yaml and upload application artifacts first.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: campgrids
+    AllowedPattern: '^[a-z][a-z0-9-]{2,24}$'
+    Description: Lowercase application identifier used in resource names and tags.
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues: [dev, test, prod]
+  VpcCidr:
+    Type: String
+    Default: 10.42.0.0/16
+    Description: Must not overlap with an existing organization network.
+  ApiCertificateArn:
+    Type: String
+    Description: ACM certificate ARN in this Region for the API HTTPS listener.
+  ApiAllowedOrigins:
+    Type: CommaDelimitedList
+    Description: Exact browser origins allowed to call the API, for example https://app.campgrids.example.org.
+  SesIdentityArn:
+    Type: String
+    Description: ARN of a verified SES domain/email identity in this Region. It must be approved for production sending.
+  SesFromEmail:
+    Type: String
+    Description: Verified sender, for example CampGrids <no-reply@example.org>.
+  AlertEmail:
+    Type: String
+    Description: Operations mailbox that will confirm the SNS subscription after stack creation.
+  ArtifactsBucketName:
+    Type: String
+    Description: Output from the bootstrap-artifacts stack.
+  ApiArtifactKey:
+    Type: String
+    Default: releases/campgrids-account-api.zip
+  StudentAuthArtifactKey:
+    Type: String
+    Default: releases/campgrids-student-auth.zip
+  AnalyticsArtifactKey:
+    Type: String
+    Default: releases/campgrids-analytics-export.zip
+  InstanceType:
+    Type: String
+    Default: t3.medium
+    AllowedValues: [t3.medium, t3.large]
+  ApiDesiredCapacity:
+    Type: Number
+    Default: 2
+    MinValue: 2
+    MaxValue: 4
+  ApiMaxCapacity:
+    Type: Number
+    Default: 4
+    MinValue: 2
+    MaxValue: 8
+  EnableRedshift:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Enable only after the application has reporting data to export.
+  RedshiftBaseCapacity:
+    Type: Number
+    Default: 4
+    AllowedValues: [4, 8, 16, 32]
+  FrontendDomainName:
+    Type: String
+    Default: ''
+    Description: Optional custom frontend hostname. The ACM certificate must be in us-east-1 for CloudFront.
+  FrontendCertificateArn:
+    Type: String
+    Default: 'arn:aws:acm:us-east-1:000000000000:certificate/not-configured'
+    Description: ACM certificate ARN in us-east-1 when FrontendDomainName is set.
+
+Conditions:
+  UseRedshift: !Equals [!Ref EnableRedshift, 'true']
+  HasFrontendDomain: !Not [!Equals [!Ref FrontendDomainName, '']]
+
+Resources:
+  DataKey:
+    Type: AWS::KMS::Key
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Description: !Sub '${ProjectName}-${Environment} encryption key for CampGrids data'
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: EnableAccountIamPolicies
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: AllowCloudWatchLogsEncryption
+            Effect: Allow
+            Principal:
+              Service: !Sub 'logs.${AWS::Region}.amazonaws.com'
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+            Condition:
+              ArnLike:
+                kms:EncryptionContext:aws:logs:arn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
+      Tags:
+        - Key: Application
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  DataKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${ProjectName}-${Environment}-data'
+      TargetKeyId: !Ref DataKey
+
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-vpc'
+        - Key: Application
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-igw'
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref Vpc
+
+  PublicSubnetAz1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Select [0, !Cidr [!Ref VpcCidr, 8, 8]]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-public-a'
+
+  PublicSubnetAz2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: !Select [1, !Cidr [!Ref VpcCidr, 8, 8]]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-public-b'
+
+  AppSubnetAz1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Select [2, !Cidr [!Ref VpcCidr, 8, 8]]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-app-a'
+
+  AppSubnetAz2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: !Select [3, !Cidr [!Ref VpcCidr, 8, 8]]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-app-b'
+
+  DatabaseSubnetAz1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Select [4, !Cidr [!Ref VpcCidr, 8, 8]]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-database-a'
+
+  DatabaseSubnetAz2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: !Select [5, !Cidr [!Ref VpcCidr, 8, 8]]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-database-b'
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-public-rt'
+
+  PublicDefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicRouteAssociationAz1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnetAz1
+
+  PublicRouteAssociationAz2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnetAz2
+
+  NatEipAz1:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-nat-a'
+
+  NatEipAz2:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-nat-b'
+
+  NatGatewayAz1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatEipAz1.AllocationId
+      SubnetId: !Ref PublicSubnetAz1
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-nat-a'
+
+  NatGatewayAz2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatEipAz2.AllocationId
+      SubnetId: !Ref PublicSubnetAz2
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-nat-b'
+
+  AppRouteTableAz1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-app-a-rt'
+
+  AppDefaultRouteAz1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref AppRouteTableAz1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGatewayAz1
+
+  AppRouteAssociationAz1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref AppRouteTableAz1
+      SubnetId: !Ref AppSubnetAz1
+
+  AppRouteTableAz2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-app-b-rt'
+
+  AppDefaultRouteAz2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref AppRouteTableAz2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGatewayAz2
+
+  AppRouteAssociationAz2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref AppRouteTableAz2
+      SubnetId: !Ref AppSubnetAz2
+
+  DatabaseRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-database-rt'
+
+  DatabaseRouteAssociationAz1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref DatabaseRouteTable
+      SubnetId: !Ref DatabaseSubnetAz1
+
+  DatabaseRouteAssociationAz2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref DatabaseRouteTable
+      SubnetId: !Ref DatabaseSubnetAz2
+
+  S3GatewayEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref Vpc
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+      VpcEndpointType: Gateway
+      RouteTableIds:
+        - !Ref AppRouteTableAz1
+        - !Ref AppRouteTableAz2
+        - !Ref DatabaseRouteTable
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: 's3:*'
+            Resource: '*'
+
+  FlowLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/vpc/${ProjectName}-${Environment}/flow-logs'
+      RetentionInDays: 90
+      KmsKeyId: !GetAtt DataKey.Arn
+
+  FlowLogsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: vpc-flow-logs.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: WriteVpcFlowLogs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                Resource: '*'
+
+  VpcFlowLogs:
+    Type: AWS::EC2::FlowLog
+    Properties:
+      DeliverLogsPermissionArn: !GetAtt FlowLogsRole.Arn
+      LogDestination: !GetAtt FlowLogsGroup.Arn
+      LogDestinationType: cloud-watch-logs
+      ResourceId: !Ref Vpc
+      ResourceType: VPC
+      TrafficType: REJECT
+
+  ApiLoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Public HTTPS ingress to the CampGrids API load balancer.
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-alb-sg'
+
+  ApiInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: API instances accept application traffic only from the ALB.
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          SourceSecurityGroupId: !Ref ApiLoadBalancerSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-api-sg'
+
+  StudentAuthSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Cognito student-authentication Lambda network identity.
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-student-auth-sg'
+
+  AnalyticsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Scheduled analytics export Lambda network identity.
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-analytics-sg'
+
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: PostgreSQL only from CampGrids API and controlled Lambda workers.
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref ApiInstanceSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref StudentAuthSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref AnalyticsSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-database-sg'
+
+  RedshiftSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: UseRedshift
+    Properties:
+      GroupDescription: Redshift Serverless is private; no inbound network access is granted.
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-redshift-sg'
+
+  DatabaseSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Sub '${ProjectName} isolated database subnets'
+      SubnetIds:
+        - !Ref DatabaseSubnetAz1
+        - !Ref DatabaseSubnetAz2
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-database-subnets'
+
+  ApiDatabaseSecret:
+    Type: AWS::SecretsManager::Secret
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Name: !Sub '${ProjectName}/${Environment}/database/api'
+      Description: CampGrids least-privilege PostgreSQL API credential. Password is applied by the database initialization runbook.
+      KmsKeyId: !GetAtt DataKey.Arn
+      GenerateSecretString:
+        SecretStringTemplate: '{"username":"campgrids_api"}'
+        GenerateStringKey: password
+        PasswordLength: 40
+        ExcludeCharacters: '"''@/\\:;?&=#%'
+
+  StudentAuthDatabaseSecret:
+    Type: AWS::SecretsManager::Secret
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Name: !Sub '${ProjectName}/${Environment}/database/student-auth'
+      Description: Read-only PostgreSQL credential for Cognito student custom-auth triggers.
+      KmsKeyId: !GetAtt DataKey.Arn
+      GenerateSecretString:
+        SecretStringTemplate: '{"username":"campgrids_student_auth"}'
+        GenerateStringKey: password
+        PasswordLength: 40
+        ExcludeCharacters: '"''@/\\:;?&=#%'
+
+  AnalyticsDatabaseSecret:
+    Type: AWS::SecretsManager::Secret
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Name: !Sub '${ProjectName}/${Environment}/database/analytics-export'
+      Description: Read-only PostgreSQL credential for the scheduled CampGrids analytics export.
+      KmsKeyId: !GetAtt DataKey.Arn
+      GenerateSecretString:
+        SecretStringTemplate: '{"username":"campgrids_analytics_export"}'
+        GenerateStringKey: password
+        PasswordLength: 40
+        ExcludeCharacters: '"''@/\\:;?&=#%'
+
+  AnalyticsHmacSecret:
+    Type: AWS::SecretsManager::Secret
+    Condition: UseRedshift
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Name: !Sub '${ProjectName}/${Environment}/analytics/hmac'
+      Description: Secret HMAC key used only to pseudonymize analytics identifiers.
+      KmsKeyId: !GetAtt DataKey.Arn
+      GenerateSecretString:
+        GenerateStringKey: key
+        PasswordLength: 64
+        ExcludePunctuation: true
+
+  RedshiftAdminSecret:
+    Type: AWS::SecretsManager::Secret
+    Condition: UseRedshift
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Name: !Sub '${ProjectName}/${Environment}/redshift/admin'
+      Description: Redshift Data API administrative credential. Do not use from browsers or the EC2 API.
+      KmsKeyId: !GetAtt DataKey.Arn
+      GenerateSecretString:
+        SecretStringTemplate: '{"username":"campgrids_analytics"}'
+        GenerateStringKey: password
+        PasswordLength: 40
+        ExcludeCharacters: '"''@/\\:;?&=#%'
+
+  Database:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: !Sub '${ProjectName}-${Environment}-postgres'
+      Engine: postgres
+      DBInstanceClass: db.t4g.medium
+      AllocatedStorage: '50'
+      MaxAllocatedStorage: 200
+      StorageType: gp3
+      StorageEncrypted: true
+      KmsKeyId: !GetAtt DataKey.Arn
+      DBName: campgrids
+      MasterUsername: campgrids_master
+      ManageMasterUserPassword: true
+      MasterUserSecret:
+        KmsKeyId: !GetAtt DataKey.Arn
+      MultiAZ: true
+      PubliclyAccessible: false
+      DBSubnetGroupName: !Ref DatabaseSubnetGroup
+      VPCSecurityGroups:
+        - !Ref DatabaseSecurityGroup
+      BackupRetentionPeriod: 35
+      PreferredBackupWindow: '07:00-07:30'
+      PreferredMaintenanceWindow: 'sun:08:00-sun:08:30'
+      DeletionProtection: true
+      CopyTagsToSnapshot: true
+      EnableCloudwatchLogsExports: [postgresql]
+      EnablePerformanceInsights: true
+      PerformanceInsightsKMSKeyId: !GetAtt DataKey.Arn
+      AutoMinorVersionUpgrade: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-postgres'
+        - Key: Application
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  WebBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Application
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  PrivateDataBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !GetAtt DataKey.Arn
+            BucketKeyEnabled: true
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: Expire-temporary-imports
+            Status: Enabled
+            Prefix: imports/tmp/
+            ExpirationInDays: 7
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 30
+          - Id: Expire-noncurrent-private-exports
+            Status: Enabled
+            Prefix: exports/
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 30
+      Tags:
+        - Key: DataClassification
+          Value: StudentPII
+        - Key: Application
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  AnalyticsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !GetAtt DataKey.Arn
+            BucketKeyEnabled: true
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: Retain-analytics-export-history
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 90
+      Tags:
+        - Key: DataClassification
+          Value: PseudonymizedAnalytics
+        - Key: Application
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  PrivateDataBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref PrivateDataBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !GetAtt PrivateDataBucket.Arn
+              - !Sub '${PrivateDataBucket.Arn}/*'
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+
+  AnalyticsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref AnalyticsBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !GetAtt AnalyticsBucket.Arn
+              - !Sub '${AnalyticsBucket.Arn}/*'
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+
+  WebOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub '${ProjectName}-${Environment}-web-oac'
+        Description: CloudFront-only access to the CampGrids static web bucket.
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  WebDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub '${ProjectName} ${Environment} static frontend'
+        DefaultRootObject: index.html
+        HttpVersion: http2and3
+        PriceClass: PriceClass_100
+        Aliases: !If [HasFrontendDomain, [!Ref FrontendDomainName], !Ref AWS::NoValue]
+        Origins:
+          - Id: web-bucket-origin
+            DomainName: !GetAtt WebBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt WebOriginAccessControl.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        DefaultCacheBehavior:
+          TargetOriginId: web-bucket-origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+        ViewerCertificate: !If
+          - HasFrontendDomain
+          - AcmCertificateArn: !Ref FrontendCertificateArn
+            SslSupportMethod: sni-only
+            MinimumProtocolVersion: TLSv1.2_2021
+          - CloudFrontDefaultCertificate: true
+
+  WebBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontReadOnly
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub '${WebBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub 'arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${WebDistribution}'
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !GetAtt WebBucket.Arn
+              - !Sub '${WebBucket.Arn}/*'
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ProjectName}-${Environment}-operations'
+      KmsMasterKeyId: !GetAtt DataKey.Arn
+      Subscription:
+        - Endpoint: !Ref AlertEmail
+          Protocol: email
+
+  ApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/ec2/${ProjectName}-${Environment}/api'
+      RetentionInDays: 90
+      KmsKeyId: !GetAtt DataKey.Arn
+
+  ApiInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-api-instance'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
+      Policies:
+        - PolicyName: ReadApiConfigurationAndArtifact
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub 'arn:${AWS::Partition}:s3:::${ArtifactsBucketName}/${ApiArtifactKey}'
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Ref ApiDatabaseSecret
+              - Effect: Allow
+                Action: kms:Decrypt
+                Resource: !GetAtt DataKey.Arn
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogStreams
+                Resource: !Sub '${ApiLogGroup.Arn}:*'
+
+  ApiInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: [!Ref ApiInstanceRole]
+
+  StudentAuthRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-student-auth'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
+      Policies:
+        - PolicyName: ReadStudentAuthenticationDatabaseSecret
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Ref StudentAuthDatabaseSecret
+              - Effect: Allow
+                Action: kms:Decrypt
+                Resource: !GetAtt DataKey.Arn
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                Resource: '*'
+
+  AnalyticsExportRole:
+    Type: AWS::IAM::Role
+    Condition: UseRedshift
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-analytics-export'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
+      Policies:
+        - PolicyName: ExportPseudonymizedAnalytics
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:AbortMultipartUpload
+                Resource: !Sub '${AnalyticsBucket.Arn}/exports/*'
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource:
+                  - !Ref AnalyticsDatabaseSecret
+                  - !Ref AnalyticsHmacSecret
+                  - !Ref RedshiftAdminSecret
+              - Effect: Allow
+                Action: kms:Decrypt
+                Resource: !GetAtt DataKey.Arn
+              - Effect: Allow
+                Action:
+                  - redshift-data:ExecuteStatement
+                  - redshift-data:BatchExecuteStatement
+                  - redshift-data:DescribeStatement
+                Resource: '*'
+
+  RedshiftCopyRole:
+    Type: AWS::IAM::Role
+    Condition: UseRedshift
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-redshift-copy'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: redshift.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: ReadAnalyticsExportsOnly
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub '${AnalyticsBucket.Arn}/exports/*'
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt AnalyticsBucket.Arn
+                Condition:
+                  StringLike:
+                    s3:prefix: exports/*
+              - Effect: Allow
+                Action: kms:Decrypt
+                Resource: !GetAtt DataKey.Arn
+
+  StudentAuthFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-student-auth'
+      Description: Cognito custom challenge verification for active student class membership.
+      Runtime: python3.12
+      Handler: handlers.define_auth_challenge
+      Role: !GetAtt StudentAuthRole.Arn
+      Timeout: 15
+      MemorySize: 256
+      ReservedConcurrentExecutions: 20
+      Code:
+        S3Bucket: !Ref ArtifactsBucketName
+        S3Key: !Ref StudentAuthArtifactKey
+      VpcConfig:
+        SecurityGroupIds: [!Ref StudentAuthSecurityGroup]
+        SubnetIds: [!Ref AppSubnetAz1, !Ref AppSubnetAz2]
+      Environment:
+        Variables:
+          DB_HOST: !GetAtt Database.Endpoint.Address
+          DB_PORT: !GetAtt Database.Endpoint.Port
+          DB_NAME: campgrids
+          DB_SECRET_ARN: !Ref StudentAuthDatabaseSecret
+          LOG_LEVEL: INFO
+      TracingConfig:
+        Mode: Active
+
+  StudentAuthLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-student-auth'
+      RetentionInDays: 90
+      KmsKeyId: !GetAtt DataKey.Arn
+
+  StudentAuthCreateFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-student-auth-create'
+      Description: Creates the non-secret class-code challenge shown to a student.
+      Runtime: python3.12
+      Handler: handlers.create_auth_challenge
+      Role: !GetAtt StudentAuthRole.Arn
+      Timeout: 15
+      MemorySize: 256
+      ReservedConcurrentExecutions: 20
+      Code:
+        S3Bucket: !Ref ArtifactsBucketName
+        S3Key: !Ref StudentAuthArtifactKey
+      VpcConfig:
+        SecurityGroupIds: [!Ref StudentAuthSecurityGroup]
+        SubnetIds: [!Ref AppSubnetAz1, !Ref AppSubnetAz2]
+      Environment:
+        Variables:
+          LOG_LEVEL: INFO
+      TracingConfig:
+        Mode: Active
+
+  StudentAuthCreateLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-student-auth-create'
+      RetentionInDays: 90
+      KmsKeyId: !GetAtt DataKey.Arn
+
+  StudentAuthVerifyFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-student-auth-verify'
+      Description: Verifies a class-code response against an active RDS enrollment.
+      Runtime: python3.12
+      Handler: handlers.verify_auth_challenge_response
+      Role: !GetAtt StudentAuthRole.Arn
+      Timeout: 15
+      MemorySize: 256
+      ReservedConcurrentExecutions: 20
+      Code:
+        S3Bucket: !Ref ArtifactsBucketName
+        S3Key: !Ref StudentAuthArtifactKey
+      VpcConfig:
+        SecurityGroupIds: [!Ref StudentAuthSecurityGroup]
+        SubnetIds: [!Ref AppSubnetAz1, !Ref AppSubnetAz2]
+      Environment:
+        Variables:
+          DB_HOST: !GetAtt Database.Endpoint.Address
+          DB_PORT: !GetAtt Database.Endpoint.Port
+          DB_NAME: campgrids
+          DB_SECRET_ARN: !Ref StudentAuthDatabaseSecret
+          LOG_LEVEL: INFO
+      TracingConfig:
+        Mode: Active
+
+  StudentAuthVerifyLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-student-auth-verify'
+      RetentionInDays: 90
+      KmsKeyId: !GetAtt DataKey.Arn
+
+  StaffUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub '${ProjectName}-${Environment}-staff'
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      MfaConfiguration: 'ON'
+      EnabledMfas: [EMAIL_OTP]
+      UserPoolTier: ESSENTIALS
+      EmailConfiguration:
+        EmailSendingAccount: DEVELOPER
+        From: !Ref SesFromEmail
+        SourceArn: !Ref SesIdentityArn
+      EmailAuthenticationSubject: Your CampGrids verification code
+      EmailAuthenticationMessage: Your CampGrids verification code is {####}.
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 14
+          RequireLowercase: true
+          RequireUppercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          TemporaryPasswordValidityDays: 3
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+      UserPoolAddOns:
+        AdvancedSecurityMode: AUDIT
+      DeletionProtection: ACTIVE
+
+  StaffWebClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref StaffUserPool
+      ClientName: !Sub '${ProjectName}-${Environment}-staff-web'
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      RefreshTokenValidity: 1
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      TokenValidityUnits:
+        RefreshToken: days
+        AccessToken: hours
+        IdToken: hours
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+
+  StudentUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub '${ProjectName}-${Environment}-students'
+      UsernameConfiguration:
+        CaseSensitive: false
+      MfaConfiguration: 'OFF'
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+      LambdaConfig:
+        DefineAuthChallenge: !GetAtt StudentAuthFunction.Arn
+        CreateAuthChallenge: !GetAtt StudentAuthCreateFunction.Arn
+        VerifyAuthChallengeResponse: !GetAtt StudentAuthVerifyFunction.Arn
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 20
+          RequireLowercase: true
+          RequireUppercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          TemporaryPasswordValidityDays: 1
+      DeletionProtection: ACTIVE
+
+  StudentWebClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref StudentUserPool
+      ClientName: !Sub '${ProjectName}-${Environment}-student-web'
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      RefreshTokenValidity: 1
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      TokenValidityUnits:
+        RefreshToken: days
+        AccessToken: hours
+        IdToken: hours
+      ExplicitAuthFlows:
+        - ALLOW_CUSTOM_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+
+  StudentAuthInvokePermissionDefine:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref StudentAuthFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt StudentUserPool.Arn
+
+  StudentAuthInvokePermissionCreate:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref StudentAuthCreateFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt StudentUserPool.Arn
+
+  StudentAuthInvokePermissionVerify:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref StudentAuthVerifyFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt StudentUserPool.Arn
+
+  ApiTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${ProjectName}-${Environment}-api'
+      VpcId: !Ref Vpc
+      Protocol: HTTP
+      Port: 8080
+      TargetType: instance
+      HealthCheckEnabled: true
+      HealthCheckPath: /health
+      HealthCheckProtocol: HTTP
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: '200-299'
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '30'
+      Tags:
+        - Key: Application
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  ApiLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub '${ProjectName}-${Environment}-api'
+      Scheme: internet-facing
+      Type: application
+      IpAddressType: ipv4
+      Subnets: [!Ref PublicSubnetAz1, !Ref PublicSubnetAz2]
+      SecurityGroups: [!Ref ApiLoadBalancerSecurityGroup]
+      LoadBalancerAttributes:
+        - Key: deletion_protection.enabled
+          Value: 'true'
+        - Key: routing.http.drop_invalid_header_fields.enabled
+          Value: 'true'
+      Tags:
+        - Key: Application
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  ApiHttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApiLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: redirect
+          RedirectConfig:
+            Protocol: HTTPS
+            Port: '443'
+            StatusCode: HTTP_301
+
+  ApiHttpsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApiLoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref ApiCertificateArn
+      SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref ApiTargetGroup
+
+  ApiWebAcl:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Sub '${ProjectName}-${Environment}-api'
+      Scope: REGIONAL
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub '${ProjectName}-${Environment}-api-waf'
+        SampledRequestsEnabled: true
+      Rules:
+        - Name: AWSManagedCommonRules
+          Priority: 0
+          OverrideAction:
+            None: {}
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesCommonRuleSet
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: common-rules
+            SampledRequestsEnabled: true
+        - Name: ApiRateLimit
+          Priority: 1
+          Action:
+            Block: {}
+          Statement:
+            RateBasedStatement:
+              Limit: 500
+              AggregateKeyType: IP
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: api-rate-limit
+            SampledRequestsEnabled: true
+
+  ApiWebAclAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      ResourceArn: !Ref ApiLoadBalancer
+      WebACLArn: !GetAtt ApiWebAcl.Arn
+
+  ApiLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub '${ProjectName}-${Environment}-api'
+      LaunchTemplateData:
+        ImageId: '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}'
+        InstanceType: !Ref InstanceType
+        IamInstanceProfile:
+          Arn: !GetAtt ApiInstanceProfile.Arn
+        SecurityGroupIds: [!Ref ApiInstanceSecurityGroup]
+        MetadataOptions:
+          HttpEndpoint: enabled
+          HttpTokens: required
+          HttpPutResponseHopLimit: 1
+        BlockDeviceMappings:
+          - DeviceName: /dev/xvda
+            Ebs:
+              DeleteOnTermination: true
+              Encrypted: true
+              VolumeSize: 30
+              VolumeType: gp3
+        UserData:
+          Fn::Base64:
+            Fn::Sub:
+              - |
+                #!/bin/bash
+                set -euo pipefail
+                exec > >(tee /var/log/campgrids-bootstrap.log | logger -t campgrids-bootstrap) 2>&1
+                dnf install -y python3-pip unzip amazon-cloudwatch-agent
+                install -d -m 0755 /srv/campgrids /etc/campgrids /var/log/campgrids
+                aws s3 cp s3://${ArtifactsBucketName}/${ApiArtifactKey} /tmp/campgrids-api.zip
+                unzip -q -o /tmp/campgrids-api.zip -d /srv/campgrids
+                python3 -m venv /srv/campgrids/venv
+                /srv/campgrids/venv/bin/pip install --no-cache-dir -r /srv/campgrids/requirements.txt
+                aws secretsmanager get-secret-value --secret-id ${ApiDatabaseSecret} --query SecretString --output text > /etc/campgrids/database-secret.json
+                export DB_HOST=${Database.Endpoint.Address}
+                export DB_PORT=${Database.Endpoint.Port}
+                export DB_NAME=campgrids
+                python3 - <<'PY' > /etc/campgrids/api.env
+                import json
+                import os
+                from urllib.parse import quote
+                secret = json.load(open('/etc/campgrids/database-secret.json', encoding='utf-8'))
+                password = quote(secret['password'], safe='')
+                username = quote(secret['username'], safe='')
+                print(f"DATABASE_URL=postgresql://{username}:{password}@{os.environ['DB_HOST']}:{os.environ['DB_PORT']}/{os.environ['DB_NAME']}?sslmode=require")
+                print("AWS_REGION=${AWS::Region}")
+                print("COGNITO_STAFF_USER_POOL_ID=${StaffUserPool}")
+                print("COGNITO_STAFF_APP_CLIENT_ID=${StaffWebClient}")
+                print("COGNITO_STUDENT_USER_POOL_ID=${StudentUserPool}")
+                print("COGNITO_STUDENT_APP_CLIENT_ID=${StudentWebClient}")
+                print("CORS_ALLOWED_ORIGINS=${AllowedOrigins}")
+                print("LOG_LEVEL=INFO")
+                PY
+                chmod 0600 /etc/campgrids/database-secret.json /etc/campgrids/api.env
+                rm -f /tmp/campgrids-api.zip
+                cat >/etc/systemd/system/campgrids-api.service <<'UNIT'
+                [Unit]
+                Description=CampGrids FastAPI service
+                After=network-online.target
+                Wants=network-online.target
+
+                [Service]
+                Type=simple
+                User=root
+                WorkingDirectory=/srv/campgrids
+                EnvironmentFile=/etc/campgrids/api.env
+                ExecStart=/srv/campgrids/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8080 --proxy-headers
+                Restart=always
+                RestartSec=5
+                StandardOutput=append:/var/log/campgrids/api.log
+                StandardError=append:/var/log/campgrids/api.log
+
+                [Install]
+                WantedBy=multi-user.target
+                UNIT
+                cat >/opt/aws/amazon-cloudwatch-agent/etc/campgrids.json <<'CWAGENT'
+                {
+                  "logs": {
+                    "logs_collected": {
+                      "files": {
+                        "collect_list": [
+                          {"file_path":"/var/log/campgrids/api.log","log_group_name":"${ApiLogGroup}","log_stream_name":"{instance_id}/api"},
+                          {"file_path":"/var/log/campgrids-bootstrap.log","log_group_name":"${ApiLogGroup}","log_stream_name":"{instance_id}/bootstrap"}
+                        ]
+                      }
+                    }
+                  }
+                }
+                CWAGENT
+                systemctl daemon-reload
+                systemctl enable --now campgrids-api
+                /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/campgrids.json -s
+              - AllowedOrigins: !Join [',', !Ref ApiAllowedOrigins]
+
+  ApiAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Sub '${ProjectName}-${Environment}-api'
+      VPCZoneIdentifier: [!Ref AppSubnetAz1, !Ref AppSubnetAz2]
+      LaunchTemplate:
+        LaunchTemplateId: !Ref ApiLaunchTemplate
+        Version: !GetAtt ApiLaunchTemplate.LatestVersionNumber
+      MinSize: '2'
+      DesiredCapacity: !Ref ApiDesiredCapacity
+      MaxSize: !Ref ApiMaxCapacity
+      TargetGroupARNs: [!Ref ApiTargetGroup]
+      HealthCheckType: ELB
+      HealthCheckGracePeriod: 300
+      NewInstancesProtectedFromScaleIn: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-api'
+          PropagateAtLaunch: true
+        - Key: Application
+          Value: !Ref ProjectName
+          PropagateAtLaunch: true
+        - Key: Environment
+          Value: !Ref Environment
+          PropagateAtLaunch: true
+
+  ApiCpuScalingPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref ApiAutoScalingGroup
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: 60
+        DisableScaleIn: false
+
+  RedshiftNamespace:
+    Type: AWS::RedshiftServerless::Namespace
+    Condition: UseRedshift
+    Properties:
+      NamespaceName: !Sub '${ProjectName}-${Environment}'
+      DbName: campgrids
+      AdminUsername: campgrids_analytics
+      AdminUserPassword: !Sub '{{resolve:secretsmanager:${RedshiftAdminSecret}:SecretString:password}}'
+      IamRoles: [!GetAtt RedshiftCopyRole.Arn]
+      KmsKeyId: !GetAtt DataKey.Arn
+      LogExports: [userlog, connectionlog, useractivitylog]
+
+  RedshiftWorkgroup:
+    Type: AWS::RedshiftServerless::Workgroup
+    Condition: UseRedshift
+    Properties:
+      WorkgroupName: !Sub '${ProjectName}-${Environment}-analytics'
+      NamespaceName: !Ref RedshiftNamespace
+      BaseCapacity: !Ref RedshiftBaseCapacity
+      PubliclyAccessible: false
+      SecurityGroupIds: [!Ref RedshiftSecurityGroup]
+      SubnetIds: [!Ref DatabaseSubnetAz1, !Ref DatabaseSubnetAz2]
+      ConfigParameters:
+        - ParameterKey: require_ssl
+          ParameterValue: 'true'
+
+  AnalyticsExportFunction:
+    Type: AWS::Lambda::Function
+    Condition: UseRedshift
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-analytics-export'
+      Description: Exports only pseudonymized CampGrids reporting facts and loads Redshift.
+      Runtime: python3.12
+      Handler: analytics_export.handler
+      Role: !GetAtt AnalyticsExportRole.Arn
+      Timeout: 900
+      MemorySize: 512
+      ReservedConcurrentExecutions: 1
+      Code:
+        S3Bucket: !Ref ArtifactsBucketName
+        S3Key: !Ref AnalyticsArtifactKey
+      VpcConfig:
+        SecurityGroupIds: [!Ref AnalyticsSecurityGroup]
+        SubnetIds: [!Ref AppSubnetAz1, !Ref AppSubnetAz2]
+      Environment:
+        Variables:
+          DB_HOST: !GetAtt Database.Endpoint.Address
+          DB_PORT: !GetAtt Database.Endpoint.Port
+          DB_NAME: campgrids
+          DB_SECRET_ARN: !Ref AnalyticsDatabaseSecret
+          HMAC_SECRET_ARN: !Ref AnalyticsHmacSecret
+          ANALYTICS_BUCKET: !Ref AnalyticsBucket
+          REDSHIFT_SECRET_ARN: !Ref RedshiftAdminSecret
+          REDSHIFT_WORKGROUP: !Ref RedshiftWorkgroup
+          REDSHIFT_DATABASE: campgrids
+          REDSHIFT_COPY_ROLE_ARN: !GetAtt RedshiftCopyRole.Arn
+      TracingConfig:
+        Mode: Active
+
+  AnalyticsExportLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: UseRedshift
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-${Environment}-analytics-export'
+      RetentionInDays: 90
+      KmsKeyId: !GetAtt DataKey.Arn
+
+  AnalyticsSchedule:
+    Type: AWS::Events::Rule
+    Condition: UseRedshift
+    Properties:
+      Name: !Sub '${ProjectName}-${Environment}-analytics-nightly'
+      Description: Nightly CampGrids pseudonymized analytics export, 03:00 UTC.
+      ScheduleExpression: 'cron(0 3 * * ? *)'
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt AnalyticsExportFunction.Arn
+          Id: AnalyticsExport
+          RetryPolicy:
+            MaximumRetryAttempts: 2
+            MaximumEventAgeInSeconds: 3600
+
+  AnalyticsSchedulePermission:
+    Type: AWS::Lambda::Permission
+    Condition: UseRedshift
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AnalyticsExportFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt AnalyticsSchedule.Arn
+
+  ApiUnhealthyTargetsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-api-unhealthy-targets'
+      AlarmDescription: CampGrids API has no healthy targets behind the load balancer.
+      Namespace: AWS/ApplicationELB
+      MetricName: UnHealthyHostCount
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !GetAtt ApiLoadBalancer.LoadBalancerFullName
+        - Name: TargetGroup
+          Value: !GetAtt ApiTargetGroup.TargetGroupFullName
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlertTopic]
+
+  Api5xxAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-api-5xx'
+      AlarmDescription: CampGrids API returned five or more server errors in five minutes.
+      Namespace: AWS/ApplicationELB
+      MetricName: HTTPCode_Target_5XX_Count
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !GetAtt ApiLoadBalancer.LoadBalancerFullName
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlertTopic]
+
+  ApiCpuAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-api-cpu'
+      AlarmDescription: CampGrids API Auto Scaling Group CPU is high.
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref ApiAutoScalingGroup
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlertTopic]
+
+  DatabaseCpuAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-database-cpu'
+      AlarmDescription: CampGrids PostgreSQL CPU has stayed above 75 percent for 15 minutes.
+      Namespace: AWS/RDS
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Ref Database
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 75
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlertTopic]
+
+  DatabaseStorageAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-database-free-storage'
+      AlarmDescription: CampGrids PostgreSQL has less than 10 GiB of free storage.
+      Namespace: AWS/RDS
+      MetricName: FreeStorageSpace
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Ref Database
+      Statistic: Minimum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 10737418240
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlertTopic]
+
+  AnalyticsFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseRedshift
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-analytics-export-errors'
+      AlarmDescription: The CampGrids analytics export Lambda failed.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref AnalyticsExportFunction
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlertTopic]
+
+Outputs:
+  ApiEndpoint:
+    Description: Use this ALB hostname to create the api DNS CNAME/alias record after deployment.
+    Value: !GetAtt ApiLoadBalancer.DNSName
+  ApiLoadBalancerArn:
+    Value: !Ref ApiLoadBalancer
+  FrontendDistributionDomainName:
+    Description: CloudFront hostname. Do not deploy the legacy Supabase browser build here until it is migrated.
+    Value: !GetAtt WebDistribution.DomainName
+  FrontendDistributionId:
+    Value: !Ref WebDistribution
+  WebBucketName:
+    Value: !Ref WebBucket
+  PrivateDataBucketName:
+    Value: !Ref PrivateDataBucket
+  AnalyticsBucketName:
+    Value: !Ref AnalyticsBucket
+  DatabaseEndpoint:
+    Value: !GetAtt Database.Endpoint.Address
+  DatabasePort:
+    Value: !GetAtt Database.Endpoint.Port
+  DatabaseMasterSecretArn:
+    Description: Use only through the database initialization runbook; do not put it in the application.
+    Value: !GetAtt Database.MasterUserSecret.SecretArn
+  ApiDatabaseSecretArn:
+    Value: !Ref ApiDatabaseSecret
+  StudentAuthDatabaseSecretArn:
+    Value: !Ref StudentAuthDatabaseSecret
+  AnalyticsDatabaseSecretArn:
+    Value: !Ref AnalyticsDatabaseSecret
+  ApiAutoScalingGroupName:
+    Value: !Ref ApiAutoScalingGroup
+  StaffUserPoolId:
+    Value: !Ref StaffUserPool
+  StaffWebClientId:
+    Value: !Ref StaffWebClient
+  StudentUserPoolId:
+    Value: !Ref StudentUserPool
+  StudentWebClientId:
+    Value: !Ref StudentWebClient
+  OperationsTopicArn:
+    Value: !Ref AlertTopic
+  RedshiftWorkgroupName:
+    Condition: UseRedshift
+    Value: !Ref RedshiftWorkgroup
+  RedshiftAdminSecretArn:
+    Condition: UseRedshift
+    Value: !Ref RedshiftAdminSecret

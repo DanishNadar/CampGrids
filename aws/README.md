@@ -1,5 +1,12 @@
 # CampGrids account data on AWS
 
+The full production architecture, resource request, deploy order, and cutover
+gates are in [DEPLOYMENT.md](DEPLOYMENT.md). Start there before using the
+account API artifacts below. The CloudFormation foundation lives in
+[`infrastructure/`](infrastructure/); the browser application is **not yet
+fully migrated from Supabase**, so do not point production DNS at AWS merely
+because the infrastructure stack exists.
+
 ## The production boundary
 
 Use these AWS services with distinct responsibilities:
@@ -38,8 +45,10 @@ Keep these out of Git and out of browser JavaScript:
 ```text
 DATABASE_URL=postgresql://...                 # RDS, TLS required
 AWS_REGION=us-east-1
-COGNITO_USER_POOL_ID=us-east-1_...
-COGNITO_APP_CLIENT_ID=...
+COGNITO_STAFF_USER_POOL_ID=us-east-1_...
+COGNITO_STAFF_APP_CLIENT_ID=...
+COGNITO_STUDENT_USER_POOL_ID=us-east-1_...
+COGNITO_STUDENT_APP_CLIENT_ID=...
 CORS_ALLOWED_ORIGINS=https://camp-grids.example.org,https://www.camp-grids.example.org
 ```
 

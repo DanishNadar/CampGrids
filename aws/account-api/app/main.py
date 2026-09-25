@@ -29,18 +29,26 @@ class Settings(BaseSettings):
 
     database_url: str
     aws_region: str
-    cognito_user_pool_id: str
-    cognito_app_client_id: str
+    cognito_staff_user_pool_id: str
+    cognito_staff_app_client_id: str
+    cognito_student_user_pool_id: str
+    cognito_student_app_client_id: str
     cors_allowed_origins: str
     log_level: str = "INFO"
 
     @property
-    def issuer(self) -> str:
-        return f"https://cognito-idp.{self.aws_region}.amazonaws.com/{self.cognito_user_pool_id}"
+    def cognito_clients(self) -> dict[str, str]:
+        """Map the only accepted Cognito issuers to their expected app client.
 
-    @property
-    def jwks_url(self) -> str:
-        return f"{self.issuer}/.well-known/jwks.json"
+        Staff and students deliberately use separate pools: mandatory staff MFA
+        cannot be weakened for student class-code access. A token from either
+        trusted pool still has to map to an active RDS account.
+        """
+        prefix = f"https://cognito-idp.{self.aws_region}.amazonaws.com/"
+        return {
+            f"{prefix}{self.cognito_staff_user_pool_id}": self.cognito_staff_app_client_id,
+            f"{prefix}{self.cognito_student_user_pool_id}": self.cognito_student_app_client_id,
+        }
 
     @property
     def allowed_origins(self) -> list[str]:
@@ -160,18 +168,25 @@ def get_principal(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="A bearer token is required")
     try:
         token = authorization.removeprefix("Bearer ").strip()
-        signing_key = get_jwk_client(settings.jwks_url).get_signing_key_from_jwt(token)
+        # The issuer is read without verification solely to select a *known*
+        # Cognito key set. It is then verified cryptographically below.
+        unverified = jwt.decode(token, options={"verify_signature": False, "verify_exp": False})
+        issuer = unverified.get("iss")
+        expected_client_id = settings.cognito_clients.get(issuer)
+        if not expected_client_id:
+            raise ValueError("Token issuer is not a CampGrids Cognito pool")
+        signing_key = get_jwk_client(f"{issuer}/.well-known/jwks.json").get_signing_key_from_jwt(token)
         claims = jwt.decode(
             token,
             signing_key.key,
             algorithms=["RS256"],
-            issuer=settings.issuer,
+            issuer=issuer,
             options={"verify_aud": False, "require": ["exp", "iat", "sub", "token_use"]},
         )
         if claims["token_use"] == "id":
-            client_matches = claims.get("aud") == settings.cognito_app_client_id
+            client_matches = claims.get("aud") == expected_client_id
         elif claims["token_use"] == "access":
-            client_matches = claims.get("client_id") == settings.cognito_app_client_id
+            client_matches = claims.get("client_id") == expected_client_id
         else:
             client_matches = False
         if not client_matches:

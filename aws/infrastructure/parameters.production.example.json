@@ -1,0 +1,50 @@
+[
+  {
+    "ParameterKey": "ProjectName",
+    "ParameterValue": "campgrids"
+  },
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "prod"
+  },
+  {
+    "ParameterKey": "VpcCidr",
+    "ParameterValue": "10.42.0.0/16"
+  },
+  {
+    "ParameterKey": "ApiCertificateArn",
+    "ParameterValue": "arn:aws:acm:us-east-1:123456789012:certificate/REPLACE-ME"
+  },
+  {
+    "ParameterKey": "ApiAllowedOrigins",
+    "ParameterValue": "https://app.campgrids.example.org"
+  },
+  {
+    "ParameterKey": "SesIdentityArn",
+    "ParameterValue": "arn:aws:ses:us-east-1:123456789012:identity/campgrids.example.org"
+  },
+  {
+    "ParameterKey": "SesFromEmail",
+    "ParameterValue": "CampGrids <no-reply@campgrids.example.org>"
+  },
+  {
+    "ParameterKey": "AlertEmail",
+    "ParameterValue": "campgrids-operations@example.org"
+  },
+  {
+    "ParameterKey": "ArtifactsBucketName",
+    "ParameterValue": "REPLACE-WITH-BOOTSTRAP-STACK-OUTPUT"
+  },
+  {
+    "ParameterKey": "EnableRedshift",
+    "ParameterValue": "false"
+  },
+  {
+    "ParameterKey": "FrontendDomainName",
+    "ParameterValue": "app.campgrids.example.org"
+  },
+  {
+    "ParameterKey": "FrontendCertificateArn",
+    "ParameterValue": "arn:aws:acm:us-east-1:123456789012:certificate/REPLACE-ME"
+  }
+]
