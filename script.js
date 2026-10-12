@@ -7437,6 +7437,26 @@ function toggleDropdown(button, dropdown) {
    from the live Grid rather than maintaining a second hand-written list. */
 window.CampGridsData = campData;
 
-/* These two lines actually start the page. First we render the quick links. Then we render the category cards. */
-renderQuickLinks();
-renderCards();
+/* The public activity catalogue remains available to visitors and staff. Students
+   always work in the selected cells of their enrolled class, so do not let a
+   signed-in student reach the complete Mother Grid by entering this URL. */
+async function startActivitiesPage() {
+  const app = window.CampGridsApp;
+  if (app?.configured?.()) {
+    const profile = await app.getProfile();
+    if (profile?.role === 'student') {
+      window.location.replace(app.dashboardHref('student'));
+      return;
+    }
+  }
+
+  renderQuickLinks();
+  renderCards();
+}
+
+startActivitiesPage().catch(() => {
+  /* The catalogue is public. An unavailable Auth service must not hide it from
+     unauthenticated visitors. */
+  renderQuickLinks();
+  renderCards();
+});

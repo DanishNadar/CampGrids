@@ -207,6 +207,21 @@ describe('a repeated class sign-in', () => {
   });
 });
 
+describe('student Grid access', () => {
+  test('offers no Mother Grid link from the student workspace', async () => {
+    const source = await read('dashboard.js');
+    const studentRender = source.slice(source.indexOf('async function renderStudent()'), source.indexOf('async function updateStudentProgress'));
+    assert.doesNotMatch(studentRender, /href="campgrids\.html"/);
+  });
+
+  test('redirects a signed-in student who enters the public Grid URL', async () => {
+    const source = await read('script.js');
+    assert.match(source, /async function startActivitiesPage\(\)/);
+    assert.match(source, /if \(profile\?\.role === 'student'\)/);
+    assert.match(source, /window\.location\.replace\(app\.dashboardHref\('student'\)\);/);
+  });
+});
+
 describe('a sign-in that times out returns to the sign-in step', () => {
   /* The reported failure: a tab left open on the verification step long enough for
      the session to lapse. Every button then answered "Sign in with your password
