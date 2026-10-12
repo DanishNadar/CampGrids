@@ -145,6 +145,22 @@ describe('the grid cell preview', () => {
   });
 });
 
+describe('the large Grid viewport', () => {
+  test('keeps a large Grid inside its own two-axis scroll box', async () => {
+    const css = await read('styles.css');
+    const block = css.slice(css.indexOf('.motherGridCard {'), css.indexOf('.smallLink {'));
+    assert.match(block, /\.motherGridCard \{ width: 100%; min-width: 0; max-width: 100%;[\s\S]*?overflow: hidden;/);
+    assert.match(block, /\.motherGridViewport \{ width: 100%; max-width: 100%; min-width: 0; max-height: min\(68vh, 660px\); overflow: auto;/);
+    assert.match(block, /contain: inline-size;/, 'the scaled canvas must not determine the page width');
+  });
+
+  test('labels the keyboard-focusable scroll region', async () => {
+    const source = await read('dashboard.js');
+    assert.match(source, /class="motherGridViewport" role="region" aria-label="Scrollable/);
+    assert.match(source, /tabindex="0"/);
+  });
+});
+
 describe('a sign-in that times out returns to the sign-in step', () => {
   /* The reported failure: a tab left open on the verification step long enough for
      the session to lapse. Every button then answered "Sign in with your password
