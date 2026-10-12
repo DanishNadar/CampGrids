@@ -25,7 +25,7 @@ const CONFIG = join(HERE, '..', 'supabase', 'config.toml');
 
 /* The functions the application actually calls. provision-teacher (singular) is in
    the directory but nothing references it, so it is not deployed by default. */
-const IN_USE = ['provision-teachers', 'provision-students', 'student-class-login', 'request-staff-email-2fa'];
+const IN_USE = ['provision-teachers', 'provision-students', 'student-class-login', 'request-staff-email-2fa', 'complete-admin-onboarding'];
 
 function arg(flag) {
   const i = process.argv.indexOf(flag);

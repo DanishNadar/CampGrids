@@ -284,6 +284,12 @@ select * from public.create_admin_account(
 );
 ```
 
+> Important: this SQL statement does **not** send an account-created or reset
+> email. It creates a temporary password. The first email is the verification code
+> sent when the new administrator signs in with that temporary password. See
+> [`LIVE_DEMO_ADMIN_ONBOARDING.txt`](../LIVE_DEMO_ADMIN_ONBOARDING.txt) for the
+> complete live-demo procedure and the SMTP verification commands.
+
 Add `p_allowed_domains => array['msichicago.org', 'hawk.illinoistech.edu']` to accept
 a second domain. `create_admin_account` is granted to `service_role` only, so it can
 be called from the SQL editor and the Management API but never from a browser.

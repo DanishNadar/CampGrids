@@ -49,7 +49,8 @@ const CASES = [
   { file: 'checkEmailSetup.mjs', args: [], expect: /Pass --project/ },
   { file: 'testOtpDelivery.mjs', args: [], expect: /Pass --to/ },
   { file: 'verifySmtp.mjs', args: [], expect: /AUTH OK|GMAIL_SMTP_|Gmail rejected/ },
-  { file: 'checkEmailDelivery.mjs', args: [], expect: /Pass --email/ }
+  { file: 'checkEmailDelivery.mjs', args: [], expect: /Pass --email/ },
+  { file: 'provisionAdmin.mjs', args: [], expect: /Pass --email/ }
 ];
 
 describe('every maintenance script runs', () => {

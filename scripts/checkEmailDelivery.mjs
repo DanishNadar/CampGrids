@@ -119,7 +119,7 @@ if (project) {
   const allow = String(cfg.uri_allow_list || '').split(',').map((s) => s.trim()).filter(Boolean);
   const covered = (target) => allow.some((a) =>
     a === target || (a.includes('*') && target.startsWith(a.split('*')[0])));
-  for (const page of ['reset-password.html', 'account-setup.html']) {
+  for (const page of ['reset-password.html', 'account-setup.html', 'admin-onboarding.html?onboarding=delivery-check']) {
     const target = `${String(cfg.site_url || '').replace(/\/$/, '')}/${page}`;
     note(covered(target) ? 'ok' : 'BLOCKS',
       `${target} ${covered(target) ? 'is allowlisted' : 'is NOT allowlisted — Auth refuses the redirect'}`);

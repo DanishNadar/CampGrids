@@ -1,9 +1,16 @@
 -- CampGrids: create an administrator with an email and a password you choose
 -- ============================================================================
 --
--- For the IT manager. Paste into the Supabase SQL editor, change the five values,
--- and run. It is one statement: there is no wrapper to miss and no part of it that
--- works on its own, so a partial paste cannot half-run.
+-- Emergency/manual path for the IT manager. Paste into the Supabase SQL editor,
+-- change the five values, and run. It is one statement: there is no wrapper to
+-- miss and no part of it that works on its own, so a partial paste cannot half-run.
+--
+-- For the normal live-demo onboarding email, use instead:
+--
+--   node scripts/provisionAdmin.mjs --email admin@example.org --first-name Ada --last-name Lovelace --department Tech
+--
+-- That command creates the same administrator and sends the requested Gmail
+-- message with the temporary credentials plus a one-time password-setup link.
 --
 -- Running it again on the same address re-issues the password. It does not delete
 -- anything and does not touch their classes, Grids, or history.
@@ -19,10 +26,14 @@ select * from public.create_admin_account(
 -- ============================================================================
 -- What the new administrator does with what you hand over
 --
---   1. Signs in at /admin/ with this email and this password.
---   2. Receives a verification code at that same MSI mailbox and enters it.
---   3. Is then required to replace your password with one only they know.
---   4. Reaches the workspace. Never prompted again.
+--   This manual SQL statement deliberately DOES NOT send the onboarding email.
+--   Use scripts/provisionAdmin.mjs for the full credential-email workflow.
+--
+--   1. Securely give the administrator this email and this temporary password.
+--   2. They sign in at /admin/ with this email and password.
+--   3. That sign-in sends a verification code to the same mailbox; they enter it.
+--   4. They are then required to replace your password with one only they know.
+--   5. They reach the workspace and are never prompted to replace it again.
 --
 -- Step 2 comes before step 3 on purpose. The password you set is a shared secret
 -- until they replace it, so replacing it has to prove more than knowing it -

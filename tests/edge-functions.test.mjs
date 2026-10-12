@@ -41,7 +41,7 @@ export function createClient(url, key, options) {
   const result = (data = null, error = null) => ({ data, error });
   const builder = (rows) => {
     const self = {
-      select: () => self, eq: () => self, in: () => self, is: () => self, not: () => self,
+      select: () => self, eq: () => self, in: () => self, is: () => self, not: () => self, gt: () => self,
       order: () => self, limit: () => self,
       maybeSingle: () => Promise.resolve(result(rows.length ? rows[0] : null)),
       single: () => Promise.resolve(result(rows[0] ?? null)),
@@ -92,7 +92,9 @@ export function createClient(url, key, options) {
       const rows = scenario.tables?.[table] ?? [];
       const self = builder(rows);
       self.insert = () => { calls.push(\`insert:\${table}\`); return builder([]); };
-      self.update = () => { calls.push(\`update:\${table}\`); return builder([]); };
+      // update(...).select(...).maybeSingle() returns the affected row. Keeping
+      // the fixture rows models PostgREST for compare-and-consume nonce updates.
+      self.update = () => { calls.push(\`update:\${table}\`); return builder(rows); };
       self.delete = () => { calls.push(\`delete:\${table}\`); return builder([]); };
       self.upsert = () => { calls.push(\`upsert:\${table}\`); return builder([]); };
       return self;
@@ -363,6 +365,28 @@ describe('provision-students', () => {
   test('a caller who is not a verified administrator is refused', async () => {
     const result = await call(handler, { students: [{ firstName: 'F', lastName: 'Y' }] }, { rpc: { is_admin: false } });
     assert.equal(result.status, 403);
+  });
+});
+
+describe('complete-admin-onboarding', () => {
+  let handler;
+  before(async () => { handler = await loadHandler('complete-admin-onboarding'); });
+
+  test('consumes a matching one-time nonce only for the signed-in administrator', async () => {
+    const result = await call(handler, { token: 'A'.repeat(43) }, {
+      tables: { admin_onboarding_tokens: [{ id: 'nonce-1' }], profiles: [{ admin_onboarding_verified_at: null }] }
+    });
+    assert.equal(result.threw, undefined, `the handler threw: ${result.threw?.stack}`);
+    assert.equal(result.status, 200, result.text);
+    assert.equal(result.body.ready, true);
+    assert.ok(result.calls.includes('update:admin_onboarding_tokens'), result.calls.join(', '));
+    assert.ok(result.calls.includes('update:profiles'), result.calls.join(', '));
+  });
+
+  test('refuses a missing or short nonce before changing account state', async () => {
+    const result = await call(handler, { token: 'not-a-valid-nonce' });
+    assert.equal(result.status, 400, result.text);
+    assert.ok(!result.calls.includes('update:admin_onboarding_tokens'));
   });
 });
 

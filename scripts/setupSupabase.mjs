@@ -63,7 +63,7 @@ await step('Redirect allowlist', async () => {
   /* The two pages an authentication email can land on. A redirect_to that is not on
      the project's list is refused by Auth, so the link in a delivered email would
      fail at the last step. */
-  const pages = ['account-setup.html', 'reset-password.html', 'auth.html'];
+  const pages = ['account-setup.html', 'reset-password.html', 'auth.html', 'admin-onboarding.html**'];
 
   if (dryRun && !token) {
     console.log('  (needs the access token to read the current list; skipped in dry run)');

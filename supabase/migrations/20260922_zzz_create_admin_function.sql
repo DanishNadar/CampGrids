@@ -173,7 +173,7 @@ begin
          p.temporary_password_issued_at + public.admin_password_setup_window(),
          (u.confirmation_token is not null and u.recovery_token is not null
           and u.email_change_token_new is not null and u.email_change is not null),
-         'Ready. Give them this email and the password you chose. They sign in at /admin/, enter the emailed code, then choose their own password.'::text
+         'Ready. This SQL function does not send an account-created email. Securely give them this email and the temporary password you chose. They sign in at /admin/; that sign-in sends the verification code to their mailbox. After entering the code, they choose their own password.'::text
   from public.profiles p
   join auth.users u on u.id = p.id
   where p.id = v_user_id;

@@ -196,6 +196,11 @@ describe('create_admin_account issues a password safely', () => {
       'without this the expiry window never starts and the emailed code is never demanded');
   });
 
+  test('the result does not falsely promise an account-created email', () => {
+    assert.match(fn, /does not send an account-created email/);
+    assert.match(fn, /sign-in sends the verification code/);
+  });
+
   test('the plaintext password is never stored or returned', () => {
     const audit = fn.slice(fn.indexOf('insert into public.audit_log'), fn.indexOf('-------- report'));
     assert.ok(!audit.includes('p_password'), 'the audit entry must not carry the password');
