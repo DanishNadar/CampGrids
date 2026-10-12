@@ -432,3 +432,33 @@ describe('a Grid cell title identifies a project', () => {
       'published class assignments can be reconciled through their selected cells');
   });
 });
+
+describe('student Grid work has usable resources and private proof', () => {
+  test('resource links start work and refresh the student timeline', async () => {
+    const source = await read('dashboard.js');
+    assert.match(source, /data-student-grid-resource/,
+      'a real instruction or video link must be the way a student begins work');
+    assert.doesNotMatch(source, /data-student-grid-start/,
+      'there must not be an inert generic start button when no resource exists');
+    assert.match(source, /Resource opened and activity started\./,
+      'opening a resource must visibly confirm that the activity was recorded');
+    assert.match(source, /await renderStudent\(\);\s*notice\('Resource opened/,
+      'the recent-activity timeline must be refreshed after an activity starts');
+  });
+
+  test('students can upload supported proof and teachers can review it', async () => {
+    const source = await read('dashboard.js');
+    assert.match(source, /storage\.from\('student-work'\)\.upload/);
+    assert.match(source, /record_student_grid_evidence/);
+    assert.match(source, /Class Grid progress and evidence/);
+    assert.match(source, /downloadEvidence\(button\.dataset\.evidencePath/);
+
+    const sql = await read('supabase/migrations/20261012_zzz_student_work_evidence.sql');
+    assert.match(sql, /insert into storage\.buckets/);
+    assert.match(sql, /create table if not exists public\.student_activity_evidence/);
+    assert.match(sql, /create policy "student evidence: class scope read"/);
+    assert.match(sql, /create or replace function public\.record_student_grid_evidence/);
+    assert.match(sql, /'assignment_submitted'/,
+      'proof submissions must be added to the existing recent-activity stream');
+  });
+});

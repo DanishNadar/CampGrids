@@ -2281,6 +2281,17 @@ footer {
 .studentActivityActions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .studentActivityActions .primaryButton { min-height: 36px; padding: 7px 12px; font-size: .8rem; }
 .studentActivityActions .primaryButton:disabled { cursor: not-allowed; opacity: .5; }
+.studentEvidenceUpload { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 10px; align-items: end; padding-top: 4px; }
+.studentEvidenceUpload .fieldLabel { gap: 5px; font-size: .78rem; }
+.studentEvidenceUpload input { min-width: 0; min-height: 36px; padding: 6px 8px; font-size: .82rem; }
+.studentEvidenceUpload .secondaryButton { min-height: 36px; padding: 7px 12px; font-size: .8rem; }
+.studentEvidenceUpload small { grid-column: 1 / -1; }
+.studentWorkCard { margin-top: 18px; }
+.studentWorkList { display: grid; gap: 10px; }
+.studentWorkList > article { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.studentWorkList p { margin: 3px 0; }
+.studentEvidenceLinks { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+@media (max-width: 760px) { .studentEvidenceUpload { grid-template-columns: 1fr; } .studentEvidenceUpload small { grid-column: auto; } .studentWorkList > article { display: grid; } .studentEvidenceLinks { justify-content: flex-start; } }
 
 /* Required fields. Positioned rather than placed in flow, so it sits beside the
    label text instead of pushing the input down a row. */
