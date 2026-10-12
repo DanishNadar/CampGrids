@@ -1,124 +1,129 @@
-CampGrids live demo: administrator onboarding email
-===================================================
+CampGrids live demo: admin, teacher, and student accounts
+==========================================================
 
-What this flow does
--------------------
+Demo rule: every staff member uses the same simple account-activation path.
+CampGrids emails a one-time invitation link. The recipient opens it and chooses
+their own password. Do not create a temporary password, use the SQL editor, or
+open admin-onboarding.html directly. That old URL is not part of this demo.
 
-Use scripts/provisionAdmin.mjs to create a new administrator. It performs all of
-these actions as one operator workflow:
+One-time production check
+-------------------------
 
-  1. Creates or reissues the administrator account and temporary password.
-  2. Creates a one-time, 30-minute Supabase recovery link.
-  3. Sends a Gmail SMTP message to the new administrator containing the sign-in
-     email, the temporary password, and the one-time setup link.
-  4. The link proves the recipient controls that mailbox before allowing a private
-     password to be saved. It is single-use.
+Run this only after changing the application or Supabase configuration. It is
+already complete for the current production deployment, but these are the exact
+commands to repeat if necessary.
 
-This is deliberately NOT the old SQL-Editor-only workflow. SQL cannot send Gmail
-email. Do not run supabase/scripts/set_admin.sql for the demo unless Gmail delivery
-is intentionally out of scope.
-
-One-time deployment before the live demo
-----------------------------------------
-
-Run these commands in PowerShell from the repository root after pulling the
-committed change. The current production project reference is
-hofninqlkcuzgboslodq.
-
-1. Put a valid Supabase personal access token in .env. It must start with sbp_.
-   Do not commit .env.
+1. Put the new Supabase personal access token in .env. Do not commit .env:
 
    SUPABASE_ACCESS_TOKEN=sbp_your_personal_access_token
 
-2. Verify SMTP credentials locally and the live Supabase Auth configuration:
+2. From the repository root, deploy the database/configuration and website:
 
    $PROJECT_REF = 'hofninqlkcuzgboslodq'
-   npm run verify:smtp
-   npm run check:email-config -- --project $PROJECT_REF
-
-3. Review then apply the production setup. This applies the onboarding database
-   migration, deploys complete-admin-onboarding, and allowlists the new
-   admin-onboarding.html redirect page:
-
-   npm run setup:supabase -- --project $PROJECT_REF --origin https://camp-grids.vercel.app --dry-run
    npm run setup:supabase -- --project $PROJECT_REF --origin https://camp-grids.vercel.app
+   npx vercel --prod --yes --scope danishnadars-projects
 
-4. Deploy the website containing admin-onboarding.html and admin-onboarding.js to
-   the production URL. Verify this exact page loads (it should say its link is
-   incomplete when opened without a link):
+3. Verify the staff invitation configuration before the audience arrives:
 
-   https://camp-grids.vercel.app/admin-onboarding.html
+   npm run check:email-config -- --project $PROJECT_REF
+   npm run verify:smtp
 
-Create the demo administrator and send the email
--------------------------------------------------
+Create the demo administrator (before the presentation)
+--------------------------------------------------------
 
-1. Run this command. Do not put --password on the command line: the script prompts
-   twice without displaying it or saving it in shell history.
+Use a NEW, unused mailbox. Do not use danish@holacreo.com again: it already has a
+CampGrids Auth account, and Supabase correctly refuses to invite an existing,
+activated user. A dedicated demo mailbox is best. A Google Workspace plus-address,
+such as danish+campgrids-admin-demo@holacreo.com, also works if plus-addressing is
+enabled for that mailbox.
 
-   node scripts/provisionAdmin.mjs --email demo.admin@YOUR_APPROVED_DOMAIN --first-name Demo --last-name Administrator --department Tech --allowed-domains msichicago.org,YOUR_APPROVED_DOMAIN
+Run exactly one command:
 
-   For the current holacreo.com demo address, use:
+   node scripts/provisionAdmin.mjs --email demo.admin@YOUR_APPROVED_DOMAIN --first-name Demo --last-name Administrator --department Tech --allowed-domains YOUR_APPROVED_DOMAIN
 
-   node scripts/provisionAdmin.mjs --email danish@holacreo.com --first-name TestAdminFirst --last-name TestAdminLast --department Tech --allowed-domains msichicago.org,holacreo.com
+For a holacreo.com demo mailbox, the final argument is:
 
-2. Enter a new, unique temporary password when prompted. It must be 12-72
-   characters and contain at least one letter and one digit. Do not use a password
-   that has appeared in a screenshot, chat, recording, presentation, or terminal
-   history.
+   --allowed-domains holacreo.com
 
-3. The command prints only a confirmation that Gmail accepted the delivery. It
-   intentionally never prints the password or setup link.
+Expected terminal result:
 
-4. In the recipient inbox, open the message from the configured sender
-   (currently SuperiorSpiron@gmail.com) with subject:
+   Administrator invitation accepted by Supabase for <email>.
 
-   Your MSI CampGrids administrator access
+The command sends no password and prints no setup link. Supabase sends the branded
+email through the configured Gmail SMTP account with subject:
 
-   The email contains the administrator email, temporary password, and a
-   "Set up my administrator access" link. Check Spam and any organizational
-   quarantine if it is not visible.
+   Your MSI staff account is ready
 
-Live-demo recipient sequence
-----------------------------
+In the demo mailbox:
 
-1. Click the one-time setup link in the onboarding email within 30 minutes.
-2. On the CampGrids page, choose and confirm a private password. The one-time link
-   proves mailbox control, and becomes unusable once opened.
-3. Sign in at:
+1. Open that email and choose "Set Up My Account."
+2. Choose and confirm a private password (12+ characters).
+3. Sign in at https://camp-grids.vercel.app/admin/ with the email and new password.
+4. Enter the one-time verification code delivered to the same mailbox.
+5. The Administrator workspace opens.
 
-   https://camp-grids.vercel.app/admin/
+This is the administrator demo identity. Keep this browser window open for the
+remaining setup.
 
-   Use the administrator email and the new private password. The temporary
-   password was sent for the requested credential handoff and should not be used
-   after setup.
-4. CampGrids sends the normal verification code to the administrator mailbox.
-   Enter that code to reach the Administrator workspace.
-5. Sign out and repeat the final sign-in once if time permits, showing that the
-   new private password and email verification code are required.
+Create the demo teacher (from the admin workspace)
+---------------------------------------------------
 
-Troubleshooting
----------------
+1. In the Administrator workspace, open People.
+2. Under "Add a teacher", enter a new demo teacher's first name, last name, and
+   unused work email. Click "Create teacher account."
+3. In the teacher mailbox, open "Your MSI staff account is ready," click "Set Up
+   My Account," and choose a password.
+4. In a separate incognito/private browser window, sign in at:
 
-* If provisionAdmin.mjs says Gmail rejected delivery, run:
+   https://camp-grids.vercel.app/auth.html
 
-    npm run verify:smtp -- --to RECIPIENT@example.com
+   Use the Teacher tab, enter the teacher's email (or assigned username) and new
+   password, then enter the email verification code.
+5. The Teacher workspace opens. Leave that window open for the presentation.
 
-* If Gmail accepts the message but it is not in the mailbox, check the recipient's
-  Spam/Junk/Quarantine and search for SuperiorSpiron@gmail.com.
+Create the demo student (from the admin workspace)
+---------------------------------------------------
 
-* If the link opens but says incomplete or expired, confirm step 3 of "One-time
-  deployment" completed, then run provisionAdmin.mjs again with a new temporary
-  password. A new command run invalidates prior unused onboarding nonces.
+1. In the admin window, create a camp/class if one is not already available.
+2. In the class roster import card, upload a one-row CSV using this exact header:
 
-* If the final sign-in verification code does not arrive, wait 60 seconds before
-  retrying. Then inspect Supabase Dashboard -> Edge Functions ->
-  request-staff-email-2fa -> Logs.
+   first_name,last_name,grade,guardian_name,guardian_email
+   Demo,Student,5,,
 
-Security notes
---------------
+3. CampGrids displays the generated student username and the class code. Copy both
+   into your presenter notes. No student email or password exists.
+4. In another private browser window, use the student sign-in screen and enter the
+   class code plus generated username.
+5. The Student workspace opens. Keep this window open too.
 
-This demo explicitly requests emailing a temporary password. That is less secure
-than the normal passwordless teacher invitation flow. The password is sent only in
-the one onboarding message, expires under the existing administrator policy, and
-the one-time link proves control of the recipient mailbox before the private
-password can be set. Never reuse the temporary password or forward the email.
+Live presentation order
+-----------------------
+
+1. Administrator: show the People page and the active admin workspace.
+2. Teacher: show the independent teacher window, class Grid, assignments, and
+   camper progress tools.
+3. Student: show the independent student window and the assigned class Grid.
+4. Return to the admin window to show that the administrator can manage people,
+   rosters, and the Mother Grid.
+
+Fast recovery during the demo
+-----------------------------
+
+* Invitation missing: search the inbox and Spam/Junk for "Your MSI staff account
+  is ready." On the admin People page, use "Resend invite" for a teacher. For an
+  administrator, run the provision command with a new unused mailbox.
+* Invitation link expired: resend it for a teacher. For an administrator, use a
+  new demo email; never reuse a setup link.
+* Staff sign-in code missing: wait one minute, then retry. Check Supabase Edge
+  Functions -> request-staff-email-2fa -> Logs if the code still does not arrive.
+* Do not navigate to https://camp-grids.vercel.app/admin-onboarding.html. It is a
+  retired fallback page, not an invitation link.
+
+Security and reliability notes
+------------------------------
+
+The one-time invitation link proves access to the recipient's mailbox and lets that
+person choose the only password for the account. This is safer and simpler than
+emailing credentials. Staff then complete the normal emailed verification code at
+sign-in. Campers remain passwordless: their class code and generated username are
+their demo credentials.

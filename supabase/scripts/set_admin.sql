@@ -9,11 +9,12 @@
 --
 --   node scripts/provisionAdmin.mjs --email admin@example.org --first-name Ada --last-name Lovelace --department Tech
 --
--- That command creates the same administrator and sends the requested Gmail
--- message with the temporary credentials plus a one-time password-setup link.
+-- That command sends a native Supabase invitation email. The administrator opens
+-- its one-time link and chooses their own password; no temporary password is
+-- created or sent.
 --
--- Running it again on the same address re-issues the password. It does not delete
--- anything and does not touch their classes, Grids, or history.
+-- Use a new, unused address for an invitation. Existing staff should use the
+-- normal password-reset flow instead.
 
 select * from public.create_admin_account(
   p_email      => 'newadmin@msichicago.org',

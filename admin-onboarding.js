@@ -26,7 +26,7 @@
 
   async function run() {
     if (!app?.configured()) { host.innerHTML = panel('Setup required', app?.configurationMessage || ''); return; }
-    if (!/^[A-Za-z0-9_-]{40,}$/.test(token)) { host.innerHTML = panel('This link is incomplete', 'Ask an MSI administrator to send a new administrator onboarding email.'); return; }
+    if (!/^[A-Za-z0-9_-]{40,}$/.test(token)) { host.innerHTML = panel('Use your invitation email', 'Administrator accounts now use the same one-time account-setup email as teachers. Open the "Set Up My Account" link in that email.'); return; }
     const session = await sessionFromLink();
     if (!session) { host.innerHTML = panel('This link has expired', 'Ask an MSI administrator to send a new administrator onboarding email.'); return; }
     const { data, error } = await app.getClient().functions.invoke('complete-admin-onboarding', { body: { token } });

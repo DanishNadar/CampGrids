@@ -62,7 +62,7 @@ export const staffAccountCreated = {
         EmailInfoBox({
           items: [
             { label: 'Account', value: EMAIL },
-            { label: 'Access', value: 'Teacher / Staff' }
+            { label: 'Access', value: 'MSI CampGrids staff' }
           ]
         }),
         EmailSteps({
