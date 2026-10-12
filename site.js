@@ -1,5 +1,24 @@
 /* This file holds everything shared by every page: the external link list, the camp lists, the placeholder camp content, and the code that builds the top navigation bar, the homepage camp rows, the camp pages, and the photo gallery pages. Individual pages load this file first, then load any extra script they need. */
 
+/* Auth normally sends an invitation directly to account-setup.html (and a recovery
+   link to reset-password.html). If an old email or a rejected redirect falls back
+   to the Site URL instead, do not leave the recipient on the public home page with
+   an unused one-time session: preserve the Supabase fragment and route it to the
+   page that can set the password. */
+(() => {
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const search = new URLSearchParams(window.location.search);
+  const type = (hash.get('type') || search.get('type') || '').toLowerCase();
+  const target = type === 'invite' ? 'account-setup.html' : type === 'recovery' ? 'reset-password.html' : '';
+  const current = window.location.pathname.split('/').pop()?.toLowerCase();
+  if (!target || current === target) return;
+
+  const destination = new URL(target, `${window.location.origin}/`);
+  destination.search = window.location.search;
+  destination.hash = window.location.hash;
+  window.location.replace(destination.href);
+})();
+
 /* Shared image slot used anywhere a camp page, camp row, or gallery needs a photo that has not been supplied yet. */
 const sitePlaceholderImage = 'assets/placeholder.jpg';
 

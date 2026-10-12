@@ -1,129 +1,64 @@
-CampGrids live demo: admin, teacher, and student accounts
-==========================================================
+CampGrids Demo: Exact Steps
+===========================
 
-Demo rule: every staff member uses the same simple account-activation path.
-CampGrids emails a one-time invitation link. The recipient opens it and chooses
-their own password. Do not create a temporary password, use the SQL editor, or
-open admin-onboarding.html directly. That old URL is not part of this demo.
+Important
+---------
 
-One-time production check
--------------------------
+Use a NEW email address for every new staff account. Do not use danish@holacreo.com
+again because it is already a CampGrids account. Do not use set_admin.sql or open
+admin-onboarding.html.
 
-Run this only after changing the application or Supabase configuration. It is
-already complete for the current production deployment, but these are the exact
-commands to repeat if necessary.
+1. Create the demo administrator
+---------------------------------
 
-1. Put the new Supabase personal access token in .env. Do not commit .env:
+From the repository root in PowerShell, run this command. Replace ONLY
+NEW_ADMIN_EMAIL with a new, unused email address.
 
-   SUPABASE_ACCESS_TOKEN=sbp_your_personal_access_token
+  node scripts/provisionAdmin.mjs --email NEW_ADMIN_EMAIL --first-name Demo --last-name Admin --department Tech --allowed-domains holacreo.com
 
-2. From the repository root, deploy the database/configuration and website:
+Example:
 
-   $PROJECT_REF = 'hofninqlkcuzgboslodq'
-   npm run setup:supabase -- --project $PROJECT_REF --origin https://camp-grids.vercel.app
-   npx vercel --prod --yes --scope danishnadars-projects
+  node scripts/provisionAdmin.mjs --email danish+campgrids-admin-demo@holacreo.com --first-name Demo --last-name Admin --department Tech --allowed-domains holacreo.com
 
-3. Verify the staff invitation configuration before the audience arrives:
+2. Activate the administrator account
+--------------------------------------
 
-   npm run check:email-config -- --project $PROJECT_REF
-   npm run verify:smtp
+1. Open the email with subject: Your MSI staff account is ready.
+2. Click Set Up My Account.
+3. Choose a password.
+4. Go to https://camp-grids.vercel.app/admin/.
+5. Sign in with the email address and password.
+6. Enter the verification code sent by email.
 
-Create the demo administrator (before the presentation)
---------------------------------------------------------
+If the email link first opens the regular CampGrids site, wait one moment. It now
+automatically forwards to the password setup page. If it does not, open the same
+link again in a private/incognito window.
 
-Use a NEW, unused mailbox. Do not use danish@holacreo.com again: it already has a
-CampGrids Auth account, and Supabase correctly refuses to invite an existing,
-activated user. A dedicated demo mailbox is best. A Google Workspace plus-address,
-such as danish+campgrids-admin-demo@holacreo.com, also works if plus-addressing is
-enabled for that mailbox.
+3. Create the demo teacher
+---------------------------
 
-Run exactly one command:
+1. In the admin workspace, open People.
+2. Complete Add a teacher with a new email address.
+3. In the teacher's email, click Set Up My Account and choose a password.
+4. In a private/incognito window, go to https://camp-grids.vercel.app/auth.html.
+5. Select Teacher, sign in, and enter the emailed verification code.
 
-   node scripts/provisionAdmin.mjs --email demo.admin@YOUR_APPROVED_DOMAIN --first-name Demo --last-name Administrator --department Tech --allowed-domains YOUR_APPROVED_DOMAIN
+4. Create the demo student
+---------------------------
 
-For a holacreo.com demo mailbox, the final argument is:
+1. In the admin workspace, create or open a class.
+2. Upload this CSV:
 
-   --allowed-domains holacreo.com
+  first_name,last_name,grade,guardian_name,guardian_email
+  Demo,Student,5,,
 
-Expected terminal result:
+3. Copy the generated student username and class code.
+4. In a separate private/incognito window, sign in as Student with the class code
+   and username. Students do not use email or passwords.
 
-   Administrator invitation accepted by Supabase for <email>.
-
-The command sends no password and prints no setup link. Supabase sends the branded
-email through the configured Gmail SMTP account with subject:
-
-   Your MSI staff account is ready
-
-In the demo mailbox:
-
-1. Open that email and choose "Set Up My Account."
-2. Choose and confirm a private password (12+ characters).
-3. Sign in at https://camp-grids.vercel.app/admin/ with the email and new password.
-4. Enter the one-time verification code delivered to the same mailbox.
-5. The Administrator workspace opens.
-
-This is the administrator demo identity. Keep this browser window open for the
-remaining setup.
-
-Create the demo teacher (from the admin workspace)
----------------------------------------------------
-
-1. In the Administrator workspace, open People.
-2. Under "Add a teacher", enter a new demo teacher's first name, last name, and
-   unused work email. Click "Create teacher account."
-3. In the teacher mailbox, open "Your MSI staff account is ready," click "Set Up
-   My Account," and choose a password.
-4. In a separate incognito/private browser window, sign in at:
-
-   https://camp-grids.vercel.app/auth.html
-
-   Use the Teacher tab, enter the teacher's email (or assigned username) and new
-   password, then enter the email verification code.
-5. The Teacher workspace opens. Leave that window open for the presentation.
-
-Create the demo student (from the admin workspace)
----------------------------------------------------
-
-1. In the admin window, create a camp/class if one is not already available.
-2. In the class roster import card, upload a one-row CSV using this exact header:
-
-   first_name,last_name,grade,guardian_name,guardian_email
-   Demo,Student,5,,
-
-3. CampGrids displays the generated student username and the class code. Copy both
-   into your presenter notes. No student email or password exists.
-4. In another private browser window, use the student sign-in screen and enter the
-   class code plus generated username.
-5. The Student workspace opens. Keep this window open too.
-
-Live presentation order
------------------------
-
-1. Administrator: show the People page and the active admin workspace.
-2. Teacher: show the independent teacher window, class Grid, assignments, and
-   camper progress tools.
-3. Student: show the independent student window and the assigned class Grid.
-4. Return to the admin window to show that the administrator can manage people,
-   rosters, and the Mother Grid.
-
-Fast recovery during the demo
------------------------------
-
-* Invitation missing: search the inbox and Spam/Junk for "Your MSI staff account
-  is ready." On the admin People page, use "Resend invite" for a teacher. For an
-  administrator, run the provision command with a new unused mailbox.
-* Invitation link expired: resend it for a teacher. For an administrator, use a
-  new demo email; never reuse a setup link.
-* Staff sign-in code missing: wait one minute, then retry. Check Supabase Edge
-  Functions -> request-staff-email-2fa -> Logs if the code still does not arrive.
-* Do not navigate to https://camp-grids.vercel.app/admin-onboarding.html. It is a
-  retired fallback page, not an invitation link.
-
-Security and reliability notes
+5. If an email does not arrive
 ------------------------------
 
-The one-time invitation link proves access to the recipient's mailbox and lets that
-person choose the only password for the account. This is safer and simpler than
-emailing credentials. Staff then complete the normal emailed verification code at
-sign-in. Campers remain passwordless: their class code and generated username are
-their demo credentials.
+1. Check Spam/Junk for Your MSI staff account is ready.
+2. For a teacher, use Resend invite in People.
+3. For an administrator, run step 1 again with a different new email address.
