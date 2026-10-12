@@ -161,6 +161,16 @@ describe('the large Grid viewport', () => {
   });
 });
 
+describe('password setup card spacing', () => {
+  test('keeps every dynamic setup state away from the card edge', async () => {
+    const css = await read('styles.css');
+    assert.match(css, /\.adminAccessCard > #passwordSetupHost \{ display: grid; gap: 24px; padding: 30px; \}/);
+    assert.match(css, /\.adminAccessCard > #passwordSetupHost > \.formHeading, \.adminAccessCard > #passwordSetupHost > \.authPanel \{ padding: 0; \}/);
+    assert.match(css, /\.adminAccessCard > #passwordSetupHost \{ padding: 22px; \}/,
+      'small screens need the same safe inset without wasting space');
+  });
+});
+
 describe('a sign-in that times out returns to the sign-in step', () => {
   /* The reported failure: a tab left open on the verification step long enough for
      the session to lapse. Every button then answered "Sign in with your password
