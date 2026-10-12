@@ -232,6 +232,22 @@ describe('self-directed class Grid activities', () => {
     assert.match(source, /Complete<\/button>/);
   });
 
+  test('uses separate category cards for dropdown view', async () => {
+    const source = await read('dashboard.js');
+    const css = await read('styles.css');
+    const dropdown = source.slice(source.indexOf('function renderStudentDropdown'), source.indexOf('async function renderStudent'));
+    assert.match(dropdown, /studentCategoryIcon/,
+      'categories need a distinct visual identity, rather than Grid-like cells');
+    assert.match(dropdown, /across belt levels/,
+      'a card should summarize its category before it is opened');
+    assert.match(dropdown, /data-student-category/,
+      'each category must be independently expandable');
+    assert.doesNotMatch(dropdown, /index === 0 \? 'open'/,
+      'Dropdown View must begin as a category picker, not an open mini-grid');
+    assert.match(css, /\.studentCategoryCard\[open\] \{ grid-column: 1 \/ -1/,
+      'the opened category should become a separate, full-width belt list');
+  });
+
   test('records direct activity progress through the protected database action', async () => {
     const source = await read('dashboard.js');
     assert.match(source, /rpc\('save_student_grid_activity_progress'/);
