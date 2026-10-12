@@ -222,6 +222,32 @@ describe('student Grid access', () => {
   });
 });
 
+describe('self-directed class Grid activities', () => {
+  test('makes each selected student Grid cell an activity entry point', async () => {
+    const source = await read('dashboard.js');
+    assert.match(source, /data-student-grid-cell="\$\{cell\.id\}"/);
+    assert.match(source, /function openStudentGridCell\(/);
+    assert.match(source, /Open activity/);
+    assert.match(source, /Mark completed/);
+  });
+
+  test('records direct activity progress through the protected database action', async () => {
+    const source = await read('dashboard.js');
+    assert.match(source, /rpc\('save_student_grid_activity_progress'/);
+    const sql = await read('supabase/migrations/20261012_zz_student_grid_self_service.sql');
+    assert.match(sql, /create table if not exists public\.student_grid_activity_progress/);
+    assert.match(sql, /Only a student can update class Grid activity progress/);
+    assert.match(sql, /That activity is not in your class Grid/);
+  });
+
+  test('enforces completion of every earlier selected belt activity', async () => {
+    const sql = await read('supabase/migrations/20261012_zz_student_grid_self_service.sql');
+    assert.match(sql, /public\.belt_rank\(lower_cell\.belt_code\) < target_rank/);
+    assert.match(sql, /generate_series\(/, 'every activity in an earlier Grid cell is required');
+    assert.match(sql, /Complete every activity in the earlier selected belt rows before completing this one/);
+  });
+});
+
 describe('a sign-in that times out returns to the sign-in step', () => {
   /* The reported failure: a tab left open on the verification step long enough for
      the session to lapse. Every button then answered "Sign in with your password

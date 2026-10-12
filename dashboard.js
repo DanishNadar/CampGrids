@@ -64,6 +64,7 @@
        body takes or releases the activity, and the corner opens what it teaches.
        The wrapper keeps the belt colour and selection ring the cell already had. */
     if (mode === 'teacher' || mode === 'partner') return cell ? `<div class="motherGridCell ${color} hasCell hasPreview ${isSelected ? 'isSelected' : ''}"><button type="button" class="cellSelect" data-class-grid-cell="${cell.id}" aria-pressed="${String(isSelected)}" aria-label="${escapeHtml(`${label}; ${isSelected ? 'selected' : 'not selected'}`)}">${title}<em>${isSelected ? 'Selected' : 'Select'}</em></button><button type="button" class="cellInfo" data-cell-preview="${cell.id}" aria-label="${escapeHtml(`What ${cell.title} teaches`)}" title="What this teaches">i</button></div>` : `<div class="motherGridCell ${color} isEmpty">${title}</div>`;
+    if (mode === 'student') return cell && isSelected ? `<button type="button" class="motherGridCell ${color} hasCell isSelected" data-student-grid-cell="${cell.id}" aria-label="${escapeHtml(`Open ${label}`)}">${title}<em>Open activities</em></button>` : `<div class="motherGridCell ${color} isEmpty"><span class="gridEmpty">—</span></div>`;
     return `<div class="motherGridCell ${color} ${cell ? 'hasCell' : 'isEmpty'} ${isSelected ? 'isSelected' : ''}">${cell && isSelected ? `${title}<em>In your class Grid</em>` : '<span class="gridEmpty">—</span>'}</div>`;
   }
 
@@ -900,10 +901,76 @@
     const client = app.getClient(); const [enrollmentsResult, assignmentsResult, progressResult, awardsResult, eventsResult] = await Promise.all([client.from('class_enrollments').select('id, class_id, classes(name, code, status)').eq('student_id', state.profile.id).is('exited_at', null), client.from('class_assignments').select('id, class_id, title, instructions, category, belt, resource_url, due_at, published_at').not('published_at', 'is', null).order('created_at', { ascending: false }), client.from('student_assignment_progress').select('id, assignment_id, enrollment_id, status, score, submitted_at, feedback, class_assignments(class_id, title)').order('updated_at', { ascending: false }), client.from('belt_awards').select('id, belt, category, awarded_at, note, class_enrollments(class_id)').order('awarded_at', { ascending: false }), client.from('student_activity_events').select('id, event_type, metadata, occurred_at, class_id').order('occurred_at', { ascending: false }).limit(12)]);
     [enrollmentsResult, assignmentsResult, progressResult, awardsResult, eventsResult].forEach((result) => { if (result.error) throw result.error; }); const enrollments = enrollmentsResult.data || []; const ids = new Set(enrollments.map((entry) => entry.class_id)); let activeClassId = window.localStorage.getItem('campgrids-active-class'); if (!ids.has(activeClassId)) activeClassId = enrollments[0]?.class_id || ''; if (activeClassId) window.localStorage.setItem('campgrids-active-class', activeClassId);
     const { data: selectionRows, error: selectionError } = activeClassId ? await client.from('class_grid_cells').select('class_id, mother_grid_cell_id, mother_grid_cells(id, belt_code, column_number, title, category, instructions, resource_url, projects)').eq('class_id', activeClassId) : { data: [], error: null }; if (selectionError) throw selectionError; const gridCells = (selectionRows || []).map((entry) => entry.mother_grid_cells).filter(Boolean); const selectedIds = new Set(gridCells.map((cell) => cell.id)); const enrollment = enrollments.find((entry) => entry.class_id === activeClassId); const progress = (progressResult.data || []).filter((entry) => entry.enrollment_id === enrollment?.id); const awards = (awardsResult.data || []).filter((entry) => entry.class_enrollments?.class_id === activeClassId); const events = (eventsResult.data || []).filter((entry) => !entry.class_id || entry.class_id === activeClassId); const assignments = (assignmentsResult.data || []).filter((entry) => entry.class_id === activeClassId);
-    const assignmentRows = assignments.length ? assignments.map((assignment) => { const record = progress.find((entry) => entry.assignment_id === assignment.id); const done = record?.status === 'complete'; return `<article class="studentAssignment"><div><p class="eyebrow">${escapeHtml(`${assignment.category || 'Grid'} · ${assignment.belt || 'Activity'} Belt`)}</p><h3>${escapeHtml(assignment.title)}</h3><p>${escapeHtml(assignment.instructions || 'Open the resource and complete the activity.')}</p><small>Due ${dateValue(assignment.due_at)}</small></div><div class="assignmentActions"><span class="statusPill ${done ? 'complete' : 'in_progress'}">${done ? 'Completed' : 'In progress'}</span>${assignment.resource_url ? `<a class="secondaryButton" target="_blank" rel="noopener noreferrer" href="${escapeHtml(assignment.resource_url)}" data-student-resource="${assignment.id}">Open activity</a>` : ''}${done ? '<span class="completionAction">Completed</span>' : `<button class="primaryButton" type="button" data-student-progress="${assignment.id}">Mark completed</button>`}</div></article>`; }).join('') : '<p class="emptyCopy">There are no published assignments in this class yet.</p>';
-    workspace.innerHTML = `${actionsHeader('Student dashboard', `Hi, ${state.profile.first_name}.`, 'Your class Grid, earned belts, and activity timeline are all in one place.')}<section class="studentClassBar"><label class="fieldLabel">My class<select id="studentClassPicker">${enrollments.map((entry) => `<option value="${entry.class_id}" ${entry.class_id === activeClassId ? 'selected' : ''}>${escapeHtml(`${entry.classes.name} · ${entry.classes.code}`)}</option>`).join('')}</select></label></section>${renderMotherGrid({ mode: 'student', cells: gridCells, selectedIds, heading: enrollment?.classes?.name || 'My class' })}<section class="studentLayout"><div><div class="sectionHeading"><div><p class="eyebrow">My assignments</p><h2>What to work on</h2></div></div>${assignmentRows}</div><aside class="studentTimeline"><p class="eyebrow">Profile timeline</p><h2>Recent activity</h2>${events.length ? `<ol>${events.map((entry) => `<li><span>${escapeHtml(entry.event_type.replaceAll('_', ' '))}</span><small>${dateValue(entry.occurred_at)}${entry.metadata?.title ? ` · ${escapeHtml(entry.metadata.title)}` : ''}</small></li>`).join('')}</ol>` : '<p class="emptyCopy">Your Grid activity will appear here as you work.</p>'}<div class="studentBelts"><p class="eyebrow">My belts</p>${awards.length ? awards.map((award) => `<span class="beltPill belt${escapeHtml(award.belt)}">${escapeHtml(`${award.category} · ${award.belt}`)}</span>`).join('') : '<p class="emptyCopy">No belts awarded yet.</p>'}</div></aside></section>`;
-    document.getElementById('studentClassPicker')?.addEventListener('change', (event) => { window.localStorage.setItem('campgrids-active-class', event.target.value); renderStudent().catch(handleError); }); document.querySelector('[data-action="sign-out"]')?.addEventListener('click', signOut); document.querySelectorAll('[data-student-resource]').forEach((link) => link.addEventListener('click', () => app.logStudentEvent('resource_opened', { source: 'student_dashboard', assignment_id: link.dataset.studentResource }, activeClassId, link.dataset.studentResource))); document.querySelectorAll('[data-student-progress]').forEach((button) => button.addEventListener('click', () => run(() => updateStudentProgress(button.dataset.studentProgress, enrollment.id, activeClassId), null))); bindZoomControls();
+    const { data: gridActivityRows, error: gridActivityError } = enrollment ? await client.from('student_grid_activity_progress').select('mother_grid_cell_id, activity_index, status').eq('enrollment_id', enrollment.id) : { data: [], error: null };
+    if (gridActivityError) throw gridActivityError;
+    const gridActivityProgress = gridActivityRows || [];
+    const assignmentRows = assignments.length ? assignments.map((assignment) => { const record = progress.find((entry) => entry.assignment_id === assignment.id); const done = record?.status === 'complete'; return `<article class="studentAssignment"><div><p class="eyebrow">${escapeHtml(`${assignment.category || 'Grid'} · ${assignment.belt || 'Activity'} Belt`)}</p><h3>${escapeHtml(assignment.title)}</h3><p>${escapeHtml(assignment.instructions || 'Open the resource and complete the activity.')}</p><small>Due ${dateValue(assignment.due_at)}</small></div><div class="assignmentActions"><span class="statusPill ${done ? 'complete' : 'in_progress'}">${done ? 'Completed' : 'In progress'}</span>${assignment.resource_url ? `<a class="secondaryButton" target="_blank" rel="noopener noreferrer" href="${escapeHtml(assignment.resource_url)}" data-student-resource="${assignment.id}">Open activity</a>` : ''}${done ? '<span class="completionAction">Completed</span>' : `<button class="primaryButton" type="button" data-student-progress="${assignment.id}">Mark completed</button>`}</div></article>`; }).join('') : '<p class="emptyCopy">There are no teacher-assigned activities in this class yet.</p>';
+    workspace.innerHTML = `${actionsHeader('Student dashboard', `Hi, ${state.profile.first_name}.`, 'Your class Grid, earned belts, and activity timeline are all in one place.')}<section class="studentClassBar"><label class="fieldLabel">My class<select id="studentClassPicker">${enrollments.map((entry) => `<option value="${entry.class_id}" ${entry.class_id === activeClassId ? 'selected' : ''}>${escapeHtml(`${entry.classes.name} · ${entry.classes.code}`)}</option>`).join('')}</select></label></section>${renderMotherGrid({ mode: 'student', cells: gridCells, selectedIds, heading: enrollment?.classes?.name || 'My class', description: 'Click any activity in your class Grid to open and work on it. You may start any activity; complete every activity in earlier selected belt rows before marking a later belt complete.' })}<section class="studentLayout"><div><div class="sectionHeading"><div><p class="eyebrow">Teacher assignments</p><h2>Extra activities</h2></div></div>${assignmentRows}</div><aside class="studentTimeline"><p class="eyebrow">Profile timeline</p><h2>Recent activity</h2>${events.length ? `<ol>${events.map((entry) => `<li><span>${escapeHtml(entry.event_type.replaceAll('_', ' '))}</span><small>${dateValue(entry.occurred_at)}${entry.metadata?.title ? ` · ${escapeHtml(entry.metadata.title)}` : ''}</small></li>`).join('')}</ol>` : '<p class="emptyCopy">Your Grid activity will appear here as you work.</p>'}<div class="studentBelts"><p class="eyebrow">My belts</p>${awards.length ? awards.map((award) => `<span class="beltPill belt${escapeHtml(award.belt)}">${escapeHtml(`${award.category} · ${award.belt}`)}</span>`).join('') : '<p class="emptyCopy">No belts awarded yet.</p>'}</div></aside></section>`;
+    document.getElementById('studentClassPicker')?.addEventListener('change', (event) => { window.localStorage.setItem('campgrids-active-class', event.target.value); renderStudent().catch(handleError); }); document.querySelector('[data-action="sign-out"]')?.addEventListener('click', signOut); document.querySelectorAll('[data-student-resource]').forEach((link) => link.addEventListener('click', () => app.logStudentEvent('resource_opened', { source: 'student_dashboard', assignment_id: link.dataset.studentResource }, activeClassId, link.dataset.studentResource))); document.querySelectorAll('[data-student-progress]').forEach((button) => button.addEventListener('click', () => run(() => updateStudentProgress(button.dataset.studentProgress, enrollment.id, activeClassId), null))); bindStudentGridActivities({ classId: activeClassId, cells: gridCells, progress: gridActivityProgress }); bindZoomControls();
   }
+  function studentGridActivities(cell) {
+    return Array.isArray(cell.projects) && cell.projects.length
+      ? cell.projects
+      : [{ name: cell.title, instructions_url: cell.resource_url }];
+  }
+
+  function lowerBeltsAreComplete(cell, cells, progress) {
+    return cells
+      .filter((entry) => beltRank(entry.belt_code) < beltRank(cell.belt_code))
+      .every((entry) => studentGridActivities(entry).every((_, activityIndex) => progress.some((record) => record.mother_grid_cell_id === entry.id && Number(record.activity_index) === activityIndex && record.status === 'complete')));
+  }
+
+  async function saveStudentGridActivity(classId, cellId, activityIndex, status) {
+    const { error } = await app.getClient().rpc('save_student_grid_activity_progress', {
+      p_class_id: classId,
+      p_mother_grid_cell_id: cellId,
+      p_activity_index: activityIndex,
+      p_status: status,
+    });
+    if (error) throw error;
+  }
+
+  function openStudentGridCell(cell, classId, cells, progress) {
+    const dialog = document.getElementById('cellPreview');
+    if (!dialog) return;
+    const beltName = (gridRows.find(([code]) => code === cell.belt_code) || [, cell.belt_code])[1];
+    const canComplete = lowerBeltsAreComplete(cell, cells, progress);
+    const activities = studentGridActivities(cell);
+    dialog.innerHTML = `<form method="dialog" class="previewShell">
+      <header class="previewHeader belt${escapeHtml(cell.belt_code)}">
+        <div><p class="eyebrow">${escapeHtml(beltName)} belt</p><h2 id="cellPreviewTitle">${escapeHtml(cell.category || cell.title)}</h2></div>
+        <button class="previewClose" value="close" aria-label="Close">&times;</button>
+      </header>
+      <div class="previewBody">
+        <p class="previewLede">Choose any activity below. You can start work at any belt; completing this activity requires all earlier selected belt activities to be complete.</p>
+        <ol class="previewProjects studentGridActivities">${activities.map((activity, index) => {
+          const record = progress.find((entry) => entry.mother_grid_cell_id === cell.id && Number(entry.activity_index) === index);
+          const complete = record?.status === 'complete';
+          const resource = activity.instructions_url || cell.resource_url || '';
+          const video = activity.video_url || '';
+          return `<li><strong>${escapeHtml(activity.name || cell.title)}</strong><div class="previewLinks">${resource ? `<a class="previewLink" target="_blank" rel="noopener noreferrer" href="${escapeHtml(resource)}" data-student-grid-start="${cell.id}" data-activity-index="${index}">Open activity</a>` : `<button class="previewLink" type="button" data-student-grid-start="${cell.id}" data-activity-index="${index}">Start activity</button>`}${video ? `<a class="previewLink" target="_blank" rel="noopener noreferrer" href="${escapeHtml(video)}" data-student-grid-start="${cell.id}" data-activity-index="${index}">Watch video</a>` : ''}</div><div class="studentActivityActions"><span class="statusPill ${complete ? 'complete' : record ? 'in_progress' : ''}">${complete ? 'Completed' : record ? 'In progress' : 'Not started'}</span>${complete ? '<span class="completionAction">Completed</span>' : `<button class="primaryButton" type="button" data-student-grid-complete="${cell.id}" data-activity-index="${index}" ${canComplete ? '' : 'disabled'}>Mark completed</button>`}</div>${canComplete || complete ? '' : '<p class="helperText">Complete all earlier selected belt activities first.</p>'}</li>`;
+        }).join('')}</ol>
+      </div>
+    </form>`;
+    dialog.showModal();
+    dialog.querySelectorAll('[data-student-grid-start]').forEach((control) => control.addEventListener('click', () => run(async () => {
+      await saveStudentGridActivity(classId, control.dataset.studentGridStart, Number(control.dataset.activityIndex), 'in_progress');
+      notice('Activity started. Return here to mark it complete.', 'isSuccess');
+    }, null)));
+    dialog.querySelectorAll('[data-student-grid-complete]').forEach((control) => control.addEventListener('click', () => run(async () => {
+      await saveStudentGridActivity(classId, control.dataset.studentGridComplete, Number(control.dataset.activityIndex), 'complete');
+      await renderStudent();
+      notice('Activity completed.', 'isSuccess');
+    }, null)));
+  }
+
+  function bindStudentGridActivities({ classId, cells, progress }) {
+    document.querySelectorAll('[data-student-grid-cell]').forEach((button) => button.addEventListener('click', () => {
+      const cell = cells.find((entry) => entry.id === button.dataset.studentGridCell);
+      if (cell) openStudentGridCell(cell, classId, cells, progress);
+    }));
+  }
+
   async function updateStudentProgress(assignmentId, enrollmentId, classId) { const { error } = await app.getClient().from('student_assignment_progress').upsert({ assignment_id: assignmentId, enrollment_id: enrollmentId, status: 'complete', submitted_at: new Date().toISOString() }, { onConflict: 'assignment_id,enrollment_id' }); if (error) throw error; await app.logStudentEvent('assignment_completed', { status: 'complete' }, classId, assignmentId); await renderStudent(); notice('Marked completed.', 'isSuccess'); }
   async function signOut() { await app.getClient().auth.signOut(); window.location.assign('auth.html'); }
   /* PostgREST answers a query against a table that is not in the database with a 404
