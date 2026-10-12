@@ -28,6 +28,19 @@
   function rosterOptions(classData) { return classData.roster.filter((entry) => !entry.exited_at).map((entry) => `<option value="${entry.id}">${escapeHtml(`${entry.profiles.first_name} ${entry.profiles.last_name} (${entry.profiles.username})`)}</option>`).join(''); }
   function progressOptions(classData, includeBlank = false) { return `${includeBlank ? '<option value="">No assignment update</option>' : ''}${classData.assignments.map((assignment) => `<option value="${assignment.id}">${escapeHtml(assignment.title)}</option>`).join('')}`; }
   function selectedGridOptions(classData) { return classData.gridCells.map((selection) => { const cell = selection.mother_grid_cells; return cell ? `<option value="${cell.id}">${escapeHtml(`${cell.belt_code} · C${cell.column_number} · ${cell.title}`)}</option>` : ''; }).join(''); }
+  function selectedGridCategories(classData) { return [...new Set(classData.gridCells.map((selection) => String(selection.mother_grid_cells?.category || '').trim()).filter(Boolean))]; }
+  /* Belt awards are tied to the class curriculum. Convert the optional free-text
+     field to a select after each teacher render so it contains only categories
+     the teacher has selected for this class. */
+  function syncBeltCategoryDropdown(classData) {
+    const input = document.querySelector('#camperUpdateForm input[name="category"]');
+    if (!input) return;
+    const select = document.createElement('select');
+    select.name = 'category';
+    select.append(new Option('No belt award', ''));
+    selectedGridCategories(classData).forEach((category) => select.append(new Option(category, category)));
+    input.replaceWith(select);
+  }
   function classKpis(classData) { const roster = classData.roster.filter((entry) => !entry.exited_at); const possible = roster.length * classData.assignments.length; const completed = classData.progress.filter((entry) => entry.status === 'complete').length; const belts = classData.awards.reduce((counts, award) => { counts[award.belt] = (counts[award.belt] || 0) + 1; return counts; }, {}); return { campers: roster.length, possible, completed, completion: possible ? completed / possible * 100 : 0, belts }; }
   function beltSummary(kpis) { const entries = Object.entries(kpis.belts); return entries.length ? entries.map(([belt, count]) => `<span class="beltPill belt${belt}">${escapeHtml(belt)} <b>${count}</b></span>`).join('') : '<span class="muted">No belts awarded yet</span>'; }
 
@@ -179,6 +192,7 @@
     const campers = state.classes.reduce((sum, classData) => sum + classKpis(classData).campers, 0); const possible = state.classes.reduce((sum, classData) => sum + classKpis(classData).possible, 0); const completed = state.classes.reduce((sum, classData) => sum + classKpis(classData).completed, 0); const current = selectedClass(); const kpis = current ? classKpis(current) : null;
     workspace.innerHTML = `${actionsHeader('Teacher workspace', 'Class management', 'Create classes, choose a sub-grid, review student work, and export the details your team needs.')}<section class="kpiGrid"><article class="kpiCard"><span>Active classes</span><strong>${state.classes.filter((entry) => entry.status === 'active').length}</strong><small>${state.classes.length} total</small></article><article class="kpiCard"><span>Campers</span><strong>${campers}</strong><small>Across your classes</small></article><article class="kpiCard"><span>Completion</span><strong>${possible ? Math.round(completed / possible * 100) : 0}%</strong><small>${completed} of ${possible} assignment records</small></article></section><section class="workspaceGrid teacherTopGrid"><article class="toolCard"><div class="cardHeading"><div><p class="eyebrow">New class</p><h2>Start a group</h2></div><span class="infoTag">Unique code</span></div><form id="createClassForm" class="stackForm"><label class="fieldLabel">Class name<input name="name" required maxlength="140" placeholder="e.g. Young Makers - Week 1"></label><div class="formTwoCols"><label class="fieldLabel">Starts<input name="startsOn" type="date"></label><label class="fieldLabel">Ends<input name="endsOn" type="date"></label></div><label class="fieldLabel">Teacher notes<textarea name="notes" rows="2" placeholder="Optional internal notes"></textarea></label><button class="primaryButton" type="submit">Create class &amp; code</button></form></article><article class="toolCard classAtGlance"><div class="cardHeading"><div><p class="eyebrow">Class overview</p><h2>${current ? escapeHtml(current.name) : 'No class selected'}</h2></div>${classSelector()}</div>${current ? `<div class="classCode"><span>Class code</span><strong>${escapeHtml(current.code)}</strong><button class="copyButton" data-copy-code="${escapeHtml(current.code)}" type="button">Copy</button></div><div class="beltSummary"><span class="summaryLabel">Belts earned</span>${beltSummary(kpis)}</div>` : ''}</article></section>${current ? renderClassManager(current) : ''}`;
     bindTeacherEvents();
+    if (current) syncBeltCategoryDropdown(current);
     restoreGridViewport('teacher');
   }
 

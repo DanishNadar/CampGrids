@@ -113,6 +113,19 @@ describe('required fields', () => {
   });
 });
 
+describe('teacher belt award categories', () => {
+  test('offers only categories selected for the current class', async () => {
+    const source = await read('dashboard.js');
+    assert.match(source, /function selectedGridCategories\(classData\)/);
+    assert.match(source, /classData\.gridCells\.map\(\(selection\) => String\(selection\.mother_grid_cells\?\.category \|\| ''\)\.trim\(\)\)\.filter\(Boolean\)/);
+    assert.match(source, /new Set\(/, 'duplicate category columns should appear once');
+    assert.match(source, /select\.append\(new Option\('No belt award', ''\)\)/,
+      'assignment-only updates must remain possible');
+    assert.match(source, /selectedGridCategories\(classData\)\.forEach\(\(category\) => select\.append\(new Option\(category, category\)\)\)/);
+    assert.match(source, /if \(current\) syncBeltCategoryDropdown\(current\);/);
+  });
+});
+
 describe('the grid cell preview', () => {
   test('a populated teacher cell carries both actions', async () => {
     const source = await read('dashboard.js');
