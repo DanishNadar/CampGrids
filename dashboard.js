@@ -824,10 +824,10 @@
     const payload = [...cells.values()].map((cell) => {
       const projects = [...cell.projects.values()];
       const first = projects[0];
-      /* The title is the name of the thing, nothing else. The cell already prints
-         the activity count on its own line, so putting it in the title too showed
-         it twice and pushed the actual name out of the available width. */
-      return { belt_code: cell.belt_code, column_number: cell.column_number, category: cell.category, title: (projects.length === 1 ? first.name : cell.category).slice(0, 180), instructions: null, resource_url: first.instructions_url || first.video_url || null, projects };
+      /* The heading names the category. A cell must name the first project in it,
+         even when that square contains additional projects; the line beneath it
+         already reports the total activity count. */
+      return { belt_code: cell.belt_code, column_number: cell.column_number, category: cell.category, title: first.name.slice(0, 180), instructions: null, resource_url: first.instructions_url || first.video_url || null, projects };
     });
     return { cells: payload, categories: categories.filter(Boolean) };
   }

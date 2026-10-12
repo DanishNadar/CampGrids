@@ -327,18 +327,18 @@ describe('finishing setup is not the same as reusing a password', () => {
   });
 });
 
-describe('a Grid cell title is just the title', () => {
-  /* The importer used to name a multi-activity cell "Category (N activities)".
-     The cell already prints the count on its own line underneath, so it appeared
-     twice - and because the title is clamped to two lines, the suffix pushed the
-     real name out of view: "Origami (Figure) (2...". */
-  test('the importer does not put a count in the title', async () => {
+describe('a Grid cell title identifies a project', () => {
+  /* A category labels the column. The cell title must identify the project within
+     that category, including when several projects share the same square. */
+  test('the importer uses the first project name without adding a count', async () => {
     const source = await read('dashboard.js');
     const parser = source.slice(source.indexOf('function parseMotherGridCsv'));
     assert.ok(!/activit(y|ies)\)\`/.test(parser.slice(0, 4000)),
       'the title must not be built with an activity count');
-    assert.match(parser, /\(projects\.length === 1 \? first\.name : cell\.category\)/,
-      'one activity uses its own name; several use the category name');
+    assert.match(parser, /title: first\.name\.slice\(0, 180\)/,
+      'the first project names the cell regardless of how many projects it contains');
+    assert.doesNotMatch(parser, /title: \(projects\.length === 1 \? first\.name : cell\.category\)/,
+      'a multi-project cell must never fall back to the category title');
   });
 
   test('the count is still shown, on its own line', async () => {
@@ -353,5 +353,14 @@ describe('a Grid cell title is just the title', () => {
       assert.ok(sql.includes(table), `${table} also stores copies of the title`);
     }
     assert.match(sql, /<> ''/, 'stripping must never leave a title empty; the table requires one');
+  });
+
+  test('existing Grid rows are renamed from their first stored project', async () => {
+    const sql = await read('supabase/migrations/20261012_project_names_for_grid_cells.sql');
+    assert.match(sql, /projects -> 0 ->> 'name'/);
+    assert.match(sql, /title = category/,
+      'only legacy category-named cells should be changed');
+    assert.match(sql, /class_grid_cells/,
+      'published class assignments can be reconciled through their selected cells');
   });
 });
