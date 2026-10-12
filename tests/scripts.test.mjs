@@ -50,6 +50,7 @@ const CASES = [
   { file: 'testOtpDelivery.mjs', args: [], expect: /Pass --to/ },
   { file: 'verifySmtp.mjs', args: [], expect: /AUTH OK|GMAIL_SMTP_|Gmail rejected/ },
   { file: 'checkEmailDelivery.mjs', args: [], expect: /Pass --email/ },
+  { file: 'restoreMotherGridResources.mjs', args: ['--dry-run'], expect: /Canonical Grid: \d+ cells, \d+ projects, \d+ projects with a resource link/ },
   { file: 'provisionAdmin.mjs', args: [], expect: /Pass --email/ }
 ];
 

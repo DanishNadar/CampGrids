@@ -84,12 +84,34 @@
     return '<dialog class="cellPreview" id="cellPreview" aria-labelledby="cellPreviewTitle"></dialog>';
   }
 
-  function projectLinks(project) {
-    const links = [
-      project.instructions_url ? `<a class="previewLink" href="${escapeHtml(project.instructions_url)}" target="_blank" rel="noopener noreferrer">Instructions</a>` : '',
-      project.video_url ? `<a class="previewLink" href="${escapeHtml(project.video_url)}" target="_blank" rel="noopener noreferrer">Video</a>` : ''
-    ].filter(Boolean).join('');
-    return links || '<span class="previewLink isNone">In-person activity</span>';
+  function safeResourceUrl(value) {
+    if (typeof value !== 'string' || !value.trim()) return '';
+    try {
+      const url = new URL(value.trim());
+      return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : '';
+    } catch { return ''; }
+  }
+
+  /* Older imports used a few different field names. Accept those safely so the
+     resource remains usable while the source Grid is being normalized. */
+  function resourceLinks(project = {}, cell = {}) {
+    const links = [];
+    const add = (label, value) => {
+      const url = safeResourceUrl(value);
+      if (url && !links.some((entry) => entry.url === url)) links.push({ label, url });
+    };
+    add('Open instructions', project.instructions_url || project.instruction_url || project.instructionsUrl);
+    add('Watch video', project.video_url || project.videoUrl);
+    add('Open resource', project.resource_url || project.resourceUrl || project.url || project.link || project.href);
+    const extras = project.resources || project.links || project.resource_links;
+    (Array.isArray(extras) ? extras : extras && typeof extras === 'object' ? Object.entries(extras).map(([label, value]) => typeof value === 'object' ? { label, ...value } : { label, url: value }) : []).forEach((entry) => add(entry.label || entry.title || entry.name || 'Open resource', entry.url || entry.link || entry.href));
+    if (!links.length) add('Open resource', cell.resource_url || cell.resourceUrl);
+    return links;
+  }
+
+  function projectLinks(project, cell = {}) {
+    const links = resourceLinks(project, cell).map((entry) => `<a class="previewLink" href="${escapeHtml(entry.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(entry.label)}</a>`).join('');
+    return links || '<span class="previewLink isNone">No online resource is listed for this activity.</span>';
   }
 
   function openCellPreview(cellId) {
@@ -988,11 +1010,9 @@
         <ol class="previewProjects studentGridActivities">${activities.map((activity, index) => {
           const record = progress.find((entry) => entry.mother_grid_cell_id === cell.id && Number(entry.activity_index) === index);
           const complete = record?.status === 'complete';
-          const resource = activity.instructions_url || cell.resource_url || '';
-          const video = activity.video_url || '';
           const activityEvidence = evidence.filter((item) => item.mother_grid_cell_id === cell.id && Number(item.activity_index) === index);
-          const resources = `${resource ? `<a class="previewLink" target="_blank" rel="noopener noreferrer" href="${escapeHtml(resource)}" data-student-grid-resource="${cell.id}" data-activity-index="${index}">Open instructions</a>` : ''}${video ? `<a class="previewLink" target="_blank" rel="noopener noreferrer" href="${escapeHtml(video)}" data-student-grid-resource="${cell.id}" data-activity-index="${index}">Watch video</a>` : ''}`;
-          return `<li><strong>${escapeHtml(activity.name || cell.title)}</strong><div class="previewLinks">${resources || '<span class="previewLink isNone">No online resource was supplied for this activity.</span>'}</div><div class="studentActivityActions"><span class="statusPill ${complete ? 'complete' : record ? 'in_progress' : ''}">${complete ? 'Completed' : record ? 'In progress' : 'Not started'}</span>${complete ? '<span class="completionAction">Completed</span>' : `<button class="primaryButton" type="button" data-student-grid-complete="${cell.id}" data-activity-index="${index}" ${canComplete ? '' : 'disabled'}>Mark completed</button>`}</div><div class="studentEvidenceUpload"><label class="fieldLabel">Add proof of work<input type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,audio/mpeg,audio/wav,application/pdf" data-student-evidence-file="${cell.id}" data-activity-index="${index}"></label><label class="fieldLabel">Note (optional)<input maxlength="500" placeholder="What did you make or learn?" data-student-evidence-caption="${cell.id}" data-activity-index="${index}"></label><button class="secondaryButton" type="button" data-student-evidence-upload="${cell.id}" data-activity-index="${index}">Upload proof</button>${activityEvidence.length ? `<small>${activityEvidence.length} proof file${activityEvidence.length === 1 ? '' : 's'} submitted</small>` : ''}</div>${canComplete || complete ? '' : '<p class="helperText">Complete all earlier selected belt activities first.</p>'}</li>`;
+          const resources = resourceLinks(activity, cell).map((entry) => `<a class="previewLink" target="_blank" rel="noopener noreferrer" href="${escapeHtml(entry.url)}" data-student-grid-resource="${cell.id}" data-activity-index="${index}">${escapeHtml(entry.label)}</a>`).join('');
+          return `<li><strong>${escapeHtml(activity.name || cell.title)}</strong><div class="previewLinks">${resources || '<span class="previewLink isNone">No online resource is listed for this activity.</span>'}</div><div class="studentActivityActions"><span class="statusPill ${complete ? 'complete' : record ? 'in_progress' : ''}">${complete ? 'Completed' : record ? 'In progress' : 'Not started'}</span>${complete ? '<span class="completionAction">Completed</span>' : `<button class="primaryButton" type="button" data-student-grid-complete="${cell.id}" data-activity-index="${index}" ${canComplete ? '' : 'disabled'}>Mark completed</button>`}</div><div class="studentEvidenceUpload"><label class="fieldLabel">Add proof of work<input type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,audio/mpeg,audio/wav,application/pdf" data-student-evidence-file="${cell.id}" data-activity-index="${index}"></label><label class="fieldLabel">Note (optional)<input maxlength="500" placeholder="What did you make or learn?" data-student-evidence-caption="${cell.id}" data-activity-index="${index}"></label><button class="secondaryButton" type="button" data-student-evidence-upload="${cell.id}" data-activity-index="${index}">Upload proof</button>${activityEvidence.length ? `<small>${activityEvidence.length} proof file${activityEvidence.length === 1 ? '' : 's'} submitted</small>` : ''}</div>${canComplete || complete ? '' : '<p class="helperText">Complete all earlier selected belt activities first.</p>'}</li>`;
         }).join('')}</ol>
       </div>
     </form>`;

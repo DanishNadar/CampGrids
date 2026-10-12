@@ -446,6 +446,23 @@ describe('student Grid work has usable resources and private proof', () => {
       'the recent-activity timeline must be refreshed after an activity starts');
   });
 
+  test('the resource reader supports canonical and legacy link fields safely', async () => {
+    const source = await read('dashboard.js');
+    assert.match(source, /function safeResourceUrl\(value\)/);
+    assert.match(source, /url\.protocol === 'https:' \|\| url\.protocol === 'http:'/,
+      'untrusted data must not turn into a javascript: activity link');
+    assert.match(source, /project\.instructions_url \|\| project\.instruction_url/);
+    assert.match(source, /project\.video_url \|\| project\.videoUrl/);
+    assert.match(source, /project\.resources \|\| project\.links/);
+  });
+
+  test('the canonical resource restoration is explicit and repeatable', async () => {
+    const source = await read('scripts/restoreMotherGridResources.mjs');
+    assert.match(source, /mother-grid-template\.csv/);
+    assert.match(source, /Pass exactly one of --dry-run or --apply/);
+    assert.match(source, /projects: cell\.projects, resource_url: cell\.resource_url/);
+  });
+
   test('students can upload supported proof and teachers can review it', async () => {
     const source = await read('dashboard.js');
     assert.match(source, /storage\.from\('student-work'\)\.upload/);
