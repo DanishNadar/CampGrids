@@ -161,10 +161,18 @@
 
     setNotice('Entering your class...');
     try {
+      /* A camper who has already completed the link is signed in. Going straight
+         to their dashboard avoids asking Auth for a second magic link inside its
+         60-second safety window. */
+      const existingProfile = await window.CampGridsApp.getProfile();
+      if (existingProfile?.role === 'student' && existingProfile.is_active) {
+        window.location.assign(window.CampGridsApp.dashboardHref('student'));
+        return;
+      }
       const { data, error } = await window.CampGridsApp.getClient().functions.invoke('student-class-login', {
         body: { username, classCode, redirectTo: new URL('auth.html', window.location.href).href },
       });
-      if (error) throw error;
+      if (error) throw new Error(await functionErrorMessage(error, 'We could not start your class sign-in. Please try again.'));
       if (data?.error) throw new Error(data.error);
       if (!data?.actionLink || !data?.classId) throw new Error('We could not start your class sign-in. Please try again.');
       window.localStorage.setItem('campgrids-active-class', data.classId);

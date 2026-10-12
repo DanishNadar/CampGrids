@@ -77,6 +77,11 @@ export function createClient(url, key, options) {
         deleteUser: async (id) => {
           calls.push(\`deleteUser:\${id}\`);
           return scenario.deleteUserFails ? result(null, { message: scenario.deleteUserFails }) : result({});
+        },
+        generateLink: async ({ email, options }) => {
+          calls.push(\`generateLink:\${email}:\${options?.redirectTo}\`);
+          if (scenario.generateLinkFails) return result(null, { message: scenario.generateLinkFails, status: scenario.generateLinkStatus });
+          return result({ properties: { action_link: 'https://stub.supabase.co/auth/v1/verify?token_hash=safe-token' } });
         }
       }
     },
@@ -381,6 +386,36 @@ describe('provision-students', () => {
   test('a caller who is not a verified administrator is refused', async () => {
     const result = await call(handler, { students: [{ firstName: 'F', lastName: 'Y' }] }, { rpc: { is_admin: false } });
     assert.equal(result.status, 403);
+  });
+});
+
+describe('student-class-login', () => {
+  let handler;
+  const STUDENT = {
+    tables: {
+      profiles: [{ id: 'student-1', email: 'camper@example.org' }],
+      classes: [{ id: 'class-1' }],
+      class_enrollments: [{ class_id: 'class-1' }]
+    }
+  };
+
+  before(async () => { handler = await loadHandler('student-class-login'); });
+
+  test('returns a usable link for an enrolled camper', async () => {
+    const result = await call(handler, { username: 'camper', classCode: 'MBET9YS', redirectTo: `${ORIGIN}/auth.html` }, STUDENT);
+    assert.equal(result.threw, undefined, `the handler threw: ${result.threw?.stack}`);
+    assert.equal(result.status, 200, result.text);
+    assert.equal(result.body.classId, 'class-1');
+    assert.match(result.body.actionLink, /^https:\/\/stub\.supabase\.co\//);
+  });
+
+  test('reports a rapid repeat link request without converting it to a server error', async () => {
+    const result = await call(handler, { username: 'camper', classCode: 'MBET9YS' }, {
+      ...STUDENT, generateLinkFails: 'For security purposes, you can only request this after 60 seconds.', generateLinkStatus: 429
+    });
+    assert.equal(result.threw, undefined, `the handler threw: ${result.threw?.stack}`);
+    assert.equal(result.status, 429, result.text);
+    assert.match(result.body.error, /wait a minute/i);
   });
 });
 

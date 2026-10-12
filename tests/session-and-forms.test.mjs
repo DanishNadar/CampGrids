@@ -193,6 +193,20 @@ describe('password setup card spacing', () => {
   });
 });
 
+describe('a repeated class sign-in', () => {
+  test('uses the existing camper session before asking Auth for another magic link', async () => {
+    const source = await read('account.js');
+    assert.match(source, /const existingProfile = await window\.CampGridsApp\.getProfile\(\);/);
+    assert.match(source, /existingProfile\?\.role === 'student' && existingProfile\.is_active/);
+    assert.match(source, /window\.location\.assign\(window\.CampGridsApp\.dashboardHref\('student'\)\);/);
+  });
+
+  test('shows the function response instead of Supabase\'s generic HTTP error', async () => {
+    const source = await read('account.js');
+    assert.match(source, /if \(error\) throw new Error\(await functionErrorMessage\(error, 'We could not start your class sign-in\. Please try again\.'\)\);/);
+  });
+});
+
 describe('a sign-in that times out returns to the sign-in step', () => {
   /* The reported failure: a tab left open on the verification step long enough for
      the session to lapse. Every button then answered "Sign in with your password

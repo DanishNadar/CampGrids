@@ -56,7 +56,18 @@ Deno.serve(async (request) => {
     email: profile.email,
     options: { redirectTo: typeof redirectTo === "string" ? redirectTo : undefined },
   });
-  if (linkError || !linkData.properties.action_link) return fail("We could not start your class sign-in. Please try again.", 500);
+  if (linkError || !linkData?.properties?.action_link) {
+    /* Auth deliberately rejects another magic link for the same user for about a
+       minute. That is an expected retry state, not a server failure. */
+    const throttled = Number(linkError?.status || 0) === 429
+      || /rate[ _-]?limit|too many|60 seconds|security purposes/i.test(linkError?.message || "");
+    return fail(
+      throttled
+        ? "A class sign-in link was requested very recently. Wait a minute and try again."
+        : "We could not start your class sign-in. Please try again.",
+      throttled ? 429 : 500,
+    );
+  }
 
   await admin.from("student_activity_events").insert({
     student_id: profile.id,
