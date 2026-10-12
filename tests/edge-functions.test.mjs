@@ -180,6 +180,19 @@ describe('provision-teachers', () => {
     assert.equal(invite, `invite:fannie.yu@example.org:${ORIGIN}/account-setup.html`);
   });
 
+  test('a dashboard resend uses the stable account id and the profile email', async () => {
+    const accountId = '12a10d70-b5f8-4f05-8ac0-7d989acdb818';
+    const result = await call(handler, {
+      action: 'resend', email: 'outdated@example.org', userId: accountId, siteOrigin: ORIGIN
+    }, {
+      ...ADMIN,
+      tables: { profiles: [{ id: accountId, email: 'current@example.org', must_change_password: true, role: 'teacher', is_active: true }] }
+    });
+    assert.equal(result.status, 200, result.text);
+    assert.equal(result.body.email, 'current@example.org');
+    assert.ok(result.calls.includes(`invite:current@example.org:${ORIGIN}/account-setup.html`), result.calls.join(', '));
+  });
+
   /* The state that broke Resend invitation in production: the teacher opened their
      link once, which confirmed the address, and never chose a password. Auth then
      refuses to invite them, and there is no supported way to undo the confirmation,

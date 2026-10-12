@@ -46,6 +46,7 @@ Deno.serve(async (request) => {
   const isResend = action === "resend";
   const isDelete = action === "delete";
   const resendEmail = clean(payload.email).toLowerCase();
+  const resendUserId = clean(payload.userId);
   const filename = clean(payload.filename);
   const teachers = payload.teachers;
 
@@ -78,6 +79,9 @@ Deno.serve(async (request) => {
 
   if (isResend) {
     if (!resendEmail || !resendEmail.includes("@")) return fail("A valid email address is required to resend an invitation.");
+    if (resendUserId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(resendUserId)) {
+      return fail("The account identifier is invalid. Refresh the page and try again.");
+    }
   } else {
     if (!Array.isArray(teachers) || teachers.length === 0) return fail("Add at least one teacher.");
     if (teachers.length > 250) return fail("Add no more than 250 teachers at one time.");
@@ -103,14 +107,16 @@ Deno.serve(async (request) => {
        guessed from an error string. Re-inviting an existing unactivated account
        returns 200 and re-sends, so matching on "already registered" both missed the
        normal case and misreported it. */
-    const { data: profile, error: profileError } = await admin
+    let profileQuery = admin
       .from("profiles")
-      .select("must_change_password, role, is_active")
-      .eq("email", resendEmail)
-      .maybeSingle();
+      .select("id, email, must_change_password, role, is_active");
+    profileQuery = resendUserId
+      ? profileQuery.eq("id", resendUserId)
+      : profileQuery.eq("email", resendEmail);
+    const { data: profile, error: profileError } = await profileQuery.maybeSingle();
 
     if (profileError) return fail(`Could not look up that account: ${profileError.message}`, 502);
-    if (!profile) return fail("No CampGrids account uses that email address.", 404);
+    if (!profile) return fail("This account record no longer exists. Refresh the page and create the account again if needed.", 404);
     if (!profile.is_active) return fail("That account is inactive. Reactivate it before resending an invitation.", 409);
     if (profile.must_change_password === false) {
       return fail(
@@ -119,7 +125,12 @@ Deno.serve(async (request) => {
       );
     }
 
-    const sendInvitation = () => admin.auth.admin.inviteUserByEmail(resendEmail, { redirectTo: inviteRedirectTo });
+    // A current profile always has its email populated. Keep the email supplied by
+    // an older dashboard as a compatibility fallback while databases finish the
+    // migration, but prefer the profile value whenever it exists.
+    const recipientEmail = clean(profile.email || resendEmail).toLowerCase();
+    if (!recipientEmail || !recipientEmail.includes("@")) return fail("This account does not have a valid email address. Update the account email before resending.", 409);
+    const sendInvitation = () => admin.auth.admin.inviteUserByEmail(recipientEmail, { redirectTo: inviteRedirectTo });
 
     let { error: inviteError } = await sendInvitation();
 
@@ -131,7 +142,7 @@ Deno.serve(async (request) => {
        your password" email, which is the wrong message for an account that has never
        had one. */
     if (inviteError && /already.*(registered|exists)/i.test(inviteError.message || "")) {
-      const { data: reopened, error: reopenError } = await admin.rpc("reopen_staff_invitation", { p_email: resendEmail });
+      const { data: reopened, error: reopenError } = await admin.rpc("reopen_staff_invitation", { p_email: recipientEmail });
       if (reopenError) return fail(`The invitation could not be resent: ${reopenError.message}`, 502);
       if (!reopened) {
         return fail(
@@ -146,9 +157,9 @@ Deno.serve(async (request) => {
 
     await admin.from("profiles")
       .update({ password_invite_sent_at: new Date().toISOString() })
-      .eq("email", resendEmail);
+      .eq("id", profile.id);
 
-    return new Response(JSON.stringify({ resent: true, email: resendEmail }), { headers });
+    return new Response(JSON.stringify({ resent: true, email: recipientEmail }), { headers });
   }
 
   const results: Array<Record<string, string>> = [];

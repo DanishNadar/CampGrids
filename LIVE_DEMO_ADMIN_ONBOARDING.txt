@@ -1,13 +1,6 @@
 CampGrids Demo: Exact Steps
 ===========================
 
-Important
----------
-
-Use a NEW email address for every new staff account. Do not use danish@holacreo.com
-again because it is already a CampGrids account. Do not use set_admin.sql or open
-admin-onboarding.html.
-
 1. Create the demo administrator
 ---------------------------------
 
@@ -25,7 +18,7 @@ Example:
 
 1. Open the email with subject: Your MSI staff account is ready.
 2. Click Set Up My Account.
-3. Choose a password.
+3. Click Continue to password setup, then choose a password.
 4. Go to https://camp-grids.vercel.app/admin/.
 5. Sign in with the email address and password.
 6. Enter the verification code sent by email.
@@ -39,7 +32,7 @@ link again in a private/incognito window.
 
 1. In the admin workspace, open People.
 2. Complete Add a teacher with a new email address.
-3. In the teacher's email, click Set Up My Account and choose a password.
+3. In the teacher's email, click Set Up My Account, click Continue to password setup, then choose a password.
 4. In a private/incognito window, go to https://camp-grids.vercel.app/auth.html.
 5. Select Teacher, sign in, and enter the emailed verification code.
 

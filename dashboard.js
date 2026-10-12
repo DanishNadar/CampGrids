@@ -237,7 +237,7 @@
       return `<tr><td><strong>${escapeHtml(row.full_name || '')}</strong><small>${escapeHtml(row.account_email || '')}</small></td>
         <td>${escapeHtml(row.account_role || '')}</td>
         <td class="${stale ? 'isWarning' : ''}">${escapeHtml(sent)}</td>
-        <td class="rowAction"><button class="quietButton" type="button" data-resend-staff="${escapeHtml(row.account_email || '')}">Resend invitation</button><span class="rowStatus" data-row-status="${escapeHtml(row.account_email || '')}" role="status" aria-live="polite"></span></td></tr>`;
+        <td class="rowAction"><button class="quietButton" type="button" data-resend-staff="${escapeHtml(row.account_email || '')}" data-resend-user-id="${escapeHtml(row.account_id || '')}">Resend invitation</button><span class="rowStatus" data-row-status="${escapeHtml(row.account_email || '')}" role="status" aria-live="polite"></span></td></tr>`;
     }).join('');
     return `<article class="toolCard"><div class="cardHeading"><div><p class="eyebrow">Staff access</p><h3>Waiting on a password</h3>
       <p class="helperText">These accounts exist but cannot be signed into until the person follows a set-password link. If someone says the email never arrived, check they are listed here first: an account that is missing was never created, so nothing was ever emailed.</p></div></div>
@@ -256,14 +256,14 @@
     return node;
   }
 
-  async function resendStaffLink(email, statusKey = email) {
+  async function resendStaffLink(email, statusKey = email, userId = '') {
     const button = document.querySelector(`[data-resend-staff="${CSS.escape(email)}"], [data-person-resend="${CSS.escape(email)}"]`);
     if (button) button.disabled = true;
     rowStatus(statusKey, 'Sending...');
 
     try {
       const { data, error } = await app.getClient().functions.invoke('provision-teachers', {
-        body: { action: 'resend', email, siteOrigin: window.location.origin }
+        body: { action: 'resend', email, userId, siteOrigin: window.location.origin }
       });
       if (error) {
         const unreachable = /FunctionsFetchError|Failed to send a request to the Edge Function|Failed to fetch/i.test(`${error.name || ''} ${error.message || ''}`);
@@ -638,7 +638,7 @@
     document.querySelectorAll('[data-person-save-classes]').forEach((button) => button.addEventListener('click', () => run(() => savePersonClasses(button.dataset.personSaveClasses), null)));
     document.querySelectorAll('[data-person-active]').forEach((button) => button.addEventListener('click', () => run(() => setPersonActive(button.dataset.personActive, button.dataset.nextActive === 'true'), null)));
     document.querySelectorAll('[data-person-delete]').forEach((button) => button.addEventListener('click', () => run(() => deletePerson(button.dataset.personDelete, button.dataset.personName), null)));
-    document.querySelectorAll('[data-person-resend]').forEach((button) => button.addEventListener('click', () => run(() => resendStaffLink(button.dataset.personResend, button.dataset.personId), null)));
+    document.querySelectorAll('[data-person-resend]').forEach((button) => button.addEventListener('click', () => run(() => resendStaffLink(button.dataset.personResend, button.dataset.personId, button.dataset.personId), null)));
   }
 
   function renderAdminDashboard() {
@@ -872,7 +872,7 @@
     document.querySelector('[data-action="save-partner-grid"]')?.addEventListener('click', () => run(savePartnerGrid, null));
     document.querySelector('[data-action="reset-partner-grid"]')?.addEventListener('click', () => run(() => { state.partnerGridDraft = null; state.partnerGridDraftFor = ''; renderAdminDashboard(); }, null));
     document.querySelector('[data-action="toggle-partner-published"]')?.addEventListener('click', () => run(togglePartnerPublished, null));
-    document.querySelectorAll('[data-resend-staff]').forEach((button) => button.addEventListener('click', () => run(() => resendStaffLink(button.dataset.resendStaff), null)));
+    document.querySelectorAll('[data-resend-staff]').forEach((button) => button.addEventListener('click', () => run(() => resendStaffLink(button.dataset.resendStaff, button.dataset.resendStaff, button.dataset.resendUserId), null)));
     bindCellPreview(); document.querySelectorAll('[data-class-grid-cell]').forEach((button) => button.addEventListener('click', () => run(() => applyPartnerDraftChange((draft) => { const id = button.dataset.classGridCell; if (draft.has(id)) draft.delete(id); else draft.add(id); }), null)));
     document.querySelectorAll('[data-grid-column-select]').forEach((button) => button.addEventListener('click', () => run(() => { const column = state.motherGrid.filter((cell) => Number(cell.column_number) === Number(button.dataset.gridColumnSelect)); if (!column.length) return; applyPartnerDraftChange((draft) => { const holdsAll = column.every((cell) => draft.has(cell.id)); column.forEach((cell) => { if (holdsAll) draft.delete(cell.id); else draft.add(cell.id); }); }); }, null))); document.getElementById('navForm')?.addEventListener('submit', (event) => run(createNavigation, event)); document.getElementById('dropdownForm')?.addEventListener('submit', (event) => run(createDropdownOption, event)); document.querySelectorAll('[data-mother-grid-cell]').forEach((button) => button.addEventListener('click', () => { state.editingMotherGridCellId = button.dataset.motherGridCell || ''; renderAdminDashboard(); })); document.querySelector('[data-action="clear-grid-cell"]')?.addEventListener('click', () => { state.editingMotherGridCellId = ''; renderAdminDashboard(); }); document.querySelector('[data-action="download-teacher-report"]')?.addEventListener('click', () => downloadCsv(`campgrids-teacher-access-${new Date().toISOString().slice(0, 10)}.csv`, ['First name', 'Last name', 'Work email', 'Username', 'Title', 'Set-password link emailed'], state.teacherCredentialRows.map((row) => [row.firstName, row.lastName, row.email, row.username, row.title, row.invited ? 'yes' : 'no']))); document.querySelector('[data-action="download-student-report"]')?.addEventListener('click', () => downloadCsv(`campgrids-student-access-${new Date().toISOString().slice(0, 10)}.csv`, ['First name', 'Last name', 'Username', 'Grade'], state.studentCredentialRows.map((row) => [row.firstName, row.lastName, row.username, row.grade]))); document.querySelector('[data-action="sign-out"]')?.addEventListener('click', signOut); bindPeopleEvents(); bindZoomControls(); }
 
