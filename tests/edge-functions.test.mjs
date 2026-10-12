@@ -39,9 +39,11 @@ export function createClient(url, key, options) {
   const role = key === scenario.serviceRoleKey ? 'admin' : 'caller';
 
   const result = (data = null, error = null) => ({ data, error });
-  const builder = (rows) => {
+  const builder = (rows, table) => {
     const self = {
-      select: () => self, eq: () => self, in: () => self, is: () => self, not: () => self, gt: () => self,
+      select: () => self,
+      eq: (column, value) => { calls.push(\`eq:\${table}:\${column}:\${value}\`); return self; },
+      in: () => self, is: () => self, not: () => self, gt: () => self,
       order: () => self, limit: () => self,
       maybeSingle: () => Promise.resolve(result(rows.length ? rows[0] : null)),
       single: () => Promise.resolve(result(rows[0] ?? null)),
@@ -90,13 +92,13 @@ export function createClient(url, key, options) {
     from: (table) => {
       calls.push(\`from:\${table}\`);
       const rows = scenario.tables?.[table] ?? [];
-      const self = builder(rows);
-      self.insert = () => { calls.push(\`insert:\${table}\`); return builder([]); };
+      const self = builder(rows, table);
+      self.insert = () => { calls.push(\`insert:\${table}\`); return builder([], table); };
       // update(...).select(...).maybeSingle() returns the affected row. Keeping
       // the fixture rows models PostgREST for compare-and-consume nonce updates.
-      self.update = () => { calls.push(\`update:\${table}\`); return builder(rows); };
-      self.delete = () => { calls.push(\`delete:\${table}\`); return builder([]); };
-      self.upsert = () => { calls.push(\`upsert:\${table}\`); return builder([]); };
+      self.update = () => { calls.push(\`update:\${table}\`); return builder(rows, table); };
+      self.delete = () => { calls.push(\`delete:\${table}\`); return builder([], table); };
+      self.upsert = () => { calls.push(\`upsert:\${table}\`); return builder([], table); };
       return self;
     }
   };
@@ -190,6 +192,7 @@ describe('provision-teachers', () => {
     });
     assert.equal(result.status, 200, result.text);
     assert.equal(result.body.email, 'current@example.org');
+    assert.ok(result.calls.includes(`eq:profiles:id:${accountId}`), result.calls.join(', '));
     assert.ok(result.calls.includes(`invite:current@example.org:${ORIGIN}/account-setup.html`), result.calls.join(', '));
   });
 
