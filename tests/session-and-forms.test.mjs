@@ -156,8 +156,17 @@ describe('the large Grid viewport', () => {
 
   test('labels the keyboard-focusable scroll region', async () => {
     const source = await read('dashboard.js');
-    assert.match(source, /class="motherGridViewport" role="region" aria-label="Scrollable/);
+    assert.match(source, /class="motherGridViewport" data-mother-grid-viewport="\$\{mode\}" role="region" aria-label="Scrollable/);
     assert.match(source, /tabindex="0"/);
+  });
+
+  test('uses compact fixed tracks and retains the Grid viewport after a selection', async () => {
+    const [css, source] = await Promise.all([read('styles.css'), read('dashboard.js')]);
+    assert.match(css, /\.motherGridHeader,\s*\.motherGridRow \{ grid-template-columns: 62px repeat\(var\(--grid-columns\), 118px\); \}/);
+    assert.match(source, /min="0\.55" max="1\.15"/, 'the smallest zoom must show substantially more of the Grid');
+    assert.match(source, /rememberGridViewport\('teacher'\);\s*renderTeacher\(\);/);
+    assert.match(source, /rememberGridViewport\('partner'\);\s*renderAdminDashboard\(\);\s*restoreGridViewport\('partner'\);/);
+    assert.match(source, /rememberGridViewport\('admin'\); state\.editingMotherGridCellId[\s\S]*?restoreGridViewport\('admin'\);/);
   });
 });
 

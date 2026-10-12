@@ -608,6 +608,12 @@ a {
   }
 }
 
+/* A Grid may contain many categories. Fixed tracks keep long activity names
+   from widening every column, so the lowest zoom can show the whole Grid. */
+.motherGridCanvas { min-width: 0; }
+.motherGridHeader,
+.motherGridRow { grid-template-columns: 62px repeat(var(--grid-columns), 118px); }
+
 /* This styles the large top banner. The warm overlay keeps the title readable while the body background image continues behind the page. */
 .siteHeader {
   display: flex;
