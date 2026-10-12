@@ -75,8 +75,10 @@ describe('activation email never reads as a password reset', () => {
     assert.doesNotMatch(html, /Reset Password<\/a>/);
   });
 
-  test('it carries a confirmation link and not a one-time code', () => {
-    assert.ok(html.includes('{{ .ConfirmationURL }}'));
+  test('it uses a scanner-safe token hash rather than a direct confirmation URL', () => {
+    assert.ok(html.includes('{{ .TokenHash }}'));
+    assert.ok(html.includes('{{ .RedirectTo }}'));
+    assert.ok(!html.includes('{{ .ConfirmationURL }}'));
     assert.ok(!html.includes('{{ .Token }}'));
   });
 });
@@ -283,6 +285,13 @@ describe('security properties', () => {
     const source = await read('password-setup.js');
     assert.match(source, /expiredHeading/);
     assert.match(source, /error_code/, 'an expired link arrives as an error in the fragment');
+  });
+
+  test('an invitation is redeemed only after the recipient presses Continue', async () => {
+    const source = await read('password-setup.js');
+    assert.match(source, /token_hash/);
+    assert.match(source, /redeemInvitation/);
+    assert.match(source, /auth\.verifyOtp\(\{ token_hash: hash, type: flow \}\)/);
   });
 
   test('the password is only ever sent to updateUser', async () => {

@@ -42,14 +42,16 @@ const MAGIC_LINK = {
   forbids: '{{ .ConfirmationURL }}'
 };
 const MAP = [
-  ...templates.map((t) => ({
-    id: t.id,
-    supabaseTemplate: t.supabaseTemplate,
-    configKeys: t.configKeys,
-    subject: t.subject,
-    requires: '{{ .ConfirmationURL }}',
+  {
+    ...templates.find((template) => template.id === 'staff-account-created'),
+    requires: ['{{ .RedirectTo }}', '{{ .TokenHash }}'],
+    forbids: '{{ .ConfirmationURL }}'
+  },
+  {
+    ...templates.find((template) => template.id === 'password-reset'),
+    requires: ['{{ .ConfirmationURL }}'],
     forbids: '{{ .Token }}'
-  })),
+  },
   MAGIC_LINK
 ];
 function arg(flag) {
@@ -84,11 +86,15 @@ for (const entry of MAP) {
 
   /* A template missing its own placeholder sends a dead email: an activation with
      no link, or a code message with no code. */
-  if (!html.includes(entry.requires)) {
-    console.error(`  INVALID  ${entry.id}.html for "${entry.supabaseTemplate}": missing ${entry.requires}`);
-    blocked = true;
-    continue;
+  let entryBlocked = false;
+  for (const required of entry.requires) {
+    if (!html.includes(required)) {
+      console.error(`  INVALID  ${entry.id}.html for "${entry.supabaseTemplate}": missing ${required}`);
+      blocked = true;
+      entryBlocked = true;
+    }
   }
+  if (entryBlocked) continue;
   /* Carrying the other flow's placeholder means the mapping has been crossed over. */
   if (entry.forbids && html.includes(entry.forbids)) {
     console.error(`  INVALID  ${entry.id}.html for "${entry.supabaseTemplate}": must not contain ${entry.forbids}`);

@@ -68,6 +68,33 @@
     };
   }
 
+  /* Invite mail carries a token hash to this page, but no request redeems it until
+     the person presses Continue. This prevents a security scanner that merely
+     opens every email URL from spending the teacher's one-time invitation. */
+  function tokenHash() {
+    return new URLSearchParams(window.location.search).get('token_hash') || '';
+  }
+
+  function activationGate(hash) {
+    host.innerHTML = `${panel(COPY.eyebrow, COPY.heading, 'Click Continue to verify this email link and choose a password.')}<p><button id="redeemInvitation" class="primaryButton" type="button">Continue to password setup</button></p><p id="passwordSetupNotice" class="formNotice" role="status" aria-live="polite"></p>`;
+    document.getElementById('redeemInvitation').addEventListener('click', async (event) => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      notice('Verifying your invitation...');
+      const { error } = await app.getClient().auth.verifyOtp({ token_hash: hash, type: flow });
+      if (error) {
+        const expired = /expired|invalid|not.?found/i.test(error.message || '');
+        host.innerHTML = panel(COPY.eyebrow, expired ? COPY.expiredHeading : 'This link could not be used', expired ? COPY.expiredLede : error.message, flow === 'recovery' ? 'auth.html' : null, 'Go to sign in');
+        return;
+      }
+      const clean = new URL(window.location.href);
+      clean.searchParams.delete('token_hash');
+      clean.searchParams.delete('type');
+      window.history.replaceState({}, document.title, clean.pathname + clean.search + clean.hash);
+      render();
+    });
+  }
+
   function form() {
     return `<div class="formHeading"><p class="eyebrow">${escapeHtml(COPY.eyebrow)}</p><h1 id="passwordSetupTitle">${escapeHtml(COPY.heading)}</h1><p>${escapeHtml(COPY.lede)}</p></div>
       <form id="passwordSetupForm" class="authPanel" novalidate>
@@ -109,6 +136,16 @@
     }
     if (type && flow === 'recovery' && type === 'invite') {
       host.innerHTML = panel('Account activation', 'This is an account activation link', 'Open it on the account setup page instead.', 'account-setup.html', 'Continue to account setup');
+      return;
+    }
+
+    const hash = tokenHash();
+    if (hash) {
+      if (type && type !== flow) {
+        host.innerHTML = panel(COPY.eyebrow, 'This link is for a different account action', 'Open the link from the correct email message.', null, '');
+        return;
+      }
+      activationGate(hash);
       return;
     }
 

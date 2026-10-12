@@ -6,8 +6,11 @@
  * password". Sending the recovery message to a brand-new teacher is what this
  * whole module exists to prevent.
  *
- * Supabase fills {{ .ConfirmationURL }} and {{ .Email }} at send time. The two
- * templates are wired to different Supabase actions:
+ * Supabase fills the placeholders at send time. The invitation deliberately uses
+ * a token hash rather than a direct confirmation URL: mail-security scanners can
+ * follow a direct confirmation URL and consume it before the teacher sees it.
+ * The CampGrids page shows a button that the teacher must press before redeeming
+ * that hash. Recovery remains a direct confirmation URL.
  *
  *   activation -> Invite user     <- admin.inviteUserByEmail()
  *   recovery   -> Reset Password  <- auth.resetPasswordForEmail()
@@ -23,12 +26,12 @@ import {
  * mail server substitutes, not user input. {{ .Email }} is substituted by Supabase
  * from the auth record, so it is not attacker-controlled markup either. */
 const CONFIRMATION_URL = '{{ .ConfirmationURL }}';
+const INVITATION_URL = '{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=invite';
 const EMAIL = '{{ .Email }}';
 
-/* How long the link lasts. Supabase's mailer_otp_exp governs this; 24 hours is its
- * default for an invitation. Stated in the email so a recipient who opens it late
- * knows to ask for another rather than assuming the system is broken. */
-const ACTIVATION_WINDOW = '24 hours';
+/* How long the link lasts. This project configures Supabase's mailer_otp_exp to
+ * one hour, so the email states the real window rather than a generic default. */
+const ACTIVATION_WINDOW = '60 minutes';
 const RECOVERY_WINDOW = '60 minutes';
 
 /* ------------------------------------------------- A. staff account created ---- */
@@ -51,11 +54,11 @@ export const staffAccountCreated = {
           heading: 'Your MSI account is ready',
           paragraphs: [
             `An ${brand.organizationShort} staff account has been created for <strong style="color:${brand.color.ink};">${EMAIL}</strong>.`,
-            'Use the button below to securely set your password and activate your account. No password was created for you, so this is the last step before you can sign in.'
+            'Use the button below to open the secure setup page, then choose a password. No password was created for you.'
           ]
         }),
         EmailButton({
-          href: CONFIRMATION_URL,
+          href: INVITATION_URL,
           label: 'Set Up My Account',
           note: `This link can be used once and expires after ${ACTIVATION_WINDOW}.`
         }),
@@ -95,9 +98,9 @@ export const staffAccountCreated = {
       'Your MSI account is ready',
       '',
       `An ${brand.organizationShort} staff account has been created for ${EMAIL}.`,
-      'Set your password to activate it:',
+      'Open the setup page, then choose your password:',
       '',
-      CONFIRMATION_URL,
+      INVITATION_URL,
       '',
       `This link can be used once and expires after ${ACTIVATION_WINDOW}.`,
       '',

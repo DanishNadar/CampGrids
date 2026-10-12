@@ -53,27 +53,27 @@
             <div style="font-family:'DM Sans',Arial,Helvetica,sans-serif; font-size:12px; font-weight:700; line-height:16px; color:#b33a00; letter-spacing:0.09em; text-transform:uppercase; mso-line-height-rule:exactly;">Account activation</div>
             <h1 class="msi-h1" style="margin:10px 0 0 0; font-family:'Space Grotesk',Arial,Helvetica,sans-serif; font-size:30px; font-weight:700; line-height:36px; color:#172033; letter-spacing:-0.035em; mso-line-height-rule:exactly;">Your MSI account is ready</h1>
             <p style="margin:14px 0 0 0; font-family:'DM Sans',Arial,Helvetica,sans-serif; font-size:16px; font-weight:400; line-height:26px; color:#334155; mso-line-height-rule:exactly;">An MSI staff account has been created for <strong style="color:#172033;">{{ .Email }}</strong>.</p>
-            <p style="margin:14px 0 0 0; font-family:'DM Sans',Arial,Helvetica,sans-serif; font-size:16px; font-weight:400; line-height:26px; color:#334155; mso-line-height-rule:exactly;">Use the button below to securely set your password and activate your account. No password was created for you, so this is the last step before you can sign in.</p>
+            <p style="margin:14px 0 0 0; font-family:'DM Sans',Arial,Helvetica,sans-serif; font-size:16px; font-weight:400; line-height:26px; color:#334155; mso-line-height-rule:exactly;">Use the button below to open the secure setup page, then choose a password. No password was created for you.</p>
           </td>
         </tr>
         <tr>
           <td class="msi-pad" align="left" style="padding:26px 40px 0 40px;">
             <!--[if mso]>
-            <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ .ConfirmationURL }}" style="height:52px;v-text-anchor:middle;width:300px;" arcsize="14%" strokecolor="#FE5000" fillcolor="#FE5000">
+            <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=invite" style="height:52px;v-text-anchor:middle;width:300px;" arcsize="14%" strokecolor="#FE5000" fillcolor="#FE5000">
               <w:anchorlock/>
               <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">Set Up My Account</center>
             </v:roundrect>
             <![endif]-->
             <!--[if !mso]><!-- -->
-            <a class="msi-btn" href="{{ .ConfirmationURL }}" style="display:inline-block; padding:16px 32px; border-radius:8px; background-color:#FE5000; color:#ffffff; font-family:'Space Grotesk',Arial,Helvetica,sans-serif; font-size:16px; font-weight:700; line-height:20px; text-align:center; text-decoration:none; mso-line-height-rule:exactly;">Set Up My Account</a>
+            <a class="msi-btn" href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=invite" style="display:inline-block; padding:16px 32px; border-radius:8px; background-color:#FE5000; color:#ffffff; font-family:'Space Grotesk',Arial,Helvetica,sans-serif; font-size:16px; font-weight:700; line-height:20px; text-align:center; text-decoration:none; mso-line-height-rule:exactly;">Set Up My Account</a>
             <!--<![endif]-->
-            <p style="margin:14px 0 0 0; font-family:'DM Sans',Arial,Helvetica,sans-serif; font-size:13px; font-weight:400; line-height:20px; color:#334155; mso-line-height-rule:exactly;">This link can be used once and expires after 24 hours.</p>
+            <p style="margin:14px 0 0 0; font-family:'DM Sans',Arial,Helvetica,sans-serif; font-size:13px; font-weight:400; line-height:20px; color:#334155; mso-line-height-rule:exactly;">This link can be used once and expires after 60 minutes.</p>
           </td>
         </tr>
         <tr>
           <td class="msi-pad" style="padding:18px 40px 0 40px;">
             <p style="margin:0; font-family:'DM Sans',Arial,Helvetica,sans-serif; font-size:13px; font-weight:400; line-height:20px; color:#334155; mso-line-height-rule:exactly;">Or paste this address into your browser:</p>
-            <p style="margin:6px 0 0 0; font-family:Consolas,'Courier New',monospace; font-size:12px; line-height:19px; color:#b33a00; overflow-wrap:break-word; word-break:break-word; mso-line-height-rule:exactly;">{{ .ConfirmationURL }}</p>
+            <p style="margin:6px 0 0 0; font-family:Consolas,'Courier New',monospace; font-size:12px; line-height:19px; color:#b33a00; overflow-wrap:break-word; word-break:break-word; mso-line-height-rule:exactly;">{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=invite</p>
           </td>
         </tr>
         <tr>
