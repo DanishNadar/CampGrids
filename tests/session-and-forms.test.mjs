@@ -227,8 +227,9 @@ describe('self-directed class Grid activities', () => {
     const source = await read('dashboard.js');
     assert.match(source, /data-student-grid-cell="\$\{cell\.id\}"/);
     assert.match(source, /function openStudentGridCell\(/);
-    assert.match(source, /Open activity/);
-    assert.match(source, /Mark completed/);
+    assert.match(source, /data-student-view="grid"/);
+    assert.match(source, /data-student-view="dropdown"/);
+    assert.match(source, /Complete<\/button>/);
   });
 
   test('records direct activity progress through the protected database action', async () => {
@@ -240,11 +241,22 @@ describe('self-directed class Grid activities', () => {
     assert.match(sql, /That activity is not in your class Grid/);
   });
 
-  test('enforces completion of every earlier selected belt activity', async () => {
-    const sql = await read('supabase/migrations/20261012_zz_student_grid_self_service.sql');
+  test('enforces completion of every earlier belt activity in the same category', async () => {
+    const source = await read('dashboard.js');
+    assert.match(source, /function categoryPrerequisitesComplete\(/);
+    assert.match(source, /entry\.category === cell\.category/);
+    assert.match(source, /class="motherGridCell \$\{color\} hasCell isSelected \$\{unlocked/,
+      'locked belts must not be clickable in Grid view');
+    assert.match(source, /renderStudentDropdown\(/,
+      'students need the compact category dropdown alternative');
+
+    const sql = await read('supabase/migrations/20261012_zzzz_category_belt_prerequisites.sql');
     assert.match(sql, /public\.belt_rank\(lower_cell\.belt_code\) < target_rank/);
+    assert.match(sql, /lower_cell\.category is not distinct from cell_category/,
+      'a category may only depend on earlier belts in that same category');
     assert.match(sql, /generate_series\(/, 'every activity in an earlier Grid cell is required');
-    assert.match(sql, /Complete every activity in the earlier selected belt rows before completing this one/);
+    assert.match(sql, /before starting this activity/,
+      'a later belt cannot be opened merely because completion is not being requested yet');
   });
 });
 
